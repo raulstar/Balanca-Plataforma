@@ -1,16 +1,13 @@
 #include <Arduino.h>
 #include "WiFi_Server.hpp"
 #include "Nextion_Display.hpp"
-
-// ==========================
-// 🔴 VARIÁVEIS GLOBAIS
-// ==========================
+/////////////////////////////////////////////////////////////////////////////
+// VARIÁVEIS GLOBAIS
 
 float pesoAtual = 0.0;
-
-// ==========================
-// 🔴 FUNÇÕES DO SISTEMA
-// ==========================
+HardwareSerial SerialPort(2);
+/////////////////////////////////////////////////////////////////////////////
+// FUNÇÕES DO SISTEMA
 
 void handleZero()
 {
@@ -41,14 +38,19 @@ void handleCalibrar()
     server.send(200, "text/plain", "Modo calibração iniciado");
 }
 
-// ==========================
+/////////////////////////////////////////////////////////////////////////////
+void atualizarPesoNaTela()
+{
+  char buffer[24];
+  snprintf(buffer, sizeof(buffer), "%.2f Kg", pesoAtual);
+  nextionCmd(String("tPeso.txt=\"") + buffer + "\"");
+}
+/////////////////////////////////////////////////////////////////////////////
 // SETUP
-// ==========================
-
 void setup()
 {
     Serial.begin(115200);
-
+    SerialPort.begin(9600, SERIAL_8N1, 16, 17);
     initWiFi();
     initWebServer();
     initNextion();
@@ -59,18 +61,44 @@ void setup()
     server.on("/calibrar", handleCalibrar);
 }
 
-// ==========================
-// LOOP
-// ==========================
-
+/////////////////////////////////////////////////////////////////////////////
+//  LOOP
 void loop()
 {
     handleWeb();
 
-    lerNextion();   // 🔥 leitura da IHM
-
-    // 🔴 depois você coloca o HX711 aqui
-    // pesoAtual = getPeso();
-
+    lerNextion(); // 🔥 leitura da IHM
+    atualizarPesoNaTela();
     delay(10);
+
+    // Se houver dados no monitor serial (USB)
+  while (Serial.available())
+  {
+    SerialPort.write(Serial.read());
+  }
+  static String buffer = "";
+
+  while (SerialPort.available())
+  {
+    char c = SerialPort.read();
+
+    // Se chegar fim de linha, processa
+    if (c == '\n')
+    {
+      buffer.trim();
+
+      if (buffer.length() > 0)
+      {
+        pesoAtual = buffer.toFloat();
+        Serial.println("Peso recebido: " + String(pesoAtual));
+      }
+
+      buffer = ""; // limpa buffer
+    }
+    else
+    {
+      buffer += c;
+    }
+  }
+    
 }
