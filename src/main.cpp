@@ -1,17 +1,22 @@
 #include <Arduino.h>
 #include "WiFi_Server.hpp"
 #include "Nextion_Display.hpp"
+#include "HX711_Module.hpp"
 /////////////////////////////////////////////////////////////////////////////
 // VARIÁVEIS GLOBAIS
 
-float pesoAtual = 0.0;
+//float pesoAtual = 0.0;
+float valorLido = 0.0;
+float calibration_factor = -404.42;
 HardwareSerial SerialPort(2);
+HX711 scale;
 /////////////////////////////////////////////////////////////////////////////
 // FUNÇÕES DO SISTEMA
 
 void handleZero()
 {
     pesoAtual = 0.0;
+    scale.tare();
 
     if (server.client())
         server.send(200, "text/plain", "Zerado!");
@@ -54,8 +59,9 @@ void setup()
     initWiFi();
     initWebServer();
     initNextion();
+    scale.tare();
 
-    // 🌐 ROTAS WEB
+    //  ROTAS WEB
     server.on("/zero", handleZero);
     server.on("/dados", handleDados);
     server.on("/calibrar", handleCalibrar);
@@ -89,7 +95,8 @@ void loop()
 
       if (buffer.length() > 0)
       {
-        pesoAtual = buffer.toFloat();
+        valorLido = buffer.toFloat();
+        pesoAtual = scale.get_units(1);
         Serial.println("Peso recebido: " + String(pesoAtual));
       }
 
