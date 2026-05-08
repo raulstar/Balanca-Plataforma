@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "HX711_Module.hpp"
 
 
@@ -14,8 +15,18 @@ HX711::HX711() {
 }
 
 // função de tara
-void HX711::tare() {
-    offset = valorLido;
+void HX711::tare(uint8_t times) {
+
+    float soma = 0;
+
+    for (uint8_t i = 0; i < times; i++) {
+
+        soma += valorLido;
+
+        delay(10);
+    }
+
+    offset = soma / times;
 }
 
 // média das leituras (mesmo que seja o mesmo valor, mantém compatibilidade)

@@ -2,7 +2,7 @@
 #define HX711_Module
 
 #include <stdint.h> 
-
+#include <Arduino.h>
 class HX711 {
 private:
     float offset;       // valor de tara
@@ -11,7 +11,7 @@ private:
 public:
     HX711();
 
-    void tare();                  // zera a balança
+    void tare(uint8_t times = 20);                  // zera a balança
     float get_units(uint8_t times = 1); // retorna valor calibrado
     void calibra(float known_weight);   // calibração com peso conhecido
 };
