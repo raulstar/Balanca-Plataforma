@@ -11,9 +11,10 @@ float valorLido = 0.0;
 HX711 balanca;
 
 // peso conhecido para calibração
-float pesoCalibracao = 100.0; // 100g exemplo
+float pesoCalibracao = 4000.0; // 100g exemplo
 
-void realizarTara() {
+void realizarTara()
+{
 
     balanca.tare(20);
 
@@ -22,7 +23,8 @@ void realizarTara() {
     Serial.println("--------------------------------");
 }
 
-void realizarCalibracao(float pesoConhecido) {
+void realizarCalibracao(float pesoConhecido)
+{
 
     balanca.calibra(pesoConhecido);
 
@@ -33,7 +35,8 @@ void realizarCalibracao(float pesoConhecido) {
     Serial.println("--------------------------------");
 }
 
-void setup() {
+void setup()
+{
 
     Serial.begin(115200);
 
@@ -54,10 +57,12 @@ void setup() {
     realizarTara();
 }
 
-void loop() {
+void loop()
+{
 
     // leitura do sensor
-    if (SerialPort.available()) {
+    if (SerialPort.available())
+    {
 
         String dado = SerialPort.readStringUntil('\n');
 
@@ -68,32 +73,38 @@ void loop() {
         Serial.print("Leitura Bruta: ");
         Serial.print(valorLido);
 
+        float pesoGramas = balanca.get_units(10);
+
+        float pesoKg = pesoGramas / 1000.0;
+
         Serial.print(" | Peso: ");
-        Serial.print(peso);
-        Serial.println(" g");
+        Serial.print(pesoKg, 3);
+        Serial.println(" kg");
     }
 
     // comandos do monitor serial
-    if (Serial.available()) {
+    if (Serial.available())
+    {
 
         char comando = Serial.read();
 
-        switch (comando) {
+        switch (comando)
+        {
 
-            case 't':
-            case 'T':
-                realizarTara();
-                break;
+        case 't':
+        case 'T':
+            realizarTara();
+            break;
 
-            case 'c':
-            case 'C':
+        case 'c':
+        case 'C':
 
-                Serial.println("\nCOLOQUE O PESO DE CALIBRACAO...");
-                delay(5000);
+            Serial.println("\nCOLOQUE O PESO DE CALIBRACAO...");
+            delay(5000);
 
-                realizarCalibracao(pesoCalibracao);
+            realizarCalibracao(pesoCalibracao);
 
-                break;
+            break;
         }
     }
 

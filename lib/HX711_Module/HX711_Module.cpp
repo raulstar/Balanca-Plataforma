@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include "HX711_Module.hpp"
 
 
