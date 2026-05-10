@@ -1,22 +1,25 @@
-#ifndef HX711_Module
-#define HX711_Module
+#ifndef HX711_MODULE_HPP
+#define HX711_MODULE_HPP
 
-#include <stdint.h> 
 #include <Arduino.h>
-class HX711 {
+
+class HX711
+{
 private:
-    float offset;       // valor de tara
-    float scale_factor; // fator de calibração
+    float offset;
+    float scale_factor;
 
 public:
     HX711();
 
-    void tare(uint8_t times = 20);                  // zera a balança
-    float get_units(uint8_t times = 1); // retorna valor calibrado
-    void calibra(float known_weight);   // calibração com peso conhecido
-};
+    // tara usando leitura atual
+    void tare(float leituraAtual);
 
-// variável global com valor já processado
-extern float pesoAtual;
+    // leitura convertida
+    float get_units(uint8_t times = 1);
+
+    // calibração
+    void calibra(float known_weight);
+};
 
 #endif
