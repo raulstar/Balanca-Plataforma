@@ -16,10 +16,10 @@ public:
     void tare(float leituraAtual);
 
     // leitura convertida
-    float get_units();
+   float get_units(float leituraAtual);
 
     // calibração
-    void calibra(float known_weight);
+    void calibra(float leituraAtual, float known_weight);
 };
 
 #endif

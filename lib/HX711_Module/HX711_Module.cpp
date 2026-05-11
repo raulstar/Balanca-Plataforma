@@ -1,7 +1,7 @@
 #include "HX711_Module.hpp"
 
 // variável global vinda do main.cpp
-extern float valorLido;
+// extern float valorLido;
 
 // peso atual global
 float pesoAtual = 0.0;
@@ -24,23 +24,60 @@ void HX711::tare(float leituraAtual)
     Serial.println(offset);
 }
 
-float HX711::get_units()
+float HX711::get_units(float leituraAtual)
 {
-    pesoAtual = (valorLido - offset) * scale_factor;
+    pesoAtual = (leituraAtual - offset) * scale_factor;
 
     return pesoAtual;
 }
 
 // CALIBRAÇÃO
-void HX711::calibra(float known_weight)
+void HX711::calibra(float leituraAtual, float known_weight)
 {
-    float leituraLiquida = valorLido - offset;
+    //////////////////////////////////////////////////////////////////////////
+    // LEITURA LÍQUIDA
+    //////////////////////////////////////////////////////////////////////////
 
-    if (known_weight != 0)
+    float leituraLiquida = leituraAtual - offset;
+
+    //////////////////////////////////////////////////////////////////////////
+    // DEBUG
+    //////////////////////////////////////////////////////////////////////////
+
+    Serial.println("--------------------------------");
+
+    Serial.print("OFFSET: ");
+    Serial.println(offset, 6);
+
+    Serial.print("LEITURA: ");
+    Serial.println(leituraAtual, 6);
+
+    Serial.print("LIQUIDA: ");
+    Serial.println(leituraLiquida, 6);
+
+    //////////////////////////////////////////////////////////////////////////
+    // PROTEÇÃO DIVISÃO ZERO
+    //////////////////////////////////////////////////////////////////////////
+
+    if (fabs(leituraLiquida) < 0.0001f)
     {
-        scale_factor = known_weight / leituraLiquida;
+        Serial.println("ERRO: PESO INVALIDO");
+
+        return;
     }
 
-    Serial.println("FACTOR:");
+    //////////////////////////////////////////////////////////////////////////
+    // CALIBRAÇÃO
+    //////////////////////////////////////////////////////////////////////////
+
+    scale_factor = known_weight / leituraLiquida;
+
+    //////////////////////////////////////////////////////////////////////////
+    // RESULTADO
+    //////////////////////////////////////////////////////////////////////////
+
+    Serial.print("FACTOR: ");
     Serial.println(scale_factor, 8);
+
+    Serial.println("--------------------------------");
 }

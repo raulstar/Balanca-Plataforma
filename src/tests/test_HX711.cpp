@@ -1,47 +1,299 @@
 #include <Arduino.h>
 #include "HX711_Module.hpp"
 
-// UART do sensor
+/////////////////////////////////////////////////////////////////////////////
+// UART SENSOR
+/////////////////////////////////////////////////////////////////////////////
+
 HardwareSerial SerialPort(2);
 
-// variável global usada pela biblioteca
-float valorLido = 0.0;
+/////////////////////////////////////////////////////////////////////////////
+// CLASSE SENSOR BALANÇA
+/////////////////////////////////////////////////////////////////////////////
 
-// objeto da balança
-HX711 balanca;
-
-// peso conhecido para calibração
-float pesoCalibracao = 78000.0;
-static char rxBuffer[32];
-static uint8_t rxIndex = 0;
-
-void realizarTara()
+class SensorBalanca
 {
-    // usa leitura atual
-    balanca.tare(valorLido);
+private:
+    //////////////////////////////////////////////////////////////////////////
+    // SERIAL
+    //////////////////////////////////////////////////////////////////////////
 
-    Serial.println("--------------------------------");
-    Serial.println("BALANCA ZERADA COM SUCESSO");
-    Serial.println("--------------------------------");
-}
+    HardwareSerial *serial;
 
-void realizarCalibracao(float pesoConhecido)
-{
-    balanca.calibra(pesoConhecido);
+    //////////////////////////////////////////////////////////////////////////
+    // BUFFER RX
+    //////////////////////////////////////////////////////////////////////////
 
-    Serial.println("--------------------------------");
-    Serial.print("BALANCA CALIBRADA COM ");
-    Serial.print(pesoConhecido);
-    Serial.println(" g");
-    Serial.println("--------------------------------");
-}
+    char rxBuffer[32];
+
+    uint8_t rxIndex = 0;
+
+    //////////////////////////////////////////////////////////////////////////
+    // BALANÇA
+    //////////////////////////////////////////////////////////////////////////
+
+    HX711 balanca;
+
+    //////////////////////////////////////////////////////////////////////////
+    // DADOS
+    //////////////////////////////////////////////////////////////////////////
+
+    float valorLido = 0.0f;
+
+    float pesoGramas = 0.0f;
+
+    float pesoKg = 0.0f;
+
+    //////////////////////////////////////////////////////////////////////////
+    // STATUS
+    //////////////////////////////////////////////////////////////////////////
+
+    bool ready = false;
+
+    bool stable = false;
+
+    float noise = 0.0f;
+
+    //////////////////////////////////////////////////////////////////////////
+    // ANÁLISE ESTABILIDADE
+    //////////////////////////////////////////////////////////////////////////
+
+    static const uint8_t NOISE_SAMPLES = 10;
+
+    float noiseBuffer[NOISE_SAMPLES];
+
+    uint8_t noiseIndex = 0;
+
+public:
+    //////////////////////////////////////////////////////////////////////////
+    // CONSTRUTOR
+    //////////////////////////////////////////////////////////////////////////
+
+    SensorBalanca(HardwareSerial &porta)
+    {
+        serial = &porta;
+
+        for (uint8_t i = 0; i < NOISE_SAMPLES; i++)
+        {
+            noiseBuffer[i] = 0.0f;
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // UPDATE SENSOR
+    //////////////////////////////////////////////////////////////////////////
+
+    bool leitura()
+    {
+        while (serial->available())
+        {
+            char c = serial->read();
+
+            //////////////////////////////////////////////////////////////////////////
+            // IGNORA CR
+            //////////////////////////////////////////////////////////////////////////
+
+            if (c == '\r')
+                continue;
+
+            //////////////////////////////////////////////////////////////////////////
+            // FIM LINHA
+            //////////////////////////////////////////////////////////////////////////
+
+            if (c == '\n')
+            {
+                rxBuffer[rxIndex] = '\0';
+
+                valorLido = atof(rxBuffer);
+
+                rxIndex = 0;
+
+                //////////////////////////////////////////////////////////////////////////
+                // IGNORA ZERO
+                //////////////////////////////////////////////////////////////////////////
+
+                if (fabs(valorLido) < 0.0001f)
+                {
+                    ready = false;
+                    return false;
+                }
+
+                //////////////////////////////////////////////////////////////////////////
+                // PESO
+                //////////////////////////////////////////////////////////////////////////
+                pesoGramas = balanca.get_units(valorLido);
+                pesoKg = pesoGramas / 1000.0f;
+
+                //////////////////////////////////////////////////////////////////////////
+                // ANALISA RUÍDO
+                //////////////////////////////////////////////////////////////////////////
+
+                analisarRuido();
+
+                ready = true;
+
+                return true;
+            }
+
+            //////////////////////////////////////////////////////////////////////////
+            // BUFFER
+            //////////////////////////////////////////////////////////////////////////
+
+            else
+            {
+                if (rxIndex < sizeof(rxBuffer) - 1)
+                {
+                    rxBuffer[rxIndex++] = c;
+                }
+            }
+        }
+
+        return false;
+    }
+
+private:
+    //////////////////////////////////////////////////////////////////////////
+    // ANALISA ESTABILIDADE
+    //////////////////////////////////////////////////////////////////////////
+
+    void analisarRuido()
+    {
+        noiseBuffer[noiseIndex] = valorLido;
+
+        noiseIndex++;
+
+        if (noiseIndex >= NOISE_SAMPLES)
+        {
+            noiseIndex = 0;
+        }
+
+        //////////////////////////////////////////////////////////////////////////
+        // CALCULA MIN/MAX
+        //////////////////////////////////////////////////////////////////////////
+
+        float minV = noiseBuffer[0];
+        float maxV = noiseBuffer[0];
+
+        for (uint8_t i = 1; i < NOISE_SAMPLES; i++)
+        {
+            if (noiseBuffer[i] < minV)
+                minV = noiseBuffer[i];
+
+            if (noiseBuffer[i] > maxV)
+                maxV = noiseBuffer[i];
+        }
+
+        //////////////////////////////////////////////////////////////////////////
+        // RUÍDO
+        //////////////////////////////////////////////////////////////////////////
+
+        noise = maxV - minV;
+
+        //////////////////////////////////////////////////////////////////////////
+        // ESTABILIDADE
+        //////////////////////////////////////////////////////////////////////////
+
+        stable = (noise < 0.020f);
+    }
+
+public:
+    //////////////////////////////////////////////////////////////////////////
+    // STATUS
+    //////////////////////////////////////////////////////////////////////////
+
+    bool isReady()
+    {
+        return ready;
+    }
+
+    bool isStable()
+    {
+        return stable;
+    }
+
+    float getNoise()
+    {
+        return noise;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // DADOS
+    //////////////////////////////////////////////////////////////////////////
+
+    float getRaw()
+    {
+        return valorLido;
+    }
+
+    float getKg()
+    {
+        return pesoKg;
+    }
+
+    float getGramas()
+    {
+        return pesoGramas;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // TARA
+    //////////////////////////////////////////////////////////////////////////
+
+    void tare()
+    {
+        balanca.tare(valorLido);
+
+        Serial.println("--------------------------------");
+        Serial.println("BALANCA ZERADA");
+        Serial.println("--------------------------------");
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // CALIBRAÇÃO
+    //////////////////////////////////////////////////////////////////////////
+
+    void calibra(float pesoConhecido)
+    {
+        if (!stable)
+        {
+            Serial.println("ERRO: BALANCA INSTAVEL");
+            return;
+        }
+
+        balanca.calibra(valorLido, pesoConhecido);
+
+        Serial.println("--------------------------------");
+        Serial.print("BALANCA CALIBRADA COM ");
+        Serial.print(pesoConhecido);
+        Serial.println(" g");
+        Serial.println("--------------------------------");
+    }
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// INSTÂNCIA SENSOR
+/////////////////////////////////////////////////////////////////////////////
+
+SensorBalanca sensor1(SerialPort);
+
+/////////////////////////////////////////////////////////////////////////////
+// PESO CALIBRAÇÃO
+/////////////////////////////////////////////////////////////////////////////
+
+float pesoCalibracao = 78000.0f;
+
+/////////////////////////////////////////////////////////////////////////////
+// SETUP
+/////////////////////////////////////////////////////////////////////////////
 
 void setup()
 {
     Serial.begin(115200);
 
-    // RX = GPIO16
-    // TX = GPIO17
+    //////////////////////////////////////////////////////////////////////////
+    // UART SENSOR
+    //////////////////////////////////////////////////////////////////////////
+
     SerialPort.begin(9600, SERIAL_8N1, 16, 17);
 
     delay(1000);
@@ -49,76 +301,77 @@ void setup()
     Serial.println("\n=== SISTEMA BALANCA ===");
 
     Serial.println("Comandos:");
-    Serial.println("t -> Tara / Zerar");
+    Serial.println("t -> Tara");
     Serial.println("c -> Calibrar");
+
     Serial.println("========================");
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// LOOP
+/////////////////////////////////////////////////////////////////////////////
+
 void loop()
 {
-    // leitura do sensor
-    while (SerialPort.available())
+    //////////////////////////////////////////////////////////////////////////
+    // LEITURA SENSOR
+    //////////////////////////////////////////////////////////////////////////
+
+    if (sensor1.leitura())
     {
-        char c = SerialPort.read();
+        Serial.print("RAW: ");
+        Serial.print(sensor1.getRaw(), 3);
 
-        // fim da linha
-        if (c == '\n')
-        {
-            // finaliza string
-            rxBuffer[rxIndex] = '\0';
+        Serial.print(" | KG: ");
+        Serial.print(sensor1.getKg(), 3);
 
-            // converte para float
-            valorLido = atof(rxBuffer);
+        Serial.print(" | Noise: ");
+        Serial.print(sensor1.getNoise(), 5);
 
-            // reinicia buffer
-            rxIndex = 0;
+        Serial.print(" | Stable: ");
 
-            // cálculo do peso
-            float pesoGramas = balanca.get_units();
-
-            float pesoKg = pesoGramas / 1000.0f;
-
-            // saída
-            Serial.print("Leitura Bruta: ");
-            Serial.print(valorLido, 3);
-
-            Serial.print(" | Peso: ");
-            Serial.print(pesoKg, 3);
-
-            Serial.println(" kg");
-        }
+        if (sensor1.isStable())
+            Serial.print("YES");
         else
-        {
-            // evita overflow
-            if (rxIndex < sizeof(rxBuffer) - 1)
-            {
-                rxBuffer[rxIndex++] = c;
-            }
-        }
+            Serial.print("NO");
+
+        Serial.println();
     }
-    // comandos do monitor serial
+
+    //////////////////////////////////////////////////////////////////////////
+    // COMANDOS
+    //////////////////////////////////////////////////////////////////////////
+
     if (Serial.available())
     {
         char comando = Serial.read();
 
         switch (comando)
         {
+            //////////////////////////////////////////////////////////////////////////
+            // TARA
+            //////////////////////////////////////////////////////////////////////////
+
         case 't':
         case 'T':
-            realizarTara();
+
+            sensor1.tare();
+
             break;
+
+            //////////////////////////////////////////////////////////////////////////
+            // CALIBRAÇÃO
+            //////////////////////////////////////////////////////////////////////////
 
         case 'c':
         case 'C':
 
             Serial.println("\nCOLOQUE O PESO DE CALIBRACAO...");
-            delay(5000);
+            delay(3000);
 
-            realizarCalibracao(pesoCalibracao);
+            sensor1.calibra(pesoCalibracao);
 
             break;
         }
     }
-
-    delay(100);
 }
