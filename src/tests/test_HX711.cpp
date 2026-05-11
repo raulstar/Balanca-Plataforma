@@ -44,7 +44,7 @@ void setup()
     // TX = GPIO17
     SerialPort.begin(9600, SERIAL_8N1, 16, 17);
 
-    delay(2000);
+    delay(1000);
 
     Serial.println("\n=== SISTEMA BALANCA ===");
 
@@ -120,5 +120,5 @@ void loop()
         }
     }
 
-    delay(50);
+    delay(100);
 }

@@ -24,30 +24,12 @@ void HX711::tare(float leituraAtual)
     Serial.println(offset);
 }
 
-
 float HX711::get_units()
 {
     pesoAtual = (valorLido - offset) * scale_factor;
 
     return pesoAtual;
 }
-// LEITURA
-// float HX711::get_units(uint8_t times)
-// {
-//     float soma = 0;
-
-//     for (uint8_t i = 0; i < times; i++)
-//     {
-//         soma += valorLido;
-//     }
-
-//     float media = soma / times;
-
-//     // cálculo correto
-//     pesoAtual = (media - offset) * scale_factor;
-
-//     return pesoAtual;
-// }
 
 // CALIBRAÇÃO
 void HX711::calibra(float known_weight)
@@ -56,7 +38,6 @@ void HX711::calibra(float known_weight)
 
     if (known_weight != 0)
     {
-        // fator correto
         scale_factor = known_weight / leituraLiquida;
     }
 
