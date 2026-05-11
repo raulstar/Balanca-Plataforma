@@ -11,7 +11,9 @@ float valorLido = 0.0;
 HX711 balanca;
 
 // peso conhecido para calibração
-float pesoCalibracao = 4000.0;
+float pesoCalibracao = 78000.0;
+static char rxBuffer[32];
+static uint8_t rxIndex = 0;
 
 void realizarTara()
 {
@@ -55,24 +57,45 @@ void setup()
 void loop()
 {
     // leitura do sensor
-    if (SerialPort.available())
+    while (SerialPort.available())
     {
-        String dado = SerialPort.readStringUntil('\n');
+        char c = SerialPort.read();
 
-        valorLido = dado.toFloat();
+        // fim da linha
+        if (c == '\n')
+        {
+            // finaliza string
+            rxBuffer[rxIndex] = '\0';
 
-        float pesoGramas = balanca.get_units(10);
+            // converte para float
+            valorLido = atof(rxBuffer);
 
-        float pesoKg = pesoGramas / 1000.0;
+            // reinicia buffer
+            rxIndex = 0;
 
-        Serial.print("Leitura Bruta: ");
-        Serial.print(valorLido);
+            // cálculo do peso
+            float pesoGramas = balanca.get_units();
 
-        Serial.print(" | Peso: ");
-        Serial.print(pesoKg, 3);
-        Serial.println(" kg");
+            float pesoKg = pesoGramas / 1000.0f;
+
+            // saída
+            Serial.print("Leitura Bruta: ");
+            Serial.print(valorLido, 3);
+
+            Serial.print(" | Peso: ");
+            Serial.print(pesoKg, 3);
+
+            Serial.println(" kg");
+        }
+        else
+        {
+            // evita overflow
+            if (rxIndex < sizeof(rxBuffer) - 1)
+            {
+                rxBuffer[rxIndex++] = c;
+            }
+        }
     }
-
     // comandos do monitor serial
     if (Serial.available())
     {
@@ -97,5 +120,5 @@ void loop()
         }
     }
 
-    delay(100);
+    delay(50);
 }

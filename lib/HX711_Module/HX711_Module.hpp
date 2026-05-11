@@ -16,7 +16,7 @@ public:
     void tare(float leituraAtual);
 
     // leitura convertida
-    float get_units(uint8_t times = 1);
+    float get_units();
 
     // calibração
     void calibra(float known_weight);

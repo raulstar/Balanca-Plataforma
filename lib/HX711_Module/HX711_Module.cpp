@@ -3,46 +3,63 @@
 // variável global vinda do main.cpp
 extern float valorLido;
 
-// variável global de saída
+// peso atual global
 float pesoAtual = 0.0;
 
 // construtor
 HX711::HX711()
 {
     offset = 0.0;
-    scale_factor = 1.0;
+
+    // começa sem calibração
+    scale_factor = 1;
 }
 
-// função de tara
+// TARA
 void HX711::tare(float leituraAtual)
 {
     offset = leituraAtual;
+
+    Serial.println("OFFSET:");
+    Serial.println(offset);
 }
 
-// média das leituras
-float HX711::get_units(uint8_t times)
+
+float HX711::get_units()
 {
-    float soma = 0;
-
-    for (uint8_t i = 0; i < times; i++)
-    {
-        soma += valorLido;
-    }
-
-    float media = soma / times;
-
-    pesoAtual = (media - offset) / scale_factor;
+    pesoAtual = (valorLido - offset) * scale_factor;
 
     return pesoAtual;
 }
+// LEITURA
+// float HX711::get_units(uint8_t times)
+// {
+//     float soma = 0;
 
-// calibração usando peso conhecido
+//     for (uint8_t i = 0; i < times; i++)
+//     {
+//         soma += valorLido;
+//     }
+
+//     float media = soma / times;
+
+//     // cálculo correto
+//     pesoAtual = (media - offset) * scale_factor;
+
+//     return pesoAtual;
+// }
+
+// CALIBRAÇÃO
 void HX711::calibra(float known_weight)
 {
-    float leitura = valorLido - offset;
+    float leituraLiquida = valorLido - offset;
 
     if (known_weight != 0)
     {
-        scale_factor = leitura / known_weight;
+        // fator correto
+        scale_factor = known_weight / leituraLiquida;
     }
+
+    Serial.println("FACTOR:");
+    Serial.println(scale_factor, 8);
 }
