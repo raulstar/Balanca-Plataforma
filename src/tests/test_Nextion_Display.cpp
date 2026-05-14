@@ -12,6 +12,13 @@ String dataRegistro = "";
 String gdata = "14/05/2026";
 String ghora = "10:45"; // sem segundos
 const String tplaca = "BRA2E19"; // somente leitura
+String gtotal = "5000.0";
+String gtara = "1200.0";
+
+// Matriz 20x5
+String tabela[20][6];
+int linhaAtual = 0;
+int contadorRegistro = 1;
 
 // --- Protótipos das Funções ---
 void handle_bsom();
@@ -46,13 +53,16 @@ void loop() {
     static unsigned long tUpdate = 0;
     if (millis() - tUpdate > 5000) {
         setNextionText("tPeso", "125.4");
-        setNextionText("ttotal", "5000.0");
+        setNextionText("ttotal", gtotal);
+        setNextionText("ttara", gtara);
 
         // Atualiza objetos do display
         setNextionText("thora", ghora);
         setNextionText("gplaca", tplaca);
         setNextionText("tdata", gdata);
- }
+
+        tUpdate = millis();
+    }
 
     // --- Processamento de Comandos "b" via printh ---
     if (NEXTION_SERIAL.available() > 0) {
@@ -84,14 +94,46 @@ void handle_bsom() {
 
 void handle_bsalvar() {
     Serial.println("Comando Recebido: [bsalvar] -> Gravando dados na memória...");
-    // Sua lógica de gravação (EEPROM/SD)
+
+    // Preenche matriz
+    tabela[linhaAtual][0] = String(contadorRegistro);
+    tabela[linhaAtual][1] = tplaca;
+    tabela[linhaAtual][2] = gdata;
+    tabela[linhaAtual][3] = ghora;
+    tabela[linhaAtual][4] = gtotal;
+    tabela[linhaAtual][5] = gtara;
+
+    // Envia para display
+    String sufixo = (linhaAtual == 0) ? "" : String(linhaAtual);
+
+    setNextionText("tn" + sufixo, tabela[linhaAtual][0]);
+    setNextionText("tplaca" + sufixo, tabela[linhaAtual][1]);
+    setNextionText("tdata" + sufixo, tabela[linhaAtual][2]);
+    setNextionText("thora" + sufixo, tabela[linhaAtual][3]);
+    setNextionText("ttotal" + sufixo, tabela[linhaAtual][4]);
+    setNextionText("ttara" + sufixo, tabela[linhaAtual][5]);
+
+    Serial.println("Registro salvo na matriz e enviado ao display.");
+
+    contadorRegistro++;
+    linhaAtual++;
+
+    if (linhaAtual >= 20) {
+        linhaAtual = 0;
+    }
 }
 
 void handle_blimpar() {
     Serial.println("Comando Recebido: [blimpar] -> Resetando campos da tela...");
 
-    // Mantém placa somente leitura
-    setNextionText("gplaca", tplaca);
+    // Limpa somente os campos editáveis
+    setNextionText("tPeso", "");
+    setNextionText("ttotal", "");
+    setNextionText("gplaca", "");
+
+    // Mantém data e hora preservadas
+    setNextionText("thora", ghora);
+    setNextionText("tdata", gdata);
 }
 
 void handle_bgeneric(String cmd) {
