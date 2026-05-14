@@ -1,12 +1,17 @@
 #include <Arduino.h>
 
 // Configuração da UART1
-#define RXD1 16 
+#define RXD1 16
 #define TXD1 17
 HardwareSerial NEXTION_SERIAL(1);
 
 String placaVeiculo = "";
 String dataRegistro = "";
+
+// --- Novas Variáveis Globais ---
+String gdata = "14/05/2026";
+String ghora = "10:45"; // sem segundos
+const String tplaca = "BRA2E19"; // somente leitura
 
 // --- Protótipos das Funções ---
 void handle_bsom();
@@ -26,8 +31,14 @@ void setNextionText(String objName, String value) {
 void setup() {
     Serial.begin(115200);
     // Nextion geralmente opera em 9600 ou 115200
-      NEXTION_SERIAL.begin(9600, SERIAL_8N1, 25, 26); // RX, TX
+    NEXTION_SERIAL.begin(9600, SERIAL_8N1, 25, 26); // RX, TX
+
     Serial.println("Monitor Serial pronto. Aguardando comandos do Nextion...");
+
+    // Atualiza display na inicialização
+    setNextionText("thora", ghora);
+    setNextionText("gplaca", tplaca);
+    setNextionText("tdata", gdata);
 }
 
 void loop() {
@@ -36,9 +47,12 @@ void loop() {
     if (millis() - tUpdate > 5000) {
         setNextionText("tPeso", "125.4");
         setNextionText("ttotal", "5000.0");
-        setNextionText("tplaca", "ABC1D23");
-        tUpdate = millis();
-    }
+
+        // Atualiza objetos do display
+        setNextionText("thora", ghora);
+        setNextionText("gplaca", tplaca);
+        setNextionText("tdata", gdata);
+ }
 
     // --- Processamento de Comandos "b" via printh ---
     if (NEXTION_SERIAL.available() > 0) {
@@ -48,10 +62,10 @@ void loop() {
 
         if (command == "bsom") {
             handle_bsom();
-        } 
+        }
         else if (command == "bsalvar") {
             handle_bsalvar();
-        } 
+        }
         else if (command == "blimpar") {
             handle_blimpar();
         }
@@ -75,8 +89,9 @@ void handle_bsalvar() {
 
 void handle_blimpar() {
     Serial.println("Comando Recebido: [blimpar] -> Resetando campos da tela...");
-    // Exemplo: Limpar o campo de placa no display
-    setNextionText("gplaca", "");
+
+    // Mantém placa somente leitura
+    setNextionText("gplaca", tplaca);
 }
 
 void handle_bgeneric(String cmd) {
