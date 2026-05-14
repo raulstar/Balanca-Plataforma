@@ -1,35 +1,162 @@
 #include "Nextion_Display.hpp"
 
-// UART1
-HardwareSerial NEXTION_SERIAL(1);
-
-void initNextion()
+NextionDisplay::NextionDisplay(HardwareSerial &serial)
 {
-    NEXTION_SERIAL.begin(9600, SERIAL_8N1, 25, 26);
-    delay(500);
-
-    nextionCmd("page 0");
-    nextionCmd("tPeso.txt=\"Iniciando...\"");
+    _serial = &serial;
 }
 
-void nextionCmd(const String &cmd)
+void NextionDisplay::begin(uint32_t baud)
 {
-    NEXTION_SERIAL.print(cmd);
-    NEXTION_SERIAL.write(0xFF);
-    NEXTION_SERIAL.write(0xFF);
-    NEXTION_SERIAL.write(0xFF);
+    _serial->begin(baud);
 }
 
-void lerNextion()
+void NextionDisplay::listen()
 {
-    if (!NEXTION_SERIAL.available())
+    while (_serial->available() >= 7)
+    {
+        uint8_t header = _serial->read();
+
+        if (header != 0x65)
+            return;
+
+        uint8_t page = _serial->read();
+        uint8_t component = _serial->read();
+        uint8_t event = _serial->read();
+
+        // descarta FF FF FF
+        _serial->read();
+        _serial->read();
+        _serial->read();
+
+        processEvent(page, component, event);
+    }
+}
+
+void NextionDisplay::processEvent(uint8_t page,
+                                  uint8_t component,
+                                  uint8_t event)
+{
+    // considera apenas TOUCH PRESS
+    if (event != 0x01)
         return;
 
-    String entrada = NEXTION_SERIAL.readStringUntil('\xFF');
-    entrada.trim();
+    // =====================================================
+    // PAGE 0
+    // =====================================================
 
-    if (entrada == "ZERO")
+    if (page == 0)
     {
-        handleZero();  // 🔥 chama função do main
+        switch (component)
+        {
+        case 1:
+            if (on_bsom)
+                on_bsom();
+            break;
+
+        case 2:
+            if (on_bconf)
+                on_bconf();
+            break;
+
+        case 3:
+            if (on_bimprir)
+                on_bimprir();
+            break;
+
+        case 4:
+            if (on_bhis)
+                on_bhis();
+            break;
+
+        case 5:
+            if (on_bsalvar)
+                on_bsalvar();
+            break;
+
+        case 6:
+            if (on_bzero)
+                on_bzero();
+            break;
+
+        case 7:
+            if (on_blimpar)
+                on_blimpar();
+            break;
+        }
+    }
+
+    // =====================================================
+    // PAGE 1
+    // =====================================================
+
+    else if (page == 1)
+    {
+        switch (component)
+        {
+        case 1:
+            if (on_bexport)
+                on_bexport();
+            break;
+
+        case 2:
+            if (on_bhome)
+                on_bhome();
+            break;
+
+        case 3:
+            if (on_bimprir)
+                on_bimprir();
+            break;
+
+        case 4:
+            if (on_bzero)
+                on_bzero();
+            break;
+
+        case 5:
+            if (on_b0)
+                on_b0();
+            break;
+        }
+    }
+
+    // =====================================================
+    // PAGE 2
+    // =====================================================
+
+    else if (page == 2)
+    {
+        switch (component)
+        {
+        case 1:
+            if (on_bzero)
+                on_bzero();
+            break;
+
+        case 2:
+            if (on_bsom)
+                on_bsom();
+            break;
+
+        case 3:
+            if (on_bsalvar)
+                on_bsalvar();
+            break;
+
+        case 4:
+            if (on_bexport)
+                on_bexport();
+            break;
+
+        case 5:
+            if (on_bimprir)
+                on_bimprir();
+            break;
+
+        case 6:
+            if (on_bhome)
+                on_bhome();
+            break;
+        }
     }
 }
