@@ -31,7 +31,7 @@ String gplaca = "BRA2E19";
 float pesoAtual = 125.4;
 
 // TOTAL inicia em ZERO
-float gtotal = 0.0;
+float ttotal = 0.0;
 
 float gtara = 1200.0;
 
@@ -51,7 +51,7 @@ int contadorRegistro = 1;
 // ======================================================
 void handle_bsom();
 void handle_bzero();
-void handle_tsom();
+void handle_btsom();
 void handle_bsalvar();
 void handle_blimpar();
 void handle_bgeneric(String cmd);
@@ -98,12 +98,12 @@ void setup()
     setNextionText("tPeso", String(pesoAtual, 1));
 
     // TOTAL inicia em ZERO
-    setNextionText("ttotal", String(gtotal, 1));
+    setNextionText("ttotal", String(ttotal, 1));
 
     setNextionText("ttara", String(gtara, 1));
 
     // tn agora é TEXT
-    setNextionText("tn", String(contadorRegistro));
+    setNextionText("tn0", String(contadorRegistro));
 }
 
 // ======================================================
@@ -120,7 +120,7 @@ void loop()
     {
         setNextionText("tPeso", String(pesoAtual, 1));
 
-        setNextionText("ttotal", String(gtotal, 1));
+        setNextionText("ttotal", String(ttotal, 1));
 
         setNextionText("ttara", String(gtara, 1));
 
@@ -131,7 +131,7 @@ void loop()
         setNextionText("gplaca", gplaca);
 
         // tn mostra contadorRegistro
-        setNextionText("tn", String(contadorRegistro));
+        setNextionText("tn0", String(contadorRegistro));
 
         tUpdate = millis();
     }
@@ -159,9 +159,9 @@ void loop()
         {
             handle_bzero();
         }
-        else if (command.indexOf("tsom") >= 0)
+        else if (command.indexOf("bsom") >= 0)
         {
-            handle_tsom();
+            handle_bsom();
         }
         else if (command.indexOf("bsalvar") >= 0)
         {
@@ -176,17 +176,6 @@ void loop()
             handle_bgeneric(command);
         }
     }
-}
-
-// ======================================================
-// EVENTO BSOM
-// ======================================================
-void handle_bsom()
-{
-    Serial.println("Evento [bsom] recebido");
-
-    // Apenas exemplo de evento sonoro
-    Serial.println("Som acionado.");
 }
 
 // ======================================================
@@ -206,34 +195,40 @@ void handle_bzero()
 }
 
 // ======================================================
-// EVENTO TSOM
+// EVENTO BSOM
 // SOMA pesoAtual AO TOTAL
 // ======================================================
-void handle_tsom()
+void handle_bsom()
 {
-    Serial.println("Evento [tsom] recebido");
+    Serial.println("Evento [bsom] recebido");
 
     // ==========================================
     // SE TOTAL FOR ZERO
     // ==========================================
-    if (gtotal == 0.0)
+    if (ttotal == 0.0)
     {
-        gtotal = pesoAtual;
+        ttotal = pesoAtual;
     }
     else
     {
-        gtotal += pesoAtual;
+        ttotal += pesoAtual;
     }
 
     // ==========================================
     // ATUALIZA DISPLAY
     // ==========================================
-    setNextionText("ttotal", String(gtotal, 1));
+    setNextionText("ttotal", String(ttotal, 1));
 
-    Serial.print("Novo gtotal = ");
-    Serial.println(gtotal);
+    Serial.print("Novo ttotal = ");
+    Serial.println(ttotal);
 }
 
+// ======================================================
+// EVENTO BSALVAR
+// ======================================================
+// ======================================================
+// EVENTO BSALVAR
+// ======================================================
 // ======================================================
 // EVENTO BSALVAR
 // ======================================================
@@ -241,66 +236,72 @@ void handle_bsalvar()
 {
     Serial.println("Evento [bsalvar] recebido");
 
-    // ==========================================
-    // SALVA NA MATRIZ
-    // ==========================================
-    tabela[linhaAtual][0] = String(contadorRegistro);
+    // ==================================================
+    // DESLOCA TODOS OS REGISTROS PARA BAIXO
+    // ==================================================
+    // 5 -> 6
+    // 4 -> 5
+    // 3 -> 4
+    // 2 -> 3
+    // 1 -> 2
+    // 0 -> 1
+    // ==================================================
 
-    tabela[linhaAtual][1] = gplaca;
+    for (int i = 6; i > 0; i--)
+    {
+        for (int j = 0; j < 6; j++)
+        {
+            tabela[i][j] = tabela[i - 1][j];
+        }
+    }
 
-    tabela[linhaAtual][2] = gdata;
+    // ==================================================
+    // NOVO REGISTRO ENTRA NO TOPO
+    // ==================================================
 
-    tabela[linhaAtual][3] = ghora;
+    tabela[0][0] = String(contadorRegistro);
 
-    tabela[linhaAtual][4] = String(gtotal, 1);
+    tabela[0][1] = gplaca;
 
-    tabela[linhaAtual][5] = String(gtara, 1);
+    tabela[0][2] = gdata;
 
-    // ==========================================
-    // SUFIXO DOS OBJETOS
-    // ==========================================
-    String idx = String(linhaAtual);
+    tabela[0][3] = ghora;
 
-    // ==========================================
-    // ENVIA PARA DISPLAY
-    // ==========================================
-    setNextionText("tn", String(contadorRegistro));
+    tabela[0][4] = String(ttotal, 1);
 
-    setNextionText("tplaca" + idx, tabela[linhaAtual][1]);
+    tabela[0][5] = String(gtara, 1);
 
-    setNextionText("tdata" + idx, tabela[linhaAtual][2]);
+    // ==================================================
+    // ATUALIZA TODAS AS LINHAS DO DISPLAY
+    // ==================================================
 
-    setNextionText("thora" + idx, tabela[linhaAtual][3]);
+   for (int i = 0; i <= 6; i++)
+{
+    String idx = String(i);
 
-    setNextionText("ttotal" + idx, tabela[linhaAtual][4]);
+    setNextionText("tn" + idx, tabela[i][0]);
 
-    setNextionText("ttara" + idx, tabela[linhaAtual][5]);
+    setNextionText("tplaca" + idx, tabela[i][1]);
 
-    Serial.println("Registro salvo.");
+    setNextionText("tdata" + idx, tabela[i][2]);
 
-    // ==========================================
+    setNextionText("thora" + idx, tabela[i][3]);
+
+    setNextionText("ttotal" + idx, tabela[i][4]);
+
+    setNextionText("ttara" + idx, tabela[i][5]);
+}
+    // ==================================================
     // INCREMENTA CONTADOR
-    // ==========================================
+    // ==================================================
+
     contadorRegistro++;
 
     Serial.print("contadorRegistro = ");
     Serial.println(contadorRegistro);
 
-    // Atualiza tn novamente
-    setNextionText("tn", String(contadorRegistro));
-
-    // ==========================================
-    // AVANÇA LINHA
-    // ==========================================
-    linhaAtual++;
-
-    // Reinicia após linha 19
-    if (linhaAtual >= 20)
-    {
-        linhaAtual = 0;
-    }
+    Serial.println("Tabela atualizada.");
 }
-
 // ======================================================
 // EVENTO BLIMPAR
 // ======================================================
@@ -313,7 +314,7 @@ void handle_blimpar()
     // ==========================================
     pesoAtual = 0.0;
 
-    gtotal = 0.0;
+    ttotal = 0.0;
 
     gtara = 0.0;
 
@@ -325,7 +326,7 @@ void handle_blimpar()
     // ==========================================
     setNextionText("tPeso", String(pesoAtual, 1));
 
-    setNextionText("ttotal", String(gtotal, 1));
+    setNextionText("ttotal", String(ttotal, 1));
 
     setNextionText("ttara", String(gtara, 1));
 
