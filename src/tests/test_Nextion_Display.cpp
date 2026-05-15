@@ -232,19 +232,85 @@ void handle_bsom()
 // ======================================================
 // EVENTO BSALVAR
 // ======================================================
+// ======================================================
+// EVENTO BSALVAR
+// ======================================================
 void handle_bsalvar()
 {
     Serial.println("Evento [bsalvar] recebido");
 
     // ==================================================
-    // DESLOCA TODOS OS REGISTROS PARA BAIXO
+    // VETORES COM NOMES DOS OBJETOS NEXTION
     // ==================================================
-    // 5 -> 6
-    // 4 -> 5
-    // 3 -> 4
-    // 2 -> 3
-    // 1 -> 2
-    // 0 -> 1
+
+    String objTN[7] =
+    {
+        "page1.tn0",
+        "page1.tn1",
+        "page1.tn2",
+        "page1.tn3",
+        "page1.tn4",
+        "page1.tn5",
+        "page1.tn6"
+    };
+
+    String objPLACA[7] =
+    {
+        "page1.tplaca0",
+        "page1.tplaca1",
+        "page1.tplaca2",
+        "page1.tplaca3",
+        "page1.tplaca4",
+        "page1.tplaca5",
+        "page1.tplaca6"
+    };
+
+    String objDATA[7] =
+    {
+        "page1.tdata0",
+        "page1.tdata1",
+        "page1.tdata2",
+        "page1.tdata3",
+        "page1.tdata4",
+        "page1.tdata5",
+        "page1.tdata6"
+    };
+
+    String objHORA[7] =
+    {
+        "page1.thora0",
+        "page1.thora1",
+        "page1.thora2",
+        "page1.thora3",
+        "page1.thora4",
+        "page1.thora5",
+        "page1.thora6"
+    };
+
+    String objTOTAL[7] =
+    {
+        "page1.ttotal0",
+        "page1.ttotal1",
+        "page1.ttotal2",
+        "page1.ttotal3",
+        "page1.ttotal4",
+        "page1.ttotal5",
+        "page1.ttotal6"
+    };
+
+    String objTARA[7] =
+    {
+        "page1.ttara0",
+        "page1.ttara1",
+        "page1.ttara2",
+        "page1.ttara3",
+        "page1.ttara4",
+        "page1.ttara5",
+        "page1.ttara6"
+    };
+
+    // ==================================================
+    // DESLOCA REGISTROS PARA BAIXO
     // ==================================================
 
     for (int i = 6; i > 0; i--)
@@ -256,7 +322,7 @@ void handle_bsalvar()
     }
 
     // ==================================================
-    // NOVO REGISTRO ENTRA NO TOPO
+    // NOVO REGISTRO NO TOPO
     // ==================================================
 
     tabela[0][0] = String(contadorRegistro);
@@ -272,25 +338,24 @@ void handle_bsalvar()
     tabela[0][5] = String(gtara, 1);
 
     // ==================================================
-    // ATUALIZA TODAS AS LINHAS DO DISPLAY
+    // ENVIA TODA TABELA PARA O NEXTION
     // ==================================================
 
-   for (int i = 0; i <= 6; i++)
-{
-    String idx = String(i);
+    for (int i = 0; i < 7; i++)
+    {
+        setNextionText(objTN[i], tabela[i][0]);
 
-    setNextionText("tn" + idx, tabela[i][0]);
+        setNextionText(objPLACA[i], tabela[i][1]);
 
-    setNextionText("tplaca" + idx, tabela[i][1]);
+        setNextionText(objDATA[i], tabela[i][2]);
 
-    setNextionText("tdata" + idx, tabela[i][2]);
+        setNextionText(objHORA[i], tabela[i][3]);
 
-    setNextionText("thora" + idx, tabela[i][3]);
+        setNextionText(objTOTAL[i], tabela[i][4]);
 
-    setNextionText("ttotal" + idx, tabela[i][4]);
+        setNextionText(objTARA[i], tabela[i][5]);
+    }
 
-    setNextionText("ttara" + idx, tabela[i][5]);
-}
     // ==================================================
     // INCREMENTA CONTADOR
     // ==================================================
