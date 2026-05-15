@@ -245,68 +245,68 @@ void handle_bsalvar()
 
     String objTN[7] =
     {
-        "page1.tn0",
-        "page1.tn1",
-        "page1.tn2",
-        "page1.tn3",
-        "page1.tn4",
-        "page1.tn5",
-        "page1.tn6"
+        "tn0",
+        "tn1",
+        "tn2",
+        "tn3",
+        "tn4",
+        "tn5",
+        "tn6"
     };
 
     String objPLACA[7] =
     {
-        "page1.tplaca0",
-        "page1.tplaca1",
-        "page1.tplaca2",
-        "page1.tplaca3",
-        "page1.tplaca4",
-        "page1.tplaca5",
-        "page1.tplaca6"
+        "tplaca0",
+        "tplaca1",
+        "tplaca2",
+        "tplaca3",
+        "tplaca4",
+        "tplaca5",
+        "tplaca6"
     };
 
     String objDATA[7] =
     {
-        "page1.tdata0",
-        "page1.tdata1",
-        "page1.tdata2",
-        "page1.tdata3",
-        "page1.tdata4",
-        "page1.tdata5",
-        "page1.tdata6"
+        "tdata0",
+        "tdata1",
+        "tdata2",
+        "tdata3",
+        "tdata4",
+        "tdata5",
+        "tdata6"
     };
 
     String objHORA[7] =
     {
-        "page1.thora0",
-        "page1.thora1",
-        "page1.thora2",
-        "page1.thora3",
-        "page1.thora4",
-        "page1.thora5",
-        "page1.thora6"
+        "thora0",
+        "thora1",
+        "thora2",
+        "thora3",
+        "thora4",
+        "thora5",
+        "thora6"
     };
 
     String objTOTAL[7] =
     {
-        "page1.ttotal0",
-        "page1.ttotal1",
-        "page1.ttotal2",
-        "page1.ttotal3",
-        "page1.ttotal4",
-        "page1.ttotal5",
-        "page1.ttotal6"
+        "ttotal0",
+        "ttotal1",
+        "ttotal2",
+        "ttotal3",
+        "ttotal4",
+        "ttotal5",
+        "ttotal6"
     };
 
     String objTARA[7] =
     {
-        "page1.ttara0",
-        "page1.ttara1",
-        "page1.ttara2",
-        "page1.ttara3",
-        "page1.ttara4",
-        "page1.ttara5",
-        "page1.ttara6"
+        "ttara0",
+        "ttara1",
+        "ttara2",
+        "ttara3",
+        "ttara4",
+        "ttara5",
+        "ttara6"
     };
 
     // ==================================================
