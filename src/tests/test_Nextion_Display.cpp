@@ -45,7 +45,6 @@ String tabela[20][6];
 // ======================================================
 int linhaAtual = 0;
 int contadorRegistro = 1;
-int contadorTN = 0;
 
 // ======================================================
 // PROTÓTIPOS
@@ -58,7 +57,6 @@ void handle_blimpar();
 void handle_bgeneric(String cmd);
 
 void setNextionText(String objName, String value);
-void setNextionValue(String objName, int value);
 
 // ======================================================
 // ENVIA TEXTO PARA NEXTION
@@ -69,20 +67,6 @@ void setNextionText(String objName, String value)
     NEXTION_SERIAL.print(".txt=\"");
     NEXTION_SERIAL.print(value);
     NEXTION_SERIAL.print("\"");
-
-    NEXTION_SERIAL.write(0xFF);
-    NEXTION_SERIAL.write(0xFF);
-    NEXTION_SERIAL.write(0xFF);
-}
-
-// ======================================================
-// ENVIA VALOR NUMBER PARA NEXTION
-// ======================================================
-void setNextionValue(String objName, int value)
-{
-    NEXTION_SERIAL.print(objName);
-    NEXTION_SERIAL.print(".val=");
-    NEXTION_SERIAL.print(value);
 
     NEXTION_SERIAL.write(0xFF);
     NEXTION_SERIAL.write(0xFF);
@@ -106,6 +90,7 @@ void setup()
     // INICIALIZA DISPLAY
     // ==========================================
     setNextionText("thora", ghora);
+
     setNextionText("tdata", gdata);
 
     setNextionText("gplaca", gplaca);
@@ -117,8 +102,8 @@ void setup()
 
     setNextionText("ttara", String(gtara, 1));
 
-    // tn principal é NUMBER
-    setNextionValue("tn", contadorTN);
+    // tn agora é TEXT
+    setNextionText("tn", String(contadorRegistro));
 }
 
 // ======================================================
@@ -134,13 +119,19 @@ void loop()
     if (millis() - tUpdate > 2000)
     {
         setNextionText("tPeso", String(pesoAtual, 1));
+
         setNextionText("ttotal", String(gtotal, 1));
+
         setNextionText("ttara", String(gtara, 1));
 
         setNextionText("thora", ghora);
+
         setNextionText("tdata", gdata);
 
         setNextionText("gplaca", gplaca);
+
+        // tn mostra contadorRegistro
+        setNextionText("tn", String(contadorRegistro));
 
         tUpdate = millis();
     }
@@ -194,14 +185,8 @@ void handle_bsom()
 {
     Serial.println("Evento [bsom] recebido");
 
-    // Incrementa contador
-    contadorTN++;
-
-    // Atualiza NUMBER tn
-    setNextionValue("tn", contadorTN);
-
-    Serial.print("contadorTN = ");
-    Serial.println(contadorTN);
+    // Apenas exemplo de evento sonoro
+    Serial.println("Som acionado.");
 }
 
 // ======================================================
@@ -264,9 +249,11 @@ void handle_bsalvar()
     tabela[linhaAtual][1] = gplaca;
 
     tabela[linhaAtual][2] = gdata;
+
     tabela[linhaAtual][3] = ghora;
 
     tabela[linhaAtual][4] = String(gtotal, 1);
+
     tabela[linhaAtual][5] = String(gtara, 1);
 
     // ==========================================
@@ -277,7 +264,7 @@ void handle_bsalvar()
     // ==========================================
     // ENVIA PARA DISPLAY
     // ==========================================
-    setNextionText("tn" + idx, String(contadorRegistro));
+    setNextionText("tn", String(contadorRegistro));
 
     setNextionText("tplaca" + idx, tabela[linhaAtual][1]);
 
@@ -298,6 +285,9 @@ void handle_bsalvar()
 
     Serial.print("contadorRegistro = ");
     Serial.println(contadorRegistro);
+
+    // Atualiza tn novamente
+    setNextionText("tn", String(contadorRegistro));
 
     // ==========================================
     // AVANÇA LINHA
