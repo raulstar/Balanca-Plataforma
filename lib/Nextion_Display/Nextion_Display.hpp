@@ -1,35 +1,67 @@
-#ifndef NEXTION_DISPLAY_HPP
-#define NEXTION_DISPLAY_HPP
+#pragma once
 
 #include <Arduino.h>
 
-class NextionDisplay
-{
-public:
-    NextionDisplay(HardwareSerial &serial);
+// ======================================================
+// CONFIGURAÇÃO UART NEXTION
+// ======================================================
+#define NEXTION_RX 25
+#define NEXTION_TX 26
 
-    void begin(uint32_t baud = 115200);
+extern HardwareSerial NEXTION_SERIAL;
 
-    void listen();
+// ======================================================
+// VARIÁVEIS GLOBAIS
+// ======================================================
+extern String placaVeiculo;
+extern String dataRegistro;
 
-    // CALLBACKS
-    void (*on_bsom)();
-    void (*on_bconf)();
-    void (*on_bimprir)();
-    void (*on_bhis)();
-    void (*on_bsalvar)();
-    void (*on_bzero)();
-    void (*on_blimpar)();
-    void (*on_bexport)();
-    void (*on_bhome)();
-    void (*on_b0)();
+// ======================================================
+// DATA / HORA
+// ======================================================
+extern String gdata;
+extern String ghora;
 
-private:
-    HardwareSerial *_serial;
+// ======================================================
+// PLACA
+// ======================================================
+extern String gplaca;
 
-    void processEvent(uint8_t page,
-                      uint8_t component,
-                      uint8_t event);
-};
+// ======================================================
+// VARIÁVEIS NUMÉRICAS
+// ======================================================
+extern float pesoAtual;
+extern float ttotal;
+extern float gtara;
 
-#endif
+// ======================================================
+// MATRIZ DE REGISTROS
+// ======================================================
+extern String tabela[20][6];
+
+// ======================================================
+// CONTADORES
+// ======================================================
+extern int linhaAtual;
+extern int contadorRegistro;
+
+// ======================================================
+// FUNÇÕES
+// ======================================================
+void initNextion();
+
+void updateDisplay();
+
+void processNextionCommands();
+
+void setNextionText(String objName, String value);
+
+void handle_bsom();
+
+void handle_bzero();
+
+void handle_bsalvar();
+
+void handle_blimpar();
+
+void handle_bgeneric(String cmd);

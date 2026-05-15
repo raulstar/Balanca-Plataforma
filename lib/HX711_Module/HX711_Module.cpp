@@ -4,7 +4,7 @@
 // extern float valorLido;
 
 // peso atual global
-float pesoAtual = 0.0;
+float plataforma1 = 0.0;
 
 // construtor
 HX711::HX711()
@@ -26,9 +26,9 @@ void HX711::tare(float leituraAtual)
 
 float HX711::get_units(float leituraAtual)
 {
-    pesoAtual = (leituraAtual - offset) * scale_factor;
+    plataforma1 = (leituraAtual - offset) * scale_factor;
 
-    return pesoAtual;
+    return plataforma1;
 }
 
 // CALIBRAÇÃO

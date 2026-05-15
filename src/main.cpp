@@ -15,7 +15,8 @@
 // VARIÁVEIS GLOBAIS
 /////////////////////////////////////////////////////////////////////////////
 
-extern float pesoAtual;
+//extern float pesoAtual;
+unsigned long tDisplay = 0;
 
 HardwareSerial SerialPort(2);
 float pesoCalibracao = 78000.0f;
@@ -309,7 +310,9 @@ void handleZero()
     server.send(200, "text/plain", "Zerado!");
   }
 
-  nextionCmd("tPeso.txt=\"Zerado!\"");
+  //nextionCmd("tPeso.txt=\"Zerado!\"");
+  handle_bsom();
+
 
   Serial.println("Balança zerada.");
 
@@ -354,14 +357,14 @@ void handleCalibrar()
 // ATUALIZA NEXTION
 /////////////////////////////////////////////////////////////////////////////
 
-void atualizarPesoNaTela()
-{
-  char buffer[32];
+// void atualizarPesoNaTela()
+// {
+//   char buffer[32];
 
-  snprintf(buffer, sizeof(buffer), "%.3f Kg", pesoAtual);
+//   snprintf(buffer, sizeof(buffer), "%.3f Kg", pesoAtual);
 
-  nextionCmd(String("tPeso.txt=\"") + buffer + "\"");
-}
+//   nextionCmd(String("tPeso.txt=\"") + buffer + "\"");
+// }
 
 /////////////////////////////////////////////////////////////////////////////
 // SETUP
@@ -448,16 +451,23 @@ void loop()
 
   handleWeb();
 
-  //////////////////////////////////////////////////////////////////////////
-  // NEXTION
-  //////////////////////////////////////////////////////////////////////////
+  if (millis() - tDisplay > 2000)
+    {
+        // Simula alteração de peso
+        pesoAtual += 1.5;
 
-  lerNextion();
+        // Atualiza display
+        updateDisplay();
 
-  //////////////////////////////////////////////////////////////////////////
-  // SENSOR
-  //////////////////////////////////////////////////////////////////////////
+        Serial.println("Display atualizado");
 
+        tDisplay = millis();
+    }
+
+    // ==================================================
+    // PROCESSA BOTÕES / EVENTOS NEXTION
+    // ==================================================
+    processNextionCommands();
   if (sensor1.leitura())
   {
     pesoAtual = sensor1.getKg();
@@ -492,7 +502,9 @@ void loop()
   // TELA
   //////////////////////////////////////////////////////////////////////////
 
-  atualizarPesoNaTela();
+  //atualizarPesoNaTela();
+ // updateDisplay();
+
 
   //////////////////////////////////////////////////////////////////////////
   // BRIDGE SERIAL USB -> UART

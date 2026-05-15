@@ -1,6 +1,13 @@
 #include <Arduino.h>
 #include "HX711_Module.hpp"
 
+#define M0 19
+#define M1 21
+// #define OK 32
+
+// #define ok digitalRead(OK)
+#define m1 digitalWrite(M1, LOW)
+#define m0 digitalWrite(M0, LOW)
 /////////////////////////////////////////////////////////////////////////////
 // UART SENSOR
 /////////////////////////////////////////////////////////////////////////////
@@ -288,6 +295,10 @@ float pesoCalibracao = 78000.0f;
 
 void setup()
 {
+    pinMode(M1, OUTPUT);
+    pinMode(M0, OUTPUT);
+    m1;
+    m0;
     Serial.begin(115200);
 
     //////////////////////////////////////////////////////////////////////////
