@@ -103,10 +103,13 @@ void handle_bsalvar() {
     tabela[linhaAtual][4] = gtotal;
     tabela[linhaAtual][5] = gtara;
 
-    // Envia para display
+    // Envia contador para display
     String sufixo = (linhaAtual == 0) ? "" : String(linhaAtual);
 
-    setNextionText("tn" + sufixo, tabela[linhaAtual][0]);
+    // Atualiza número do registro
+    setNextionText("tn" + sufixo, String(contadorRegistro));
+
+    // Atualiza demais campos
     setNextionText("tplaca" + sufixo, tabela[linhaAtual][1]);
     setNextionText("tdata" + sufixo, tabela[linhaAtual][2]);
     setNextionText("thora" + sufixo, tabela[linhaAtual][3]);
