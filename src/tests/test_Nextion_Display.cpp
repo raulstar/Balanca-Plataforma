@@ -1,145 +1,359 @@
 #include <Arduino.h>
 
-// Configuração da UART1
-#define RXD1 16
-#define TXD1 17
+// ======================================================
+// CONFIGURAÇÃO UART NEXTION
+// ======================================================
+#define NEXTION_RX 25
+#define NEXTION_TX 26
+
 HardwareSerial NEXTION_SERIAL(1);
 
+// ======================================================
+// VARIÁVEIS GLOBAIS
+// ======================================================
 String placaVeiculo = "";
 String dataRegistro = "";
 
-// --- Novas Variáveis Globais ---
+// ======================================================
+// DATA / HORA
+// ======================================================
 String gdata = "14/05/2026";
-String ghora = "10:45"; // sem segundos
-const String tplaca = "BRA2E19"; // somente leitura
-String gtotal = "5000.0";
-String gtara = "1200.0";
+String ghora = "10:45";
 
-// Matriz 20x5
+// ======================================================
+// PLACA GLOBAL EDITÁVEL
+// ======================================================
+String gplaca = "BRA2E19";
+
+// ======================================================
+// VARIÁVEIS NUMÉRICAS
+// ======================================================
+float pesoAtual = 125.4;
+
+// TOTAL inicia em ZERO
+float gtotal = 0.0;
+
+float gtara = 1200.0;
+
+// ======================================================
+// MATRIZ DE REGISTROS
+// ======================================================
 String tabela[20][6];
+
+// ======================================================
+// CONTADORES
+// ======================================================
 int linhaAtual = 0;
 int contadorRegistro = 1;
+int contadorTN = 0;
 
-// --- Protótipos das Funções ---
+// ======================================================
+// PROTÓTIPOS
+// ======================================================
 void handle_bsom();
+void handle_bzero();
+void handle_tsom();
 void handle_bsalvar();
 void handle_blimpar();
 void handle_bgeneric(String cmd);
-void handle_entrada_texto(String rawData);
 
-// Função para atualizar textos (Objetos "t")
-void setNextionText(String objName, String value) {
-    NEXTION_SERIAL.print(objName + ".txt=\"" + value + "\"");
-    NEXTION_SERIAL.write(0xff);
-    NEXTION_SERIAL.write(0xff);
-    NEXTION_SERIAL.write(0xff);
+void setNextionText(String objName, String value);
+void setNextionValue(String objName, int value);
+
+// ======================================================
+// ENVIA TEXTO PARA NEXTION
+// ======================================================
+void setNextionText(String objName, String value)
+{
+    NEXTION_SERIAL.print(objName);
+    NEXTION_SERIAL.print(".txt=\"");
+    NEXTION_SERIAL.print(value);
+    NEXTION_SERIAL.print("\"");
+
+    NEXTION_SERIAL.write(0xFF);
+    NEXTION_SERIAL.write(0xFF);
+    NEXTION_SERIAL.write(0xFF);
 }
 
-void setup() {
+// ======================================================
+// ENVIA VALOR NUMBER PARA NEXTION
+// ======================================================
+void setNextionValue(String objName, int value)
+{
+    NEXTION_SERIAL.print(objName);
+    NEXTION_SERIAL.print(".val=");
+    NEXTION_SERIAL.print(value);
+
+    NEXTION_SERIAL.write(0xFF);
+    NEXTION_SERIAL.write(0xFF);
+    NEXTION_SERIAL.write(0xFF);
+}
+
+// ======================================================
+// SETUP
+// ======================================================
+void setup()
+{
     Serial.begin(115200);
-    // Nextion geralmente opera em 9600 ou 115200
-    NEXTION_SERIAL.begin(9600, SERIAL_8N1, 25, 26); // RX, TX
 
-    Serial.println("Monitor Serial pronto. Aguardando comandos do Nextion...");
+    // Inicializa UART do Nextion
+    NEXTION_SERIAL.begin(9600, SERIAL_8N1, NEXTION_RX, NEXTION_TX);
 
-    // Atualiza display na inicialização
+    Serial.println("Sistema iniciado...");
+    Serial.println("Aguardando comandos do Nextion...");
+
+    // ==========================================
+    // INICIALIZA DISPLAY
+    // ==========================================
     setNextionText("thora", ghora);
-    setNextionText("gplaca", tplaca);
     setNextionText("tdata", gdata);
+
+    setNextionText("gplaca", gplaca);
+
+    setNextionText("tPeso", String(pesoAtual, 1));
+
+    // TOTAL inicia em ZERO
+    setNextionText("ttotal", String(gtotal, 1));
+
+    setNextionText("ttara", String(gtara, 1));
+
+    // tn principal é NUMBER
+    setNextionValue("tn", contadorTN);
 }
 
-void loop() {
-    // Exemplo de atualização de variáveis de texto ("t")
+// ======================================================
+// LOOP PRINCIPAL
+// ======================================================
+void loop()
+{
+    // ==========================================
+    // ATUALIZA DISPLAY PERIODICAMENTE
+    // ==========================================
     static unsigned long tUpdate = 0;
-    if (millis() - tUpdate > 5000) {
-        setNextionText("tPeso", "125.4");
-        setNextionText("ttotal", gtotal);
-        setNextionText("ttara", gtara);
 
-        // Atualiza objetos do display
+    if (millis() - tUpdate > 2000)
+    {
+        setNextionText("tPeso", String(pesoAtual, 1));
+        setNextionText("ttotal", String(gtotal, 1));
+        setNextionText("ttara", String(gtara, 1));
+
         setNextionText("thora", ghora);
-        setNextionText("gplaca", tplaca);
         setNextionText("tdata", gdata);
+
+        setNextionText("gplaca", gplaca);
 
         tUpdate = millis();
     }
 
-    // --- Processamento de Comandos "b" via printh ---
-    if (NEXTION_SERIAL.available() > 0) {
-        // Lemos a string enviada pelo printh
-        String command = NEXTION_SERIAL.readString();
-        command.trim(); // Remove espaços ou caracteres fantasmas
+    // ==========================================
+    // RECEBE COMANDOS NEXTION
+    // ==========================================
+    if (NEXTION_SERIAL.available())
+    {
+        String command = NEXTION_SERIAL.readStringUntil('\n');
 
-        if (command == "bsom") {
+        command.trim();
+
+        Serial.print("Comando Recebido: ");
+        Serial.println(command);
+
+        // ======================================
+        // EVENTOS
+        // ======================================
+        if (command.indexOf("bsom") >= 0)
+        {
             handle_bsom();
         }
-        else if (command == "bsalvar") {
+        else if (command.indexOf("bzero") >= 0)
+        {
+            handle_bzero();
+        }
+        else if (command.indexOf("tsom") >= 0)
+        {
+            handle_tsom();
+        }
+        else if (command.indexOf("bsalvar") >= 0)
+        {
             handle_bsalvar();
         }
-        else if (command == "blimpar") {
+        else if (command.indexOf("blimpar") >= 0)
+        {
             handle_blimpar();
         }
-        else {
+        else
+        {
             handle_bgeneric(command);
         }
     }
 }
 
-// --- Implementação das Funções de cada Botão ---
+// ======================================================
+// EVENTO BSOM
+// ======================================================
+void handle_bsom()
+{
+    Serial.println("Evento [bsom] recebido");
 
-void handle_bsom() {
-    Serial.println("Comando Recebido: [bsom] -> Ativando sinal sonoro...");
-    // Sua lógica de som aqui
+    // Incrementa contador
+    contadorTN++;
+
+    // Atualiza NUMBER tn
+    setNextionValue("tn", contadorTN);
+
+    Serial.print("contadorTN = ");
+    Serial.println(contadorTN);
 }
 
-void handle_bsalvar() {
-    Serial.println("Comando Recebido: [bsalvar] -> Gravando dados na memória...");
+// ======================================================
+// EVENTO BZERO
+// ======================================================
+void handle_bzero()
+{
+    Serial.println("Evento [bzero] recebido");
 
-    // Preenche matriz
+    // Zera peso atual
+    pesoAtual = 0.0;
+
+    // Atualiza display
+    setNextionText("tPeso", String(pesoAtual, 1));
+
+    Serial.println("pesoAtual zerado.");
+}
+
+// ======================================================
+// EVENTO TSOM
+// SOMA pesoAtual AO TOTAL
+// ======================================================
+void handle_tsom()
+{
+    Serial.println("Evento [tsom] recebido");
+
+    // ==========================================
+    // SE TOTAL FOR ZERO
+    // ==========================================
+    if (gtotal == 0.0)
+    {
+        gtotal = pesoAtual;
+    }
+    else
+    {
+        gtotal += pesoAtual;
+    }
+
+    // ==========================================
+    // ATUALIZA DISPLAY
+    // ==========================================
+    setNextionText("ttotal", String(gtotal, 1));
+
+    Serial.print("Novo gtotal = ");
+    Serial.println(gtotal);
+}
+
+// ======================================================
+// EVENTO BSALVAR
+// ======================================================
+void handle_bsalvar()
+{
+    Serial.println("Evento [bsalvar] recebido");
+
+    // ==========================================
+    // SALVA NA MATRIZ
+    // ==========================================
     tabela[linhaAtual][0] = String(contadorRegistro);
-    tabela[linhaAtual][1] = tplaca;
+
+    tabela[linhaAtual][1] = gplaca;
+
     tabela[linhaAtual][2] = gdata;
     tabela[linhaAtual][3] = ghora;
-    tabela[linhaAtual][4] = gtotal;
-    tabela[linhaAtual][5] = gtara;
 
-    // Envia contador para display
-    String sufixo = (linhaAtual == 0) ? "" : String(linhaAtual);
+    tabela[linhaAtual][4] = String(gtotal, 1);
+    tabela[linhaAtual][5] = String(gtara, 1);
 
-    // Atualiza número do registro
-    setNextionText("tn" + sufixo, String(contadorRegistro));
+    // ==========================================
+    // SUFIXO DOS OBJETOS
+    // ==========================================
+    String idx = String(linhaAtual);
 
-    // Atualiza demais campos
-    setNextionText("tplaca" + sufixo, tabela[linhaAtual][1]);
-    setNextionText("tdata" + sufixo, tabela[linhaAtual][2]);
-    setNextionText("thora" + sufixo, tabela[linhaAtual][3]);
-    setNextionText("ttotal" + sufixo, tabela[linhaAtual][4]);
-    setNextionText("ttara" + sufixo, tabela[linhaAtual][5]);
+    // ==========================================
+    // ENVIA PARA DISPLAY
+    // ==========================================
+    setNextionText("tn" + idx, String(contadorRegistro));
 
-    Serial.println("Registro salvo na matriz e enviado ao display.");
+    setNextionText("tplaca" + idx, tabela[linhaAtual][1]);
 
+    setNextionText("tdata" + idx, tabela[linhaAtual][2]);
+
+    setNextionText("thora" + idx, tabela[linhaAtual][3]);
+
+    setNextionText("ttotal" + idx, tabela[linhaAtual][4]);
+
+    setNextionText("ttara" + idx, tabela[linhaAtual][5]);
+
+    Serial.println("Registro salvo.");
+
+    // ==========================================
+    // INCREMENTA CONTADOR
+    // ==========================================
     contadorRegistro++;
+
+    Serial.print("contadorRegistro = ");
+    Serial.println(contadorRegistro);
+
+    // ==========================================
+    // AVANÇA LINHA
+    // ==========================================
     linhaAtual++;
 
-    if (linhaAtual >= 20) {
+    // Reinicia após linha 19
+    if (linhaAtual >= 20)
+    {
         linhaAtual = 0;
     }
 }
 
-void handle_blimpar() {
-    Serial.println("Comando Recebido: [blimpar] -> Resetando campos da tela...");
+// ======================================================
+// EVENTO BLIMPAR
+// ======================================================
+void handle_blimpar()
+{
+    Serial.println("Evento [blimpar] recebido");
 
-    // Limpa somente os campos editáveis
-    setNextionText("tPeso", "");
-    setNextionText("ttotal", "");
-    setNextionText("gplaca", "");
+    // ==========================================
+    // ZERA VARIÁVEIS
+    // ==========================================
+    pesoAtual = 0.0;
 
-    // Mantém data e hora preservadas
+    gtotal = 0.0;
+
+    gtara = 0.0;
+
+    // Limpa placa
+    gplaca = "";
+
+    // ==========================================
+    // LIMPA DISPLAY
+    // ==========================================
+    setNextionText("tPeso", String(pesoAtual, 1));
+
+    setNextionText("ttotal", String(gtotal, 1));
+
+    setNextionText("ttara", String(gtara, 1));
+
+    setNextionText("gplaca", gplaca);
+
+    // Mantém data/hora
     setNextionText("thora", ghora);
+
     setNextionText("tdata", gdata);
+
+    Serial.println("Campos limpos.");
 }
 
-void handle_bgeneric(String cmd) {
-    Serial.print("Outro botão pressionado: ");
+// ======================================================
+// EVENTOS GENÉRICOS
+// ======================================================
+void handle_bgeneric(String cmd)
+{
+    Serial.print("Outro comando recebido: ");
     Serial.println(cmd);
 }

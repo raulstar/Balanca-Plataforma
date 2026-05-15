@@ -1,258 +1,594 @@
 #include <Arduino.h>
 
-// ======================================================
-// CONFIGURAÇÃO UART NEXTION
-// ======================================================
-#define RXD1 16
-#define TXD1 17
+#include "WiFi_Server.hpp"
+#include "Nextion_Display.hpp"
+#include "HX711_Module.hpp"
 
-HardwareSerial NEXTION_SERIAL(1);
+#define M0 19
+#define M1 21
+#define OK 32
 
-// ======================================================
+#define ok digitalRead(OK)
+#define m1 digitalWrite(M1, LOW)
+#define m0 digitalWrite(M0, LOW)
+/////////////////////////////////////////////////////////////////////////////
 // VARIÁVEIS GLOBAIS
-// ======================================================
-String placaVeiculo = "";
-String dataRegistro = "";
+/////////////////////////////////////////////////////////////////////////////
 
-// Dados simulados
-String gdata  = "14/05/2026";
-String ghora  = "10:45";
-String gtotal = "5000.0";
-String gtara  = "1200.0";
+extern float pesoAtual;
 
-const String tplaca = "BRA2E19";
+HardwareSerial SerialPort(2);
+float pesoCalibracao = 78000.0f;
+/////////////////////////////////////////////////////////////////////////////
+// CLASSE SENSOR BALANÇA
+/////////////////////////////////////////////////////////////////////////////
 
-// ======================================================
-// CONTADORES
-// ======================================================
-int contadorRegistro = 7;
-int contadorTN = 0;
-int linhaAtual = 0;
-
-// ======================================================
-// MATRIZ DE REGISTROS
-// ======================================================
-String tabela[20][6];
-
-// ======================================================
-// PROTÓTIPOS
-// ======================================================
-void handle_bsom();
-void handle_bsalvar();
-void handle_blimpar();
-void handle_bgeneric(String cmd);
-
-void setNextionText(String objName, String value);
-void setNextionValue(String objName, int value);
-
-// ======================================================
-// ENVIO DE TEXTO PARA NEXTION
-// ======================================================
-void setNextionText(String objName, String value)
+class SensorBalanca
 {
-    NEXTION_SERIAL.print(objName + ".txt=\"" + value + "\"");
+private:
+  //////////////////////////////////////////////////////////////////////////
+  // SERIAL
+  //////////////////////////////////////////////////////////////////////////
 
-    NEXTION_SERIAL.write(0xFF);
-    NEXTION_SERIAL.write(0xFF);
-    NEXTION_SERIAL.write(0xFF);
+  HardwareSerial *serial;
+
+  //////////////////////////////////////////////////////////////////////////
+  // BALANÇA
+  //////////////////////////////////////////////////////////////////////////
+
+  HX711 balanca;
+
+  //////////////////////////////////////////////////////////////////////////
+  // BUFFER RX
+  //////////////////////////////////////////////////////////////////////////
+
+  char rxBuffer[32];
+
+  uint8_t rxIndex = 0;
+
+  //////////////////////////////////////////////////////////////////////////
+  // DADOS
+  //////////////////////////////////////////////////////////////////////////
+
+  float valorLido = 0.0f;
+
+  float pesoGramas = 0.0f;
+
+  float pesoKg = 0.0f;
+
+  //////////////////////////////////////////////////////////////////////////
+  // STATUS
+  //////////////////////////////////////////////////////////////////////////
+
+  bool ready = false;
+
+  bool stable = false;
+
+  float noise = 0.0f;
+
+  //////////////////////////////////////////////////////////////////////////
+  // CONTROLE RUÍDO
+  //////////////////////////////////////////////////////////////////////////
+
+  static const uint8_t NOISE_SAMPLES = 10;
+
+  float noiseBuffer[NOISE_SAMPLES];
+
+  uint8_t noiseIndex = 0;
+
+public:
+  //////////////////////////////////////////////////////////////////////////
+  // CONSTRUTOR
+  //////////////////////////////////////////////////////////////////////////
+
+  SensorBalanca(HardwareSerial &porta)
+  {
+    serial = &porta;
+
+    for (uint8_t i = 0; i < NOISE_SAMPLES; i++)
+    {
+      noiseBuffer[i] = 0.0f;
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////
+  // LEITURA SENSOR
+  //////////////////////////////////////////////////////////////////////////
+
+  bool leitura()
+  {
+    while (serial->available())
+    {
+      char c = serial->read();
+
+      //////////////////////////////////////////////////////////////////////////
+      // IGNORA CR
+      //////////////////////////////////////////////////////////////////////////
+
+      if (c == '\r')
+        continue;
+
+      //////////////////////////////////////////////////////////////////////////
+      // FIM LINHA
+      //////////////////////////////////////////////////////////////////////////
+
+      if (c == '\n')
+      {
+        rxBuffer[rxIndex] = '\0';
+
+        valorLido = atof(rxBuffer);
+
+        rxIndex = 0;
+
+        //////////////////////////////////////////////////////////////////////////
+        // IGNORA ZERO
+        //////////////////////////////////////////////////////////////////////////
+
+        if (fabs(valorLido) < 0.0001f)
+        {
+          ready = false;
+          return false;
+        }
+
+        //////////////////////////////////////////////////////////////////////////
+        // PESO
+        //////////////////////////////////////////////////////////////////////////
+
+        pesoGramas = balanca.get_units(valorLido);
+
+        pesoKg = pesoGramas / 1000.0f;
+
+        //////////////////////////////////////////////////////////////////////////
+        // ESTABILIDADE
+        //////////////////////////////////////////////////////////////////////////
+
+        analisarRuido();
+
+        ready = true;
+
+        return true;
+      }
+
+      //////////////////////////////////////////////////////////////////////////
+      // BUFFER
+      //////////////////////////////////////////////////////////////////////////
+
+      else
+      {
+        if (rxIndex < sizeof(rxBuffer) - 1)
+        {
+          rxBuffer[rxIndex++] = c;
+        }
+      }
+    }
+
+    return false;
+  }
+
+private:
+  //////////////////////////////////////////////////////////////////////////
+  // ANÁLISE DE RUÍDO
+  //////////////////////////////////////////////////////////////////////////
+
+  void analisarRuido()
+  {
+    noiseBuffer[noiseIndex] = valorLido;
+
+    noiseIndex++;
+
+    if (noiseIndex >= NOISE_SAMPLES)
+    {
+      noiseIndex = 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // MIN/MAX
+    //////////////////////////////////////////////////////////////////////////
+
+    float minV = noiseBuffer[0];
+    float maxV = noiseBuffer[0];
+
+    for (uint8_t i = 1; i < NOISE_SAMPLES; i++)
+    {
+      if (noiseBuffer[i] < minV)
+        minV = noiseBuffer[i];
+
+      if (noiseBuffer[i] > maxV)
+        maxV = noiseBuffer[i];
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // RUÍDO
+    //////////////////////////////////////////////////////////////////////////
+
+    noise = maxV - minV;
+
+    //////////////////////////////////////////////////////////////////////////
+    // ESTABILIDADE
+    //////////////////////////////////////////////////////////////////////////
+
+    stable = (noise < 0.020f);
+  }
+
+public:
+  //////////////////////////////////////////////////////////////////////////
+  // STATUS
+  //////////////////////////////////////////////////////////////////////////
+
+  bool isReady()
+  {
+    return ready;
+  }
+
+  bool isStable()
+  {
+    return stable;
+  }
+
+  float getNoise()
+  {
+    return noise;
+  }
+
+  //////////////////////////////////////////////////////////////////////////
+  // DADOS
+  //////////////////////////////////////////////////////////////////////////
+
+  float getRaw()
+  {
+    return valorLido;
+  }
+
+  float getKg()
+  {
+    return pesoKg;
+  }
+
+  float getGramas()
+  {
+    return pesoGramas;
+  }
+
+  //////////////////////////////////////////////////////////////////////////
+  // TARA
+  //////////////////////////////////////////////////////////////////////////
+
+  void tare()
+  {
+    balanca.tare(valorLido);
+
+    Serial.println("--------------------------------");
+    Serial.println("BALANCA ZERADA");
+    Serial.println("--------------------------------");
+  }
+
+  //////////////////////////////////////////////////////////////////////////
+  // CALIBRAÇÃO
+  //////////////////////////////////////////////////////////////////////////
+
+  void calibra(float pesoConhecido)
+  {
+    if (!stable)
+    {
+      Serial.println("ERRO: BALANCA INSTAVEL");
+      return;
+    }
+
+    balanca.calibra(valorLido, pesoConhecido);
+
+    Serial.println("--------------------------------");
+
+    Serial.print("BALANCA CALIBRADA COM ");
+
+    Serial.print(pesoConhecido);
+
+    Serial.println(" g");
+
+    Serial.println("--------------------------------");
+  }
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// INSTÂNCIA SENSOR
+/////////////////////////////////////////////////////////////////////////////
+
+SensorBalanca sensor1(SerialPort);
+
+/////////////////////////////////////////////////////////////////////////////
+// FUNÇÕES WEB
+/////////////////////////////////////////////////////////////////////////////
+
+void handleZero()
+{
+  pesoAtual = 0.0f;
+
+  sensor1.tare();
+
+  if (server.client())
+  {
+    server.send(200, "text/plain", "Zerado!");
+  }
+
+  nextionCmd("tPeso.txt=\"Zerado!\"");
+
+  Serial.println("Balança zerada.");
+
+  delay(800);
 }
 
-// ======================================================
-// ENVIO DE VALOR NUMÉRICO PARA NEXTION
-// ======================================================
-void setNextionValue(String objName, int value)
-{
-    NEXTION_SERIAL.print(objName + ".val=" + String(value));
+/////////////////////////////////////////////////////////////////////////////
+// DADOS WEB
+/////////////////////////////////////////////////////////////////////////////
 
-    NEXTION_SERIAL.write(0xFF);
-    NEXTION_SERIAL.write(0xFF);
-    NEXTION_SERIAL.write(0xFF);
+void handleDados()
+{
+  String json = "{";
+
+  json += "\"pesoAtual\":" + String(pesoAtual, 3);
+
+  json += ",";
+
+  json += "\"noise\":" + String(sensor1.getNoise(), 5);
+
+  json += ",";
+
+  json += "\"stable\":";
+
+  json += sensor1.isStable() ? "true" : "false";
+
+  json += "}";
+
+  server.send(200, "application/json", json);
 }
 
-// ======================================================
+/////////////////////////////////////////////////////////////////////////////
+// CALIBRAÇÃO WEB
+/////////////////////////////////////////////////////////////////////////////
+
+void handleCalibrar()
+{
+  server.send(200, "text/plain", "Modo calibração iniciado");
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// ATUALIZA NEXTION
+/////////////////////////////////////////////////////////////////////////////
+
+void atualizarPesoNaTela()
+{
+  char buffer[32];
+
+  snprintf(buffer, sizeof(buffer), "%.3f Kg", pesoAtual);
+
+  nextionCmd(String("tPeso.txt=\"") + buffer + "\"");
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // SETUP
-// ======================================================
+/////////////////////////////////////////////////////////////////////////////
+
 void setup()
 {
-    Serial.begin(115200);
+  pinMode(OK, INPUT);
+  pinMode(M1, OUTPUT);
+  pinMode(M0, OUTPUT);
+  m1;
+  m0;
+  //////////////////////////////////////////////////////////////////////////
+  // SERIAL DEBUG
+  //////////////////////////////////////////////////////////////////////////
 
-    // Inicializa UART Nextion
-    NEXTION_SERIAL.begin(9600, SERIAL_8N1, 25, 26);
+  Serial.begin(115200);
 
-    Serial.println("Sistema iniciado...");
-    Serial.println("Aguardando comandos do Nextion...");
+  //////////////////////////////////////////////////////////////////////////
+  // SERIAL SENSOR
+  //////////////////////////////////////////////////////////////////////////
 
-    // ==========================================
-    // INICIALIZA DISPLAY
-    // ==========================================
-    setNextionText("thora", ghora);
-    setNextionText("gplaca", tplaca);
-    setNextionText("tdata", gdata);
+  SerialPort.begin(9600, SERIAL_8N1, 16, 17);
+  Serial.println("\n=== SISTEMA BALANCA ===");
 
-    // Inicializa objeto NUMBER tn
-    setNextionValue("tn", contadorTN);
+  Serial.println("Comandos:");
+  Serial.println("t -> Tara");
+  Serial.println("c -> Calibrar");
 
-    // Inicializa pesos
-    setNextionText("ttotal", gtotal);
-    setNextionText("ttara", gtara);
+  Serial.println("========================");
+
+  //////////////////////////////////////////////////////////////////////////
+  // WIFI
+  //////////////////////////////////////////////////////////////////////////
+
+  initWiFi();
+
+  //////////////////////////////////////////////////////////////////////////
+  // WEB SERVER
+  //////////////////////////////////////////////////////////////////////////
+
+  initWebServer();
+
+  //////////////////////////////////////////////////////////////////////////
+  // NEXTION
+  //////////////////////////////////////////////////////////////////////////
+
+  initNextion();
+
+  //////////////////////////////////////////////////////////////////////////
+  // ROTAS
+  //////////////////////////////////////////////////////////////////////////
+
+  server.on("/zero", handleZero);
+
+  server.on("/dados", handleDados);
+
+  server.on("/calibrar", handleCalibrar);
+
+  //////////////////////////////////////////////////////////////////////////
+  // INFO
+  //////////////////////////////////////////////////////////////////////////
+
+  Serial.println("\n=== SISTEMA BALANCA ===");
+
+  Serial.println("Comandos:");
+
+  Serial.println("t -> Tara");
+
+  Serial.println("c5000 -> Calibrar com 5000g");
+
+  Serial.println("========================");
 }
 
-// ======================================================
-// LOOP PRINCIPAL
-// ======================================================
+/////////////////////////////////////////////////////////////////////////////
+// LOOP
+/////////////////////////////////////////////////////////////////////////////
+
 void loop()
 {
-    // ==========================================
-    // ATUALIZAÇÃO PERIÓDICA DISPLAY
-    // ==========================================
-    static unsigned long tUpdate = 0;
+  //////////////////////////////////////////////////////////////////////////
+  // WEB
+  //////////////////////////////////////////////////////////////////////////
 
-    if (millis() - tUpdate > 5000)
+  handleWeb();
+
+  //////////////////////////////////////////////////////////////////////////
+  // NEXTION
+  //////////////////////////////////////////////////////////////////////////
+
+  lerNextion();
+
+  //////////////////////////////////////////////////////////////////////////
+  // SENSOR
+  //////////////////////////////////////////////////////////////////////////
+
+  if (sensor1.leitura())
+  {
+    pesoAtual = sensor1.getKg();
+
+    //////////////////////////////////////////////////////////////////////////
+    // DEBUG
+    //////////////////////////////////////////////////////////////////////////
+
+    Serial.print("RAW: ");
+
+    Serial.print(sensor1.getRaw(), 3);
+
+    Serial.print(" | KG: ");
+
+    Serial.print(sensor1.getKg(), 3);
+
+    Serial.print(" | Noise: ");
+
+    Serial.print(sensor1.getNoise(), 5);
+
+    Serial.print(" | Stable: ");
+
+    if (sensor1.isStable())
+      Serial.print("YES");
+    else
+      Serial.print("NO");
+
+    Serial.println();
+  }
+
+  //////////////////////////////////////////////////////////////////////////
+  // TELA
+  //////////////////////////////////////////////////////////////////////////
+
+  atualizarPesoNaTela();
+
+  //////////////////////////////////////////////////////////////////////////
+  // BRIDGE SERIAL USB -> UART
+  //////////////////////////////////////////////////////////////////////////
+
+  while (Serial.available())
+  {
+    //////////////////////////////////////////////////////////////////////////
+    // COMANDOS
+    //////////////////////////////////////////////////////////////////////////
+
+    if (Serial.available())
     {
-        setNextionText("tPeso", "125.4");
+      char comando = Serial.read();
 
-        setNextionText("ttotal", gtotal);
-        setNextionText("ttara", gtara);
+      switch (comando)
+      {
+        //////////////////////////////////////////////////////////////////////////
+        // TARA
+        //////////////////////////////////////////////////////////////////////////
 
-        setNextionText("thora", ghora);
-        setNextionText("gplaca", tplaca);
-        setNextionText("tdata", gdata);
+      case 't':
+      case 'T':
 
-        tUpdate = millis();
+        sensor1.tare();
+
+        break;
+
+        //////////////////////////////////////////////////////////////////////////
+        // CALIBRAÇÃO
+        //////////////////////////////////////////////////////////////////////////
+
+      case 'c':
+      case 'C':
+
+        Serial.println("\nCOLOQUE O PESO DE CALIBRACAO...");
+        delay(3000);
+
+        sensor1.calibra(pesoCalibracao);
+
+        break;
+      }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////
+  // COMANDOS SERIAL
+  //////////////////////////////////////////////////////////////////////////
+
+  if (Serial.available())
+  {
+    String comando = Serial.readStringUntil('\n');
+
+    comando.trim();
+
+    //////////////////////////////////////////////////////////////////////////
+    // TARA
+    //////////////////////////////////////////////////////////////////////////
+
+    if (comando.equalsIgnoreCase("t"))
+    {
+      sensor1.tare();
     }
 
-    // ==========================================
-    // RECEBIMENTO DE COMANDOS
-    // ==========================================
-    if (NEXTION_SERIAL.available())
+    //////////////////////////////////////////////////////////////////////////
+    // CALIBRAÇÃO
+    //////////////////////////////////////////////////////////////////////////
+
+    else if (comando.startsWith("c"))
     {
-        String command = NEXTION_SERIAL.readString();
+      String pesoTexto = comando.substring(1);
 
-        command.trim();
+      float pesoConhecido = pesoTexto.toFloat();
 
-        Serial.print("Comando recebido: ");
-        Serial.println(command);
+      if (pesoConhecido <= 0)
+      {
+        Serial.println("ERRO: peso invalido");
 
-        // ======================================
-        // EVENTOS
-        // ======================================
-        if (command == "bsom")
-        {
-            handle_bsom();
-        }
-        else if (command == "bsalvar")
-        {
-            handle_bsalvar();
-        }
-        else if (command == "blimpar")
-        {
-            handle_blimpar();
-        }
-        else
-        {
-            handle_bgeneric(command);
-        }
+        return;
+      }
+
+      Serial.println("--------------------------------");
+
+      Serial.println("AGUARDE ESTABILIZAR...");
+
+      Serial.println("--------------------------------");
+
+      delay(3000);
+
+      sensor1.calibra(pesoConhecido);
     }
-}
+  }
 
-// ======================================================
-// EVENTO BSOM
-// ======================================================
-void handle_bsom()
-{
-    Serial.println("Evento BSOM recebido");
+  //////////////////////////////////////////////////////////////////////////
+  // PEQUENO YIELD
+  //////////////////////////////////////////////////////////////////////////
 
-    // Incrementa contador
-    contadorTN++;
-
-    // Atualiza objeto NUMBER no Nextion
-    setNextionValue("tn", contadorTN);
-
-    Serial.print("TN atualizado para: ");
-    Serial.println(contadorTN);
-
-    // Aqui pode adicionar buzzer futuramente
-}
-
-// ======================================================
-// EVENTO BSALVAR
-// ======================================================
-void handle_bsalvar()
-{
-    Serial.println("Salvando registro...");
-
-    // ==========================================
-    // SALVA MATRIZ
-    // ==========================================
-    tabela[linhaAtual][0] = String(contadorRegistro);
-    tabela[linhaAtual][1] = tplaca;
-    tabela[linhaAtual][2] = gdata;
-    tabela[linhaAtual][3] = ghora;
-    tabela[linhaAtual][4] = gtotal;
-    tabela[linhaAtual][5] = gtara;
-
-    // ==========================================
-    // SUFIXO DOS CAMPOS
-    // ==========================================
-    String sufixo = (linhaAtual == 0) ? "" : String(linhaAtual);
-
-    // ==========================================
-    // ENVIA PARA DISPLAY
-    // ==========================================
-
-    // tn é NUMBER
-    setNextionValue("tn" + sufixo, contadorRegistro);
-
-    // textos
-    setNextionText("tplaca" + sufixo, tabela[linhaAtual][1]);
-    setNextionText("tdata"  + sufixo, tabela[linhaAtual][2]);
-    setNextionText("thora"  + sufixo, tabela[linhaAtual][3]);
-    setNextionText("ttotal" + sufixo, tabela[linhaAtual][4]);
-    setNextionText("ttara"  + sufixo, tabela[linhaAtual][5]);
-
-    Serial.println("Registro salvo e enviado ao display.");
-
-    // ==========================================
-    // AVANÇA LINHA
-    // ==========================================
-    contadorRegistro++;
-    linhaAtual++;
-
-    // Reinicia ao chegar em 20
-    if (linhaAtual >= 20)
-    {
-        linhaAtual = 0;
-    }
-}
-
-// ======================================================
-// EVENTO BLIMPAR
-// ======================================================
-void handle_blimpar()
-{
-    Serial.println("Limpando campos do display...");
-
-    // Limpa campos
-    setNextionText("tPeso", "");
-    setNextionText("ttotal", "");
-    setNextionText("gplaca", "");
-
-    // Mantém data/hora
-    setNextionText("thora", ghora);
-    setNextionText("tdata", gdata);
-
-    // Zera contador TN
-    contadorTN = 0;
-
-    // Atualiza NUMBER tn
-    setNextionValue("tn", contadorTN);
-}
-
-// ======================================================
-// OUTROS BOTÕES
-// ======================================================
-void handle_bgeneric(String cmd)
-{
-    Serial.print("Outro botão pressionado: ");
-    Serial.println(cmd);
+  delay(5);
 }
