@@ -61,7 +61,7 @@ void updateDisplay()
 
     setNextionText("tdata", gdata);
 
-    setNextionText("gplaca", gplaca);
+    // setNextionText("gplaca", gplaca);
 
     setNextionText("tPeso", String(pesoAtual, 1));
 
@@ -102,9 +102,42 @@ void processNextionCommands()
         {
             handle_blimpar();
         }
-        else
+        else if (command.indexOf("bcalib") >= 0)
         {
-            handle_bgeneric(command);
+            handle_bcalib(command);
+        }
+        else if (command.indexOf("calib:") >= 0)
+        {
+            Serial.println("Evento [calib]");
+
+            int pos = command.indexOf(':');
+
+            if (pos > 0)
+            {
+                String valorStr = command.substring(pos + 1);
+
+                pesoCalibracao1 = valorStr.toFloat();
+
+                Serial.print("Peso de calibração 1: ");
+                Serial.println(pesoCalibracao1, 2);
+            }
+        }
+        else if (command.startsWith("placa:"))
+        {
+            Serial.println("Evento [placa]");
+
+            // pega tudo após "placa:"
+            String valorStr = command.substring(6);
+
+            // remove espaços extras no início/fim
+            valorStr.trim();
+
+            // salva na variável
+            placaVeiculo = valorStr;
+
+            Serial.print("Placa recebida: ");
+            Serial.println(placaVeiculo);
+            handle_bsalvar();
         }
     }
 }
@@ -148,34 +181,28 @@ void handle_bsalvar()
     Serial.println("Evento [bsalvar]");
 
     String objTN[7] =
-    {
-        "tn0","tn1","tn2","tn3","tn4","tn5","tn6"
-    };
+        {
+            "tn0", "tn1", "tn2", "tn3", "tn4", "tn5", "tn6"};
 
     String objPLACA[7] =
-    {
-        "tplaca0","tplaca1","tplaca2","tplaca3","tplaca4","tplaca5","tplaca6"
-    };
+        {
+            "tplaca0", "tplaca1", "tplaca2", "tplaca3", "tplaca4", "tplaca5", "tplaca6"};
 
     String objDATA[7] =
-    {
-        "tdata0","tdata1","tdata2","tdata3","tdata4","tdata5","tdata6"
-    };
+        {
+            "tdata0", "tdata1", "tdata2", "tdata3", "tdata4", "tdata5", "tdata6"};
 
     String objHORA[7] =
-    {
-        "thora0","thora1","thora2","thora3","thora4","thora5","thora6"
-    };
+        {
+            "thora0", "thora1", "thora2", "thora3", "thora4", "thora5", "thora6"};
 
     String objTOTAL[7] =
-    {
-        "ttotal0","ttotal1","ttotal2","ttotal3","ttotal4","ttotal5","ttotal6"
-    };
+        {
+            "ttotal0", "ttotal1", "ttotal2", "ttotal3", "ttotal4", "ttotal5", "ttotal6"};
 
     String objTARA[7] =
-    {
-        "ttara0","ttara1","ttara2","ttara3","ttara4","ttara5","ttara6"
-    };
+        {
+            "ttara0", "ttara1", "ttara2", "ttara3", "ttara4", "ttara5", "ttara6"};
 
     for (int i = 6; i > 0; i--)
     {
@@ -235,4 +262,33 @@ void handle_bgeneric(String cmd)
 {
     Serial.print("Outro comando: ");
     Serial.println(cmd);
+}
+
+// ======================================================
+// EVENTO BCALIB
+// ======================================================
+void handle_bcalib(String cmd)
+{
+    Serial.println("Evento [bcalib]");
+
+    // Exemplo recebido:
+    // bcalib:41A00000
+
+    int pos = cmd.indexOf(':');
+
+    if (pos > 0)
+    {
+        String hexValue = cmd.substring(pos + 1);
+
+        uint32_t hexInt = strtoul(hexValue.c_str(), NULL, 16);
+
+        float valor;
+
+        memcpy(&valor, &hexInt, sizeof(valor));
+
+        pesoCalibracao1 = valor;
+
+        Serial.print("pesoCalibracao1 = ");
+        Serial.println(pesoCalibracao1, 4);
+    }
 }

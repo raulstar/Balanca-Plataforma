@@ -10,9 +10,8 @@ float plataforma1 = 0.0;
 HX711::HX711()
 {
     offset = 0.0;
-
     // começa sem calibração
-    scale_factor = 1;
+    scale_factor = -4782.34179688;
 }
 
 // TARA

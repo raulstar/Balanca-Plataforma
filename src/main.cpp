@@ -17,7 +17,7 @@
 extern float pesoAtual;
 
 HardwareSerial SerialPort(2);
-float pesoCalibracao = 78000.0f;
+extern float pesoCalibracao1 = 78000.0f;
 /////////////////////////////////////////////////////////////////////////////
 
 class SensorBalanca // CLASSE SENSOR BALANÇA
@@ -353,6 +353,8 @@ void setup()
   initWiFi();
   initWebServer();
   initNextion();
+  sensor1.tare();
+  
   server.on("/zero", handleZero);
   server.on("/dados", handleDados);
   server.on("/calibrar", handleCalibrar);
@@ -371,7 +373,7 @@ void loop()
   handleWeb();
   if (sensor1.leitura())
   {
-    pesoAtual = sensor1.getKg();
+     if (sensor1.isStable())pesoAtual = sensor1.getKg();
 
     //////////////////////////////////////////////////////////////////////////
     // DEBUG
@@ -433,7 +435,7 @@ void loop()
         Serial.println("\nCOLOQUE O PESO DE CALIBRACAO...");
         delay(3000);
 
-        sensor1.calibra(pesoCalibracao);
+        sensor1.calibra(pesoCalibracao1);
 
         break;
       }

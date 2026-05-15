@@ -15,6 +15,7 @@ extern HardwareSerial NEXTION_SERIAL;
 // ======================================================
 extern String placaVeiculo;
 extern String dataRegistro;
+extern float pesoCalibracao1;
 
 // ======================================================
 // DATA / HORA
@@ -26,6 +27,7 @@ extern String ghora;
 // PLACA
 // ======================================================
 extern String gplaca;
+extern String placa;
 
 // ======================================================
 // VARIÁVEIS NUMÉRICAS
@@ -65,3 +67,7 @@ void handle_bsalvar();
 void handle_blimpar();
 
 void handle_bgeneric(String cmd);
+
+void processNextionCommands();
+
+void handle_bcalib(String cmd);

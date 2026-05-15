@@ -6,6 +6,7 @@
 // TIMER UPDATE DISPLAY
 // ======================================================
 unsigned long tDisplay = 0;
+ float pesoCalibracao1 = 78000.0f;// PESO CALIBRAÇÃO
 
 // ======================================================
 // SETUP
@@ -21,7 +22,7 @@ void setup()
 
     ghora = "14:30";
 
-    gplaca = "BRA2E19";
+    gplaca = "";
 
     pesoAtual = 125.4;
 
@@ -54,7 +55,7 @@ void loop()
         // Atualiza display
         updateDisplay();
 
-        Serial.println("Display atualizado");
+        //Serial.println("Display atualizado");
 
         tDisplay = millis();
     }
