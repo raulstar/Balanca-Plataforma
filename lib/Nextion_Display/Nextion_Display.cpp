@@ -83,8 +83,8 @@ void processNextionCommands()
 
         command.trim();
 
-        Serial.print("Comando Recebido: ");
-        Serial.println(command);
+        //Serial.print("Comando Recebido: ");
+        //Serial.println(command);
 
         if (command.indexOf("bsom") >= 0)
         {
@@ -120,6 +120,7 @@ void processNextionCommands()
 
                 Serial.print("Peso de calibração 1: ");
                 Serial.println(pesoCalibracao1, 2);
+                calibrando1 = true;
             }
         }
         else if (command.startsWith("placa:"))

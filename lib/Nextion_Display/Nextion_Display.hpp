@@ -16,6 +16,7 @@ extern HardwareSerial NEXTION_SERIAL;
 extern String placaVeiculo;
 extern String dataRegistro;
 extern float pesoCalibracao1;
+extern bool calibrando1;
 
 // ======================================================
 // DATA / HORA

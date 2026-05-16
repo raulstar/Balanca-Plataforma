@@ -15,9 +15,11 @@
 // VARIÁVEIS GLOBAIS
 
 extern float pesoAtual;
+bool calibrando1 = 0;
 
 HardwareSerial SerialPort(2);
-extern float pesoCalibracao1 = 78000.0f;
+float pesoCalibracao1 = 78000.0f;
+
 /////////////////////////////////////////////////////////////////////////////
 
 class SensorBalanca // CLASSE SENSOR BALANÇA
@@ -402,12 +404,18 @@ void loop()
   }
 
   updateDisplay();
+  processNextionCommands();
   while (Serial.available())
   {
     //////////////////////////////////////////////////////////////////////////
     // COMANDOS
     //////////////////////////////////////////////////////////////////////////
-
+     if (calibrando1){
+       Serial.print("calibrando1 ");
+       Serial.println(pesoCalibracao1);
+       sensor1.calibra(pesoCalibracao1);
+       calibrando1 = false;
+     }
     if (Serial.available())
     {
       char comando = Serial.read();
@@ -433,7 +441,7 @@ void loop()
       case 'C':
 
         Serial.println("\nCOLOQUE O PESO DE CALIBRACAO...");
-        delay(3000);
+        delay(2000);
 
         sensor1.calibra(pesoCalibracao1);
 
