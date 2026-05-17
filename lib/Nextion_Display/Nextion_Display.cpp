@@ -25,6 +25,16 @@ String tabela[20][6];
 int linhaAtual = 0;
 int contadorRegistro = 1;
 
+String last_ghora = "";
+String last_gdata = "";
+String last_gplaca = "";
+
+float last_pesoAtual = -999999.0;
+float last_gtara = -999999.0;
+float last_ttotal = -999999.0;
+
+int last_contadorRegistro = -1;
+
 // ======================================================
 // ENVIA TEXTO PARA NEXTION
 // ======================================================
@@ -57,19 +67,54 @@ void initNextion()
 // ======================================================
 void updateDisplay()
 {
-    setNextionText("thora", ghora);
+    // Hora
+    if (ghora != last_ghora)
+    {
+        setNextionText("thora", ghora);
+        last_ghora = ghora;
+    }
 
-    setNextionText("tdata", gdata);
+    // Data
+    if (gdata != last_gdata)
+    {
+        setNextionText("tdata", gdata);
+        last_gdata = gdata;
+    }
 
-    // setNextionText("gplaca", gplaca);
+    // Placa
+    if (gplaca != last_gplaca)
+    {
+        setNextionText("gplaca", gplaca);
+        last_gplaca = gplaca;
+    }
 
-    setNextionText("tPeso", String(pesoAtual, 1));
+    // Peso Atual
+    if (pesoAtual != last_pesoAtual)
+    {
+        setNextionText("tPeso", String(pesoAtual, 1));
+        last_pesoAtual = pesoAtual;
+    }
 
-    setNextionText("ttotal", String(ttotal, 1));
+    // Total
+    if (ttotal != last_ttotal)
+    {
+        setNextionText("ttotal", String(ttotal, 1));
+        last_ttotal = ttotal;
+    }
 
-    setNextionText("ttara", String(gtara, 1));
+    // Tara
+    if (gtara != last_gtara)
+    {
+        setNextionText("ttara", String(gtara, 1));
+        last_gtara = gtara;
+    }
 
-    setNextionText("tn0", String(contadorRegistro));
+    // Contador
+    if (contadorRegistro != last_contadorRegistro)
+    {
+        setNextionText("tn0", String(contadorRegistro));
+        last_contadorRegistro = contadorRegistro;
+    }
 }
 
 // ======================================================
