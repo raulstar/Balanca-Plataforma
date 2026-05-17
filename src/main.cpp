@@ -14,278 +14,13 @@
 /////////////////////////////////////////////////////////////////////////////
 // VARIÁVEIS GLOBAIS
 
-extern float pesoAtual;
+//float pesoAtual;
 bool calibrando1 = 0;
 
 HardwareSerial SerialPort(2);
 float pesoCalibracao1 = 78000.0f;
 
 /////////////////////////////////////////////////////////////////////////////
-
-class SensorBalanca // CLASSE SENSOR BALANÇA
-{
-private:
-  //////////////////////////////////////////////////////////////////////////
-  // SERIAL
-  //////////////////////////////////////////////////////////////////////////
-
-  HardwareSerial *serial;
-
-  //////////////////////////////////////////////////////////////////////////
-  // BALANÇA
-  //////////////////////////////////////////////////////////////////////////
-
-  HX711 balanca;
-
-  //////////////////////////////////////////////////////////////////////////
-  // BUFFER RX
-  //////////////////////////////////////////////////////////////////////////
-
-  char rxBuffer[32];
-
-  uint8_t rxIndex = 0;
-
-  //////////////////////////////////////////////////////////////////////////
-  // DADOS
-  //////////////////////////////////////////////////////////////////////////
-
-  float valorLido = 0.0f;
-
-  float pesoGramas = 0.0f;
-
-  float pesoKg = 0.0f;
-
-  //////////////////////////////////////////////////////////////////////////
-  // STATUS
-  //////////////////////////////////////////////////////////////////////////
-
-  bool ready = false;
-
-  bool stable = false;
-
-  float noise = 0.0f;
-
-  //////////////////////////////////////////////////////////////////////////
-  // CONTROLE RUÍDO
-  //////////////////////////////////////////////////////////////////////////
-
-  static const uint8_t NOISE_SAMPLES = 10;
-
-  float noiseBuffer[NOISE_SAMPLES];
-
-  uint8_t noiseIndex = 0;
-
-public:
-  //////////////////////////////////////////////////////////////////////////
-  // CONSTRUTOR
-  //////////////////////////////////////////////////////////////////////////
-
-  SensorBalanca(HardwareSerial &porta)
-  {
-    serial = &porta;
-
-    for (uint8_t i = 0; i < NOISE_SAMPLES; i++)
-    {
-      noiseBuffer[i] = 0.0f;
-    }
-  }
-
-  //////////////////////////////////////////////////////////////////////////
-  // LEITURA SENSOR
-  //////////////////////////////////////////////////////////////////////////
-
-  bool leitura()
-  {
-    while (serial->available())
-    {
-      char c = serial->read();
-
-      //////////////////////////////////////////////////////////////////////////
-      // IGNORA CR
-      //////////////////////////////////////////////////////////////////////////
-
-      if (c == '\r')
-        continue;
-
-      //////////////////////////////////////////////////////////////////////////
-      // FIM LINHA
-      //////////////////////////////////////////////////////////////////////////
-
-      if (c == '\n')
-      {
-        rxBuffer[rxIndex] = '\0';
-
-        valorLido = atof(rxBuffer);
-
-        rxIndex = 0;
-
-        //////////////////////////////////////////////////////////////////////////
-        // IGNORA ZERO
-        //////////////////////////////////////////////////////////////////////////
-
-        if (fabs(valorLido) < 0.0001f)
-        {
-          ready = false;
-          return false;
-        }
-
-        //////////////////////////////////////////////////////////////////////////
-        // PESO
-        //////////////////////////////////////////////////////////////////////////
-
-        pesoGramas = balanca.get_units(valorLido);
-
-        pesoKg = pesoGramas / 1000.0f;
-
-        //////////////////////////////////////////////////////////////////////////
-        // ESTABILIDADE
-        //////////////////////////////////////////////////////////////////////////
-
-        analisarRuido();
-
-        ready = true;
-
-        return true;
-      }
-
-      //////////////////////////////////////////////////////////////////////////
-      // BUFFER
-      //////////////////////////////////////////////////////////////////////////
-
-      else
-      {
-        if (rxIndex < sizeof(rxBuffer) - 1)
-        {
-          rxBuffer[rxIndex++] = c;
-        }
-      }
-    }
-
-    return false;
-  }
-
-private:
-  //////////////////////////////////////////////////////////////////////////
-  // ANÁLISE DE RUÍDO
-  //////////////////////////////////////////////////////////////////////////
-
-  void analisarRuido()
-  {
-    noiseBuffer[noiseIndex] = valorLido;
-
-    noiseIndex++;
-
-    if (noiseIndex >= NOISE_SAMPLES)
-    {
-      noiseIndex = 0;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    // MIN/MAX
-    //////////////////////////////////////////////////////////////////////////
-
-    float minV = noiseBuffer[0];
-    float maxV = noiseBuffer[0];
-
-    for (uint8_t i = 1; i < NOISE_SAMPLES; i++)
-    {
-      if (noiseBuffer[i] < minV)
-        minV = noiseBuffer[i];
-
-      if (noiseBuffer[i] > maxV)
-        maxV = noiseBuffer[i];
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    // RUÍDO
-    //////////////////////////////////////////////////////////////////////////
-
-    noise = maxV - minV;
-
-    //////////////////////////////////////////////////////////////////////////
-    // ESTABILIDADE
-    //////////////////////////////////////////////////////////////////////////
-
-    stable = (noise < 0.020f);
-  }
-
-public:
-  //////////////////////////////////////////////////////////////////////////
-  // STATUS
-  //////////////////////////////////////////////////////////////////////////
-
-  bool isReady()
-  {
-    return ready;
-  }
-
-  bool isStable()
-  {
-    return stable;
-  }
-
-  float getNoise()
-  {
-    return noise;
-  }
-
-  //////////////////////////////////////////////////////////////////////////
-  // DADOS
-  //////////////////////////////////////////////////////////////////////////
-
-  float getRaw()
-  {
-    return valorLido;
-  }
-
-  float getKg()
-  {
-    return pesoKg;
-  }
-
-  float getGramas()
-  {
-    return pesoGramas;
-  }
-
-  //////////////////////////////////////////////////////////////////////////
-  // TARA
-  //////////////////////////////////////////////////////////////////////////
-
-  void tare()
-  {
-    balanca.tare(valorLido);
-
-    Serial.println("--------------------------------");
-    Serial.println("BALANCA ZERADA");
-    Serial.println("--------------------------------");
-  }
-
-  //////////////////////////////////////////////////////////////////////////
-  // CALIBRAÇÃO
-  //////////////////////////////////////////////////////////////////////////
-
-  void calibra(float pesoConhecido)
-  {
-    if (!stable)
-    {
-      Serial.println("ERRO: BALANCA INSTAVEL");
-      return;
-    }
-
-    balanca.calibra(valorLido, pesoConhecido);
-
-    Serial.println("--------------------------------");
-
-    Serial.print("BALANCA CALIBRADA COM ");
-
-    Serial.print(pesoConhecido);
-
-    Serial.println(" g");
-
-    Serial.println("--------------------------------");
-  }
-};
 
 SensorBalanca sensor1(SerialPort); // INSTÂNCIA SENSOR
 
@@ -313,15 +48,15 @@ void handleDados() // DADOS WEB
 
   json += "\"pesoAtual\":" + String(pesoAtual, 3);
 
-  json += ",";
+  // json += ",";
 
-  json += "\"noise\":" + String(sensor1.getNoise(), 5);
+  // json += "\"noise\":" + String(sensor1.getNoise(), 5);
 
-  json += ",";
+  // json += ",";
 
-  json += "\"stable\":";
+  // json += "\"stable\":";
 
-  json += sensor1.isStable() ? "true" : "false";
+  // json += sensor1.isStable() ? "true" : "false";
 
   json += "}";
 
@@ -356,7 +91,7 @@ void setup()
   initWebServer();
   initNextion();
   sensor1.tare();
-  
+
   server.on("/zero", handleZero);
   server.on("/dados", handleDados);
   server.on("/calibrar", handleCalibrar);
@@ -373,9 +108,10 @@ void setup()
 void loop()
 {
   handleWeb();
+  pesoAtual = sensor1.getKg();
   if (sensor1.leitura())
   {
-     if (sensor1.isStable())pesoAtual = sensor1.getKg();
+    sensor1.getKg();
 
     //////////////////////////////////////////////////////////////////////////
     // DEBUG
@@ -389,16 +125,16 @@ void loop()
 
     Serial.print(sensor1.getKg(), 3);
 
-    Serial.print(" | Noise: ");
+    //   Serial.print(" | Noise: ");
 
-    Serial.print(sensor1.getNoise(), 5);
+    //   Serial.print(sensor1.getNoise(), 5);
 
-    Serial.print(" | Stable: ");
+    //   Serial.print(" | Stable: ");
 
-    if (sensor1.isStable())
-      Serial.print("YES");
-    else
-      Serial.print("NO");
+    //   if (sensor1.isStable())
+    //     Serial.print("YES");
+    //   else
+    //     Serial.print("NO");
 
     Serial.println();
   }
@@ -410,12 +146,13 @@ void loop()
     //////////////////////////////////////////////////////////////////////////
     // COMANDOS
     //////////////////////////////////////////////////////////////////////////
-     if (calibrando1){
-       Serial.print("calibrando1 ");
-       Serial.println(pesoCalibracao1);
-       sensor1.calibra(pesoCalibracao1);
-       calibrando1 = false;
-     }
+    if (calibrando1)
+    {
+      Serial.print("calibrando1 ");
+      Serial.println(pesoCalibracao1);
+      sensor1.calibra(pesoCalibracao1);
+      calibrando1 = false;
+    }
     if (Serial.available())
     {
       char comando = Serial.read();

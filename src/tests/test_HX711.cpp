@@ -17,6 +17,10 @@
 
 HardwareSerial SerialPort(2);
 
+/////////////////////////////////////////////////////////////////////////////
+// SENSOR HX711
+/////////////////////////////////////////////////////////////////////////////
+
 SensorBalanca sensor1(SerialPort);
 
 /////////////////////////////////////////////////////////////////////////////
@@ -47,7 +51,8 @@ void setup()
 
     Serial.println("Comandos:");
     Serial.println("t -> Tara");
-    Serial.println("c -> Calibrar");
+    Serial.println("c -> Calibrar usando peso padrão");
+    Serial.println("c5000 -> Calibrar com 5000g");
 
     Serial.println("========================");
 }
@@ -58,16 +63,30 @@ void setup()
 
 void loop()
 {
- if (sensor1.leitura())
-{
-    Serial.print("RAW: ");
-    Serial.print(sensor1.getRaw(), 3);
+    //////////////////////////////////////////////////////////////////////////
+    // LEITURA SENSOR
+    //////////////////////////////////////////////////////////////////////////
 
-    Serial.print(" | KG: ");
-    Serial.print(sensor1.getKg(), 3);
+    if (sensor1.leitura())
+    {
+        Serial.print("RAW: ");
+        Serial.print(sensor1.getRaw(), 3);
 
-    Serial.println();
-}
+        Serial.print(" | KG: ");
+        Serial.print(sensor1.getKg(), 3);
+
+        // Serial.print(" | Noise: ");
+        // Serial.print(sensor1.getNoise(), 5);
+
+        // Serial.print(" | Stable: ");
+
+        // if (sensor1.isStable())
+        //     Serial.print("YES");
+        // else
+        //     Serial.print("NO");
+
+        Serial.println();
+    }
 
     //////////////////////////////////////////////////////////////////////////
     // COMANDOS SERIAL
@@ -75,35 +94,60 @@ void loop()
 
     if (Serial.available())
     {
-        char comando = Serial.read();
+        String comando = Serial.readStringUntil('\n');
 
-        switch (comando)
+        comando.trim();
+
+        //////////////////////////////////////////////////////////////////////////
+        // TARA
+        //////////////////////////////////////////////////////////////////////////
+
+        if (comando.equalsIgnoreCase("t"))
         {
-            //////////////////////////////////////////////////////////////////////////
-            // TARA
-            //////////////////////////////////////////////////////////////////////////
+            sensor1.tare();
+        }
 
-            case 't':
-            case 'T':
+        //////////////////////////////////////////////////////////////////////////
+        // CALIBRAÇÃO COM PESO PADRÃO
+        //////////////////////////////////////////////////////////////////////////
 
-                sensor1.tare();
+        else if (comando.equalsIgnoreCase("c"))
+        {
+            Serial.println("--------------------------------");
+            Serial.println("COLOQUE O PESO DE CALIBRACAO...");
+            Serial.println("--------------------------------");
 
-                break;
+            delay(3000);
 
-            //////////////////////////////////////////////////////////////////////////
-            // CALIBRAÇÃO
-            //////////////////////////////////////////////////////////////////////////
+            sensor1.calibra(pesoCalibracao1);
+        }
 
-            case 'c':
-            case 'C':
+        //////////////////////////////////////////////////////////////////////////
+        // CALIBRAÇÃO COM PESO INFORMADO
+        //////////////////////////////////////////////////////////////////////////
 
-                Serial.println("\nCOLOQUE O PESO DE CALIBRACAO...");
+        else if (comando.startsWith("c") || comando.startsWith("C"))
+        {
+            String pesoTexto = comando.substring(1);
 
-                delay(3000);
+            float pesoConhecido = pesoTexto.toFloat();
 
-                sensor1.calibra(pesoCalibracao1);
+            if (pesoConhecido <= 0)
+            {
+                Serial.println("ERRO: peso invalido");
 
-                break;
+                return;
+            }
+
+            Serial.println("--------------------------------");
+            Serial.println("AGUARDE ESTABILIZAR...");
+            Serial.println("--------------------------------");
+
+            delay(3000);
+
+            sensor1.calibra(pesoConhecido);
         }
     }
+
+    delay(5);
 }
