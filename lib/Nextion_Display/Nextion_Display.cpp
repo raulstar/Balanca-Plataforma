@@ -45,7 +45,7 @@ void setNextionText(String objName, String value)
 // ======================================================
 void initNextion()
 {
-    NEXTION_SERIAL.begin(9600, SERIAL_8N1, NEXTION_RX, NEXTION_TX);
+    NEXTION_SERIAL.begin(115200, SERIAL_8N1, NEXTION_RX, NEXTION_TX);
 
     Serial.println("Nextion iniciado");
 

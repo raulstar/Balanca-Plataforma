@@ -14,7 +14,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // VARIÁVEIS GLOBAIS
 
-//float pesoAtual;
+// float pesoAtual;
 bool calibrando1 = 0;
 
 HardwareSerial SerialPort(2);
@@ -108,10 +108,12 @@ void setup()
 void loop()
 {
   handleWeb();
+  updateDisplay();
+  processNextionCommands();
   pesoAtual = sensor1.getKg();
   if (sensor1.leitura())
   {
-    sensor1.getKg();
+    // sensor1.getKg();
 
     //////////////////////////////////////////////////////////////////////////
     // DEBUG
@@ -125,22 +127,9 @@ void loop()
 
     Serial.print(sensor1.getKg(), 3);
 
-    //   Serial.print(" | Noise: ");
-
-    //   Serial.print(sensor1.getNoise(), 5);
-
-    //   Serial.print(" | Stable: ");
-
-    //   if (sensor1.isStable())
-    //     Serial.print("YES");
-    //   else
-    //     Serial.print("NO");
-
     Serial.println();
   }
 
-  updateDisplay();
-  processNextionCommands();
   while (Serial.available())
   {
     //////////////////////////////////////////////////////////////////////////
@@ -184,46 +173,6 @@ void loop()
 
         break;
       }
-    }
-  }
-
-  if (Serial.available())
-  {
-    String comando = Serial.readStringUntil('\n');
-
-    comando.trim();
-
-    if (comando.equalsIgnoreCase("t"))
-    {
-      sensor1.tare();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    // CALIBRAÇÃO
-    //////////////////////////////////////////////////////////////////////////
-
-    else if (comando.startsWith("c"))
-    {
-      String pesoTexto = comando.substring(1);
-
-      float pesoConhecido = pesoTexto.toFloat();
-
-      if (pesoConhecido <= 0)
-      {
-        Serial.println("ERRO: peso invalido");
-
-        return;
-      }
-
-      Serial.println("--------------------------------");
-
-      Serial.println("AGUARDE ESTABILIZAR...");
-
-      Serial.println("--------------------------------");
-
-      delay(3000);
-
-      sensor1.calibra(pesoConhecido);
     }
   }
 

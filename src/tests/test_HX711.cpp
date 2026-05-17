@@ -74,17 +74,6 @@ void loop()
 
         Serial.print(" | KG: ");
         Serial.print(sensor1.getKg(), 3);
-
-        // Serial.print(" | Noise: ");
-        // Serial.print(sensor1.getNoise(), 5);
-
-        // Serial.print(" | Stable: ");
-
-        // if (sensor1.isStable())
-        //     Serial.print("YES");
-        // else
-        //     Serial.print("NO");
-
         Serial.println();
     }
 
