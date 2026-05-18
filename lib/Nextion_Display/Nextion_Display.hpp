@@ -17,6 +17,7 @@ extern String placaVeiculo;
 extern String dataRegistro;
 extern float pesoCalibracao1;
 extern bool calibrando1;
+extern bool zero;
 
 // ======================================================
 // DATA / HORA

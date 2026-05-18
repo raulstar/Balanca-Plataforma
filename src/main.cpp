@@ -16,7 +16,7 @@
 
 // float pesoAtual;
 bool calibrando1 = 0;
-
+bool zero = 0;
 HardwareSerial SerialPort(2);
 float pesoCalibracao1 = 78000.0f;
 
@@ -111,6 +111,19 @@ void loop()
   updateDisplay();
   processNextionCommands();
   pesoAtual = sensor1.getKg();
+  if (calibrando1)
+  {
+    Serial.print("calibrando1 ");
+    Serial.println(pesoCalibracao1);
+    sensor1.calibra(pesoCalibracao1 *10);
+    calibrando1 = false;
+  }
+  if(zero)
+  {
+    sensor1.tare();
+    zero = false;
+    Serial.println("Balança zerada.");
+  }
   if (sensor1.leitura())
   {
     // sensor1.getKg();
@@ -154,9 +167,7 @@ void loop()
 
       case 't':
       case 'T':
-
         sensor1.tare();
-
         break;
 
         //////////////////////////////////////////////////////////////////////////

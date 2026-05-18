@@ -194,7 +194,7 @@ void processNextionCommands()
 void handle_bzero()
 {
     Serial.println("Evento [bzero]");
-
+    zero = true;
     pesoAtual = 0.0;
 
     setNextionText("tPeso", String(pesoAtual, 1));
