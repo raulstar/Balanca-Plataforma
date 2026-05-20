@@ -115,7 +115,7 @@ void loop()
   {
     Serial.print("calibrando1 ");
     Serial.println(pesoCalibracao1);
-    sensor1.calibra(pesoCalibracao1 *10);
+    sensor1.calibra(pesoCalibracao1);
     calibrando1 = false;
   }
   if(zero)

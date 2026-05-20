@@ -10,27 +10,31 @@ HardwareSerial NEXTION_SERIAL(1);
 // ======================================================
 String placaVeiculo = "";
 String dataRegistro = "";
+bool calibrando1 = false;
+bool zero = false;
 
-String gdata = "";
-String ghora = "";
+String tdata = "";
+String thora = "";
+String tbateria = "90%";
 
-String gplaca = "";
+String tplaca = "";
 
 float pesoAtual = 0.0;
 float ttotal = 0.0;
-float gtara = 0.0;
+float ttara = 0.0;
 
 String tabela[20][6];
 
 int linhaAtual = 0;
 int contadorRegistro = 1;
 
-String last_ghora = "";
-String last_gdata = "";
-String last_gplaca = "";
+String last_thora = "";
+String last_tdata = "";
+String last_tplaca = "";
+String last_tbateria = "";
 
 float last_pesoAtual = -999999.0;
-float last_gtara = -999999.0;
+float last_ttara = -999999.0;
 float last_ttotal = -999999.0;
 
 int last_contadorRegistro = -1;
@@ -68,24 +72,24 @@ void initNextion()
 void updateDisplay()
 {
     // Hora
-    if (ghora != last_ghora)
+    if (thora != last_thora)
     {
-        setNextionText("thora", ghora);
-        last_ghora = ghora;
+        setNextionText("thora", thora);
+        last_thora = thora;
     }
 
     // Data
-    if (gdata != last_gdata)
+    if (tdata != last_tdata)
     {
-        setNextionText("tdata", gdata);
-        last_gdata = gdata;
+        setNextionText("tdata", tdata);
+        last_tdata = tdata;
     }
 
     // Placa
-    if (gplaca != last_gplaca)
+    if (tplaca != last_tplaca)
     {
-        setNextionText("gplaca", gplaca);
-        last_gplaca = gplaca;
+        setNextionText("tplaca", tplaca);
+        last_tplaca = tplaca;
     }
 
     // Peso Atual
@@ -103,17 +107,17 @@ void updateDisplay()
     }
 
     // Tara
-    if (gtara != last_gtara)
+    if (ttara != last_ttara)
     {
-        setNextionText("ttara", String(gtara, 1));
-        last_gtara = gtara;
+        setNextionText("ttara", String(ttara, 1));
+        last_ttara = ttara;
     }
 
     // Contador
     if (contadorRegistro != last_contadorRegistro)
     {
-        setNextionText("tn0", String(contadorRegistro));
-        last_contadorRegistro = contadorRegistro;
+        //setNextionText("tn0", String(contadorRegistro));
+        //last_contadorRegistro = contadorRegistro;
     }
 }
 
@@ -128,8 +132,8 @@ void processNextionCommands()
 
         command.trim();
 
-        //Serial.print("Comando Recebido: ");
-        //Serial.println(command);
+        // Serial.print("Comando Recebido: ");
+        // Serial.println(command);
 
         if (command.indexOf("bsom") >= 0)
         {
@@ -250,35 +254,62 @@ void handle_bsalvar()
         {
             "ttara0", "ttara1", "ttara2", "ttara3", "ttara4", "ttara5", "ttara6"};
 
-    for (int i = 6; i > 0; i--)
-    {
-        for (int j = 0; j < 6; j++)
-        {
-            tabela[i][j] = tabela[i - 1][j];
-        }
-    }
+    // for (int i = 6; i > 0; i--)
+    // {
+    //     for (int j = 0; j < 6; j++)
+    //     {
+    //         tabela[i][j] = tabela[i - 1][j];
+    //     }
+    // }
 
     tabela[0][0] = String(contadorRegistro);
-    tabela[0][1] = gplaca;
-    tabela[0][2] = gdata;
-    tabela[0][3] = ghora;
+    tabela[0][1] = tplaca;
+    tabela[0][2] = tdata;
+    tabela[0][3] = thora;
     tabela[0][4] = String(ttotal, 1);
-    tabela[0][5] = String(gtara, 1);
+    tabela[0][5] = String(ttara, 1);
+    Serial.print("//////////////////////////////////////");
+    Serial.print("contadorRegistro");
+    Serial.print(": ");
+    Serial.println(tabela[0][0]);
+    Serial.print("tplaca");
+    Serial.print(": ");
+    Serial.println(tabela[0][1]);
+    Serial.print("tdata");
+    Serial.print(": ");
+    Serial.println(tabela[0][2]);
+    Serial.print("thora");
+    Serial.print(": ");
+    Serial.println(tabela[0][3]);
+    Serial.print("ttotal");
+    Serial.print(": ");
+    Serial.println(tabela[0][4]);
+    Serial.print("ttara");
+    Serial.print(": ");
+    Serial.println(tabela[0][5]);
 
-    for (int i = 0; i < 7; i++)
-    {
-        setNextionText(objTN[i], tabela[i][0]);
+    setNextionText("page1.tPeso1", String(33, 1));
+    setNextionText("page1.tplaca1", String(33, 1));
+    setNextionText("page1.tdata1", String(33, 1));
+    setNextionText("page1.thora1", String(33, 1));
+    setNextionText("page1.ttotal1","423");
+    setNextionText("page1.tn0", "3");
+    setNextionText("page1.tn1", "1");
+    setNextionText("page1.tn2", "5");
+    setNextionText("page1.tdata1", "34");
 
-        setNextionText(objPLACA[i], tabela[i][1]);
 
-        setNextionText(objDATA[i], tabela[i][2]);
+    //setNextionText(objTN[0], tabela[0][0]);
 
-        setNextionText(objHORA[i], tabela[i][3]);
+    // setNextionText(objPLACA[0], tabela[0][1]);
 
-        setNextionText(objTOTAL[i], tabela[i][4]);
+    // setNextionText(objDATA[0], tabela[0][2]);
 
-        setNextionText(objTARA[i], tabela[i][5]);
-    }
+    // setNextionText(objHORA[0], tabela[0][3]);
+
+    // setNextionText(objTOTAL[0], tabela[0][4]);
+
+    // setNextionText(objTARA[0], tabela[0][5]);
 
     contadorRegistro++;
 }
@@ -294,9 +325,9 @@ void handle_blimpar()
 
     ttotal = 0.0;
 
-    gtara = 0.0;
+    ttara = 0.0;
 
-    gplaca = "";
+    tplaca = "";
 
     updateDisplay();
 }

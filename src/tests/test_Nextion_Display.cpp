@@ -18,17 +18,17 @@ void setup()
     // ==================================================
     // EXEMPLO DE VALORES
     // ==================================================
-    gdata = "15/05/2026";
+    tdata = "15/05/2026";
 
-    ghora = "14:30";
+    thora = "14:30";
 
-    gplaca = "";
+    tplaca = "";
 
     pesoAtual = 125.4;
 
     ttotal = 0.0;
 
-    gtara = 1200.0;
+    ttara = 1200.0;
 
     // ==================================================
     // INICIA DISPLAY
@@ -47,17 +47,24 @@ void loop()
     // EXEMPLO:
     // Atualiza display a cada 2 segundos
     // ==================================================
+
     if (millis() - tDisplay > 2000)
     {
         // Simula alteração de peso
         pesoAtual += 1.5;
-
+        int c = 1;
+        c++;
+      
+        tplaca = "ABC1234";
+        thora = "14:30";
+        tdata = "15/05/2026";
         // Atualiza display
         updateDisplay();
 
         //Serial.println("Display atualizado");
 
         tDisplay = millis();
+
     }
 
     // ==================================================

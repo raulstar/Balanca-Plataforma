@@ -22,13 +22,14 @@ extern bool zero;
 // ======================================================
 // DATA / HORA
 // ======================================================
-extern String gdata;
-extern String ghora;
+extern String tdata;
+extern String thora;
+extern String tbateria;
 
 // ======================================================
 // PLACA
 // ======================================================
-extern String gplaca;
+extern String tplaca;
 extern String placa;
 
 // ======================================================
@@ -36,7 +37,7 @@ extern String placa;
 // ======================================================
 extern float pesoAtual;
 extern float ttotal;
-extern float gtara;
+extern float ttara;
 
 // ======================================================
 // MATRIZ DE REGISTROS
