@@ -14,9 +14,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // VARIÁVEIS GLOBAIS
 
-// float pesoAtual;
-//bool calibrando1 = 0;
-//bool zero = 0;
+unsigned long tDisplay = 0;
 HardwareSerial SerialPort(2);
 float pesoCalibracao1 = 78000.0f;
 
@@ -108,9 +106,20 @@ void setup()
 void loop()
 {
   handleWeb();
-  updateDisplay();
   processNextionCommands();
   pesoAtual = sensor1.getKg();
+
+ if (millis() - tDisplay > 2000)
+    {               
+        tplaca = placaVeiculo;
+        thora = "14:30";
+        tdata = "15/05/2026";
+        ttara = ttotal;
+        updateDisplay();
+        tDisplay = millis();
+    }
+
+
   if (calibrando1)
   {
     Serial.print("calibrando1 ");

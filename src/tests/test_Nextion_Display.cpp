@@ -6,7 +6,7 @@
 // TIMER UPDATE DISPLAY
 // ======================================================
 unsigned long tDisplay = 0;
- float pesoCalibracao1 = 78000.0f;// PESO CALIBRAÇÃO
+float pesoCalibracao1 = 78000.0f; // PESO CALIBRAÇÃO
 
 // ======================================================
 // SETUP
@@ -52,20 +52,15 @@ void loop()
     {
         // Simula alteração de peso
         pesoAtual += 1.5;
-        int c = 1;
-        c++;
-      
+
         tplaca = placaVeiculo;
         thora = "14:30";
         tdata = "15/05/2026";
-        // Atualiza display
+        ttara = ttotal;
+
         updateDisplay();
-
-        //Serial.println("Display atualizado");
-
         tDisplay = millis();
-
-    }
+    }  
 
     // ==================================================
     // PROCESSA BOTÕES / EVENTOS NEXTION

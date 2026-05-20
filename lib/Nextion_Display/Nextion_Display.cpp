@@ -262,12 +262,12 @@ void handle_bsalvar()
     //     }
     // }
 
-    tabela[0][0] = String(contadorRegistro);
-    tabela[0][1] = tplaca;
-    tabela[0][2] = tdata;
-    tabela[0][3] = thora;
-    tabela[0][4] = String(ttotal, 1);
-    tabela[0][5] = String(ttara, 1);
+    tabela[contadorRegistro][0] = String(contadorRegistro);
+    tabela[contadorRegistro][1] = tplaca;
+    tabela[contadorRegistro][2] = tdata;
+    tabela[contadorRegistro][3] = thora;
+    tabela[contadorRegistro][4] = String(ttotal, 1);
+    tabela[contadorRegistro][5] = String(ttara, 1);
     Serial.print("//////////////////////////////////////");
     Serial.println("contadorRegistro");
     Serial.print(": ");
