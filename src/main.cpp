@@ -15,8 +15,8 @@
 // VARIÁVEIS GLOBAIS
 
 // float pesoAtual;
-bool calibrando1 = 0;
-bool zero = 0;
+//bool calibrando1 = 0;
+//bool zero = 0;
 HardwareSerial SerialPort(2);
 float pesoCalibracao1 = 78000.0f;
 

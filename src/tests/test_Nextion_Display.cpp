@@ -55,7 +55,7 @@ void loop()
         int c = 1;
         c++;
       
-        tplaca = "ABC1234";
+        tplaca = placaVeiculo;
         thora = "14:30";
         tdata = "15/05/2026";
         // Atualiza display
