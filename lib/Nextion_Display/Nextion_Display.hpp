@@ -49,6 +49,8 @@ extern String tabela[20][6];
 // ======================================================
 extern int linhaAtual;
 extern int contadorRegistro;
+extern int eixo;
+extern int peixo;
 
 // ======================================================
 // FUNÇÕES

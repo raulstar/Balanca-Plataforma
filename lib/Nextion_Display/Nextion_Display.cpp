@@ -26,7 +26,7 @@ float ttara = 0.0;
 String tabela[20][6];
 
 int linhaAtual = 0;
-int contadorRegistro = 1;
+int contadorRegistro = 0;
 
 String last_thora = "";
 String last_tdata = "";
@@ -37,7 +37,10 @@ float last_pesoAtual = -999999.0;
 float last_ttara = -999999.0;
 float last_ttotal = -999999.0;
 
-int last_contadorRegistro = -1;
+int last_contadorRegistro = 0;
+int eixo = 0;
+int peixo = 0;
+
 
 // ======================================================
 // ENVIA TEXTO PARA NEXTION
@@ -143,7 +146,7 @@ void processNextionCommands()
         {
             handle_bzero();
         }
-        else if (command.indexOf("bsalvar") >= 0)
+        else if (command.indexOf("bsalva") >= 0)
         {
             handle_bsalvar();
         }
@@ -155,7 +158,7 @@ void processNextionCommands()
         {
             handle_bcalib(command);
         }
-        else if (command.indexOf("calib:") >= 0)
+        else if (command.indexOf("calib") >= 0)
         {
             Serial.println("Evento [calib]");
 
@@ -187,7 +190,39 @@ void processNextionCommands()
 
             Serial.print("Placa recebida: ");
             Serial.println(placaVeiculo);
-            handle_bsalvar();
+           // handle_bsalvar();
+        }
+        else if (command.startsWith("thora:"))
+        {
+            Serial.println("Evento [thora]");
+
+            // pega tudo após "thora:"
+            String valorStr = command.substring(6);
+
+            // remove espaços extras no início/fim
+            valorStr.trim();
+            // salva na variável
+            thora = valorStr;
+
+            Serial.print("hora recebida: ");
+            Serial.println(thora);
+            // handle_bsalvar();
+        }
+         else if (command.startsWith("tdata:"))
+        {
+            Serial.println("Evento [tdata]");
+
+            // pega tudo após "tdata:"
+            String valorStr = command.substring(6);
+
+            // remove espaços extras no início/fim
+            valorStr.trim();
+            // salva na variável
+            tdata = valorStr;
+
+            Serial.print("data recebida: ");
+            Serial.println(tdata);
+            // handle_bsalvar();
         }
     }
 }
@@ -218,6 +253,9 @@ void handle_bsom()
     else
     {
         ttotal += pesoAtual;
+        eixo++;
+        peixo = pesoAtual;
+
     }
 
     setNextionText("ttotal", String(ttotal, 1));
@@ -302,6 +340,7 @@ void handle_bsalvar()
     setNextionText(objTARA[contadorRegistro], tabela[contadorRegistro][5]);
 
     contadorRegistro++;
+    delay(2);
 }
 
 // ======================================================
@@ -316,6 +355,8 @@ void handle_blimpar()
     ttara = 0.0;
     tplaca = "";
     placaVeiculo = "";
+    eixo = 0;
+    peixo = 0;
 
     updateDisplay();
 }
