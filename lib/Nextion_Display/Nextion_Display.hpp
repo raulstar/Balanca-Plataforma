@@ -18,6 +18,7 @@ extern String dataRegistro;
 extern float pesoCalibracao1;
 extern bool calibrando1;
 extern bool zero;
+extern bool imprimir;
 
 // ======================================================
 // DATA / HORA

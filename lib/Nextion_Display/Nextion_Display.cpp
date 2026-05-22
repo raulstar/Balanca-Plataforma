@@ -41,6 +41,13 @@ int last_contadorRegistro = 0;
 int eixo = 0;
 int peixo = 0;
 
+int peixo1;
+int peixo2;
+int peixo3;
+int peixo4;
+int peixo5;
+int peixo6;
+
 
 // ======================================================
 // ENVIA TEXTO PARA NEXTION
@@ -157,6 +164,11 @@ void processNextionCommands()
         else if (command.indexOf("bcalib") >= 0)
         {
             handle_bcalib(command);
+        }
+         else if (command.indexOf("imprimi") >= 0)
+        {
+            imprimir = true;
+            Serial.println("Evento [imprimir]");
         }
         else if (command.indexOf("calib") >= 0)
         {

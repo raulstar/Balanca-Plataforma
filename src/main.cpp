@@ -3,6 +3,7 @@
 #include "WiFi_Server.hpp"
 #include "Nextion_Display.hpp"
 #include "HX711_Module.hpp"
+#include "Thermal_Printer.hpp"
 
 #define M0 19
 #define M1 21
@@ -16,7 +17,9 @@
 
 unsigned long tDisplay = 0;
 HardwareSerial SerialPort(2);
+HardwareSerial impressoraSerial(3);
 float pesoCalibracao1 = 78000.0f;
+bool imprimir;
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -75,6 +78,7 @@ void setup()
   m1;
   m0;
   Serial.begin(115200);
+  iniciarImpressora(impressoraSerial, 9600, 4, 5);
 
   SerialPort.begin(9600, SERIAL_8N1, 16, 17);
   Serial.println("\n=== SISTEMA BALANCA ===");
@@ -108,17 +112,20 @@ void loop()
   handleWeb();
   processNextionCommands();
   pesoAtual = sensor1.getKg();
-
- if (millis() - tDisplay > 2000)
-    {               
-        tplaca = placaVeiculo;
-        thora = "14:30";
-        tdata = "15/05/2026";
-        ttara = ttotal;
-        updateDisplay();
-        tDisplay = millis();
-    }
-
+if(imprimir){
+  imprimirRegistro();
+  imprimir = false;
+  Serial.println("Registro impresso.");
+}
+  if (millis() - tDisplay > 2000)
+  {
+    tplaca = placaVeiculo;
+    thora = "14:30";
+    tdata = "15/05/2026";
+    ttara = ttotal;
+    updateDisplay();
+    tDisplay = millis();
+  }
 
   if (calibrando1)
   {
@@ -127,7 +134,7 @@ void loop()
     sensor1.calibra(pesoCalibracao1);
     calibrando1 = false;
   }
-  if(zero)
+  if (zero)
   {
     sensor1.tare();
     zero = false;
