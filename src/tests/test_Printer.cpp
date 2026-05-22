@@ -1,7 +1,7 @@
 #include "Adafruit_Thermal.h"
 
 // SERIAL DA IMPRESSORA
-HardwareSerial impressoraSerial(2);
+HardwareSerial impressoraSerial(0);
 
 // RX, TX
 Adafruit_Thermal printer(&impressoraSerial);
@@ -29,6 +29,7 @@ int peixo4;
 int peixo5;
 int peixo6;
 
+void imprimirRegistro();
 // ===========================
 
 void setup() {
@@ -36,7 +37,7 @@ void setup() {
   Serial.begin(115200);
 
   // SERIAL DA IMPRESSORA
-  impressoraSerial.begin(19200, SERIAL_8N1, 16, 17);
+  impressoraSerial.begin(9600, SERIAL_8N1, 4, 5);
 
   printer.begin();
 
@@ -66,7 +67,7 @@ void setup() {
   peixo6 = 9740;
 
   // IMPRIME O REGISTRO
-  imprimirRegistro();
+ imprimirRegistro();
 }
 
 void loop() {
