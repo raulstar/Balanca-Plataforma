@@ -1,4 +1,5 @@
 #include "Thermal_Printer.hpp"
+#include <Arduino.h>
 
 // ===========================
 // OBJETO DA IMPRESSORA
@@ -29,7 +30,7 @@ void iniciarImpressora(
 // FUNÇÃO DE IMPRESSÃO
 // ===========================
 
-void imprimirRegistro()
+void imprimirRegistro(DadosImpressao dados)
 {
 
     if (printer == nullptr)
@@ -44,79 +45,83 @@ void imprimirRegistro()
 
     printer->println("REGISTRO DE");
     printer->println("PESAGEM");
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 
     printer->boldOff();
 
     printer->setSize('S');
 
     printer->println("--------------------------------");
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 
     printer->justify('L');
 
     printer->print("Registro: ");
-    printer->println(contadorRegistro);
+    printer->println(dados.contador);
 
     printer->print("Data: ");
-    printer->println(tdata);
+    printer->println(dados.data);
 
     printer->print("Hora: ");
-    printer->println(thora);
+    printer->println(dados.hora);
 
     printer->print("Placa: ");
-    printer->println(placaVeiculo);
+    printer->println(dados.placa);
 
     printer->println("--------------------------------");
+    vTaskDelay(10 / portTICK_PERIOD_MS);
      printer->boldOn();
     printer->print("Peso Total: ");
-    printer->print(ttotal, 2);
+    printer->print(dados.total, 2);
     printer->println(" kg");
      printer->boldOff();
 
     printer->print("Tara: ");
-    printer->print(ttara, 2);
+    printer->print(dados.tara, 2);
     printer->println(" kg");
 
     printer->print("Qtd Eixos: ");
-    printer->println(eixo);
+    printer->println(dados.eixo);
 
     printer->println("--------------------------------");
 
     printer->println("PESO POR EIXO");
 
     printer->print("Eixo 1: ");
-    printer->print(peixo1);
+    printer->print(dados.peixo1);
     printer->println(" kg");
-    if (peixo2 > 0)
+    if (dados.peixo2 > 0)
     {
         printer->print("Eixo 2: ");
-        printer->print(peixo2);
+        printer->print(dados.peixo2);
         printer->println(" kg");
     }
-    if (peixo3 > 0)
+    if (dados.peixo3 > 0)
     {
         printer->print("Eixo 3: ");
-        printer->print(peixo3);
+        printer->print(dados.peixo3);
         printer->println(" kg");
     }
-    if (peixo4 > 0)
+    if (dados.peixo4 > 0)
     {
         printer->print("Eixo 4: ");
-        printer->print(peixo4);
+        printer->print(dados.peixo4);
         printer->println(" kg");
     }
-    if (peixo5 > 0)
+    if (dados.peixo5 > 0)
     {
         printer->print("Eixo 5: ");
-        printer->print(peixo5);
+        printer->print(dados.peixo5);
         printer->println(" kg");
     }
-    if (peixo6 > 0)
+    if (dados.peixo6 > 0)
     {
         printer->print("Eixo 6: ");
-        printer->print(peixo6);
+        printer->print(dados.peixo6);
         printer->println(" kg");
     }
     printer->println("--------------------------------");
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 
     printer->justify('C');
 

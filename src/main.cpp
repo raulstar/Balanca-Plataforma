@@ -16,8 +16,8 @@
 // VARIÁVEIS GLOBAIS
 
 unsigned long tDisplay = 0;
-HardwareSerial SerialPort(2);
-HardwareSerial impressoraSerial(3);
+HardwareSerial SerialPort(3);
+HardwareSerial impressoraSerial(2);
 float pesoCalibracao1 = 78000.0f;
 bool imprimir;
 
@@ -68,6 +68,13 @@ void handleCalibrar() // CALIBRAÇÃO WEB
   server.send(200, "text/plain", "Modo calibração iniciado");
 }
 
+void printTask(void *pvParameters) {
+    DadosImpressao *dados = (DadosImpressao *)pvParameters;
+    imprimirRegistro(*dados);
+    delete dados;
+    vTaskDelete(NULL);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // SETUP
 void setup()
@@ -113,10 +120,25 @@ void loop()
   processNextionCommands();
   pesoAtual = sensor1.getKg();
 if(imprimir){
-  imprimirRegistro();
-  imprimir = false;
-  Serial.println("Registro impresso.");
-}
+    DadosImpressao *dados = new DadosImpressao;
+    dados->placa = placaVeiculo;
+    dados->data = tdata;
+    dados->hora = thora;
+    dados->contador = contadorRegistro;
+    dados->total = ttotal;
+    dados->tara = ttara;
+    dados->eixo = eixo;
+    dados->peixo1 = peixo1;
+    dados->peixo2 = peixo2;
+    dados->peixo3 = peixo3;
+    dados->peixo4 = peixo4;
+    dados->peixo5 = peixo5;
+    dados->peixo6 = peixo6;
+
+    xTaskCreate(printTask, "PrintTask", 4096, dados, 1, NULL);
+    imprimir = false;
+    Serial.println("Registro sendo impresso...");
+  }
   if (millis() - tDisplay > 2000)
   {
     tplaca = placaVeiculo;
