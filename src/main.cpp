@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #include "WiFi_Server.hpp"
 #include "Nextion_Display.hpp"
@@ -15,11 +17,26 @@
 /////////////////////////////////////////////////////////////////////////////
 // VARIÁVEIS GLOBAIS
 
-unsigned long tDisplay = 0;
-HardwareSerial SerialPort(3);
-HardwareSerial impressoraSerial(2);
+uint32_t displayUpdateInterval = 5000;
+HardwareSerial SerialPort(2);
+HardwareSerial impressoraSerial(3);
 float pesoCalibracao1 = 78000.0f;
 bool imprimir;
+
+void taskUpdateDisplay(void *pvParameters) {
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    const TickType_t xFrequency = pdMS_TO_TICKS(displayUpdateInterval);
+
+    for (;;) {
+        tplaca = placaVeiculo;
+        thora = "14:30";
+        tdata = "15/05/2026";
+        ttara = ttotal;
+        updateDisplay();
+
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -164,6 +181,7 @@ void setup()
   initWiFi();
   initWebServer();
   initNextion();
+  xTaskCreate(taskUpdateDisplay, "UpdateDisplay", 4096, NULL, 1, NULL);
   sensor1.tare();
 
   server.on("/zero", handleZero);
@@ -185,16 +203,6 @@ void loop()
   processNextionCommands();
   pesoAtual = sensor1.getKg();
   processarImpressao();
-
-  if (millis() - tDisplay > 2000)
-  {
-    tplaca = placaVeiculo;
-    thora = "14:30";
-    tdata = "15/05/2026";
-    ttara = ttotal;
-    updateDisplay();
-    tDisplay = millis();
-  }
 
   if (calibrando1)
   {
