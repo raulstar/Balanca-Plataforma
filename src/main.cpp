@@ -75,6 +75,71 @@ void printTask(void *pvParameters) {
     vTaskDelete(NULL);
 }
 
+void processarImpressao() {
+  if (imprimir) {
+    DadosImpressao *dados = new DadosImpressao;
+    dados->placa = placaVeiculo;
+    dados->data = tdata;
+    dados->hora = thora;
+    dados->contador = contadorRegistro;
+    dados->total = ttotal;
+    dados->tara = ttara;
+    dados->eixo = eixo;
+    dados->peixo1 = peixo1;
+    dados->peixo2 = peixo2;
+    dados->peixo3 = peixo3;
+    dados->peixo4 = peixo4;
+    dados->peixo5 = peixo5;
+    dados->peixo6 = peixo6;
+
+    xTaskCreate(printTask, "PrintTask", 4096, dados, 1, NULL);
+    imprimir = false;
+    Serial.println("Registro sendo impresso...");
+  }
+}
+
+void processarSerial() {
+  while (Serial.available()) {
+    //////////////////////////////////////////////////////////////////////////
+    // COMANDOS
+    //////////////////////////////////////////////////////////////////////////
+    if (calibrando1) {
+      Serial.print("calibrando1 ");
+      Serial.println(pesoCalibracao1);
+      sensor1.calibra(pesoCalibracao1);
+      calibrando1 = false;
+    }
+    if (Serial.available()) {
+      char comando = Serial.read();
+
+      switch (comando) {
+        //////////////////////////////////////////////////////////////////////////
+        // TARA
+        //////////////////////////////////////////////////////////////////////////
+
+      case 't':
+      case 'T':
+        sensor1.tare();
+        break;
+
+        //////////////////////////////////////////////////////////////////////////
+        // CALIBRAÇÃO
+        //////////////////////////////////////////////////////////////////////////
+
+      case 'c':
+      case 'C':
+
+        Serial.println("\nCOLOQUE O PESO DE CALIBRACAO...");
+        delay(2000);
+
+        sensor1.calibra(pesoCalibracao1);
+
+        break;
+      }
+    }
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // SETUP
 void setup()
@@ -119,26 +184,8 @@ void loop()
   handleWeb();
   processNextionCommands();
   pesoAtual = sensor1.getKg();
-if(imprimir){
-    DadosImpressao *dados = new DadosImpressao;
-    dados->placa = placaVeiculo;
-    dados->data = tdata;
-    dados->hora = thora;
-    dados->contador = contadorRegistro;
-    dados->total = ttotal;
-    dados->tara = ttara;
-    dados->eixo = eixo;
-    dados->peixo1 = peixo1;
-    dados->peixo2 = peixo2;
-    dados->peixo3 = peixo3;
-    dados->peixo4 = peixo4;
-    dados->peixo5 = peixo5;
-    dados->peixo6 = peixo6;
+  processarImpressao();
 
-    xTaskCreate(printTask, "PrintTask", 4096, dados, 1, NULL);
-    imprimir = false;
-    Serial.println("Registro sendo impresso...");
-  }
   if (millis() - tDisplay > 2000)
   {
     tplaca = placaVeiculo;
@@ -181,49 +228,7 @@ if(imprimir){
     Serial.println();
   }
 
-  while (Serial.available())
-  {
-    //////////////////////////////////////////////////////////////////////////
-    // COMANDOS
-    //////////////////////////////////////////////////////////////////////////
-    if (calibrando1)
-    {
-      Serial.print("calibrando1 ");
-      Serial.println(pesoCalibracao1);
-      sensor1.calibra(pesoCalibracao1);
-      calibrando1 = false;
-    }
-    if (Serial.available())
-    {
-      char comando = Serial.read();
-
-      switch (comando)
-      {
-        //////////////////////////////////////////////////////////////////////////
-        // TARA
-        //////////////////////////////////////////////////////////////////////////
-
-      case 't':
-      case 'T':
-        sensor1.tare();
-        break;
-
-        //////////////////////////////////////////////////////////////////////////
-        // CALIBRAÇÃO
-        //////////////////////////////////////////////////////////////////////////
-
-      case 'c':
-      case 'C':
-
-        Serial.println("\nCOLOQUE O PESO DE CALIBRACAO...");
-        delay(2000);
-
-        sensor1.calibra(pesoCalibracao1);
-
-        break;
-      }
-    }
-  }
+  processarSerial();
 
   delay(5);
 }
