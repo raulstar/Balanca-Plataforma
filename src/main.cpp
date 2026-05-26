@@ -26,14 +26,13 @@ bool imprimir;
 void taskUpdateDisplay(void *pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     const TickType_t xFrequency = pdMS_TO_TICKS(displayUpdateInterval);
-
+    ESP_LOGI("Task", "Display update task started with interval %d ms", displayUpdateInterval);
     for (;;) {
         tplaca = placaVeiculo;
         thora = "14:30";
         tdata = "15/05/2026";
         ttara = ttotal;
         updateDisplay();
-
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }
