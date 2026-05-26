@@ -21,7 +21,23 @@ HardwareSerial SerialPort(2);
 // SENSOR HX711
 /////////////////////////////////////////////////////////////////////////////
 
-SensorBalanca sensor1(SerialPort);
+SensorBalanca sensor1(SerialPort, "S1");
+SensorBalanca sensor2(SerialPort, "S2");
+SensorBalanca sensor3(SerialPort, "S3");
+SensorBalanca sensor4(SerialPort, "S4");
+
+struct SensorConfig {
+    SensorBalanca &sensor;
+    String prefixo;
+};
+
+SensorConfig sensores[] = {
+    {sensor1, "S1"},
+    {sensor2, "S2"},
+    {sensor3, "S3"},
+    {sensor4, "S4"}
+};
+const int numSensores = sizeof(sensores) / sizeof(sensores[0]);
 
 /////////////////////////////////////////////////////////////////////////////
 // PESO CALIBRAÇÃO
@@ -67,14 +83,30 @@ void loop()
     // LEITURA SENSOR
     //////////////////////////////////////////////////////////////////////////
 
-    if (sensor1.leitura())
+    static String bufferSerial;
+    while (SerialPort.available())
     {
-        Serial.print("RAW: ");
-        Serial.print(sensor1.getRaw(), 3);
+        char c = SerialPort.read();
+        if (c == '\n')
+        {
+            for (int i = 0; i < numSensores; i++)
+            {
+                if (sensores[i].sensor.processaString(bufferSerial))
+                {
+                    Serial.print(sensores[i].prefixo + " RAW: ");
+                    Serial.print(sensores[i].sensor.getRaw(), 3);
 
-        Serial.print(" | KG: ");
-        Serial.print(sensor1.getKg(), 3);
-        Serial.println();
+                    Serial.print(" | " + sensores[i].prefixo + " KG: ");
+                    Serial.print(sensores[i].sensor.getKg(), 3);
+                    Serial.println();
+                }
+            }
+            bufferSerial = "";
+        }
+        else if (c != '\r')
+        {
+            bufferSerial += c;
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -137,6 +169,4 @@ void loop()
             sensor1.calibra(pesoConhecido);
         }
     }
-
-    delay(5);
 }
