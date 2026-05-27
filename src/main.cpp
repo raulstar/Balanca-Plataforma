@@ -6,6 +6,7 @@
 #include "Nextion_Display.hpp"
 #include "HX711_Module.hpp"
 #include "Thermal_Printer.hpp"
+#include "config.hpp"
 
 #define M0 19
 #define M1 21
@@ -57,7 +58,16 @@ SensorConfig sensores[] = {
     {&sensor2, "S2"},
     {&sensor3, "S3"},
     {&sensor4, "S4"}};
-const int numSensores = sizeof(sensores) / sizeof(sensores[0]);
+int numSensores = sizeof(sensores) / sizeof(sensores[0]);
+
+void tareAllSensors()
+{
+  for (int i = 0; i < numSensores; i++)
+  {
+    sensores[i].sensor->tare();
+  }
+  Serial.println("Todas as balanças zeradas.");
+}
 
 void handleZero() // FUNÇÕES WEB
 {
@@ -151,7 +161,11 @@ void processarSerial()
     if (comando.startsWith("t") || comando.startsWith("T"))
     {
       int sensorIndex = comando.substring(1).toInt() - 1;
-      if (sensorIndex >= 0 && sensorIndex < numSensores)
+      if (sensorIndex == -1) // Tare all (e.g. "t" or "t0")
+      {
+        tareAllSensors();
+      }
+      else if (sensorIndex >= 0 && sensorIndex < numSensores)
       {
         sensores[sensorIndex].sensor->tare();
         Serial.print("Sensor ");
@@ -160,7 +174,7 @@ void processarSerial()
       }
       else
       {
-        Serial.println("ERRO: Sensor invalido (use t1-t4)");
+        Serial.println("ERRO: Sensor invalido (use t0 para todos ou t1-t4)");
       }
     }
 
@@ -311,7 +325,14 @@ void loop()
 {
   handleWeb();
   processNextionCommands();
-  pesoAtual = sensor1.getKg();
+  pesoAtual = 0.0f;
+  for (int i = 0; i < numSensores; i++)
+  {
+    if (sensores[i].sensor->isReady())
+    {
+      pesoAtual += sensores[i].sensor->getKg();
+    }
+  }
   processarImpressao();
 
   if (calibrando1)
@@ -323,7 +344,7 @@ void loop()
   }
   if (zero)
   {
-    sensor1.tare();
+    tareAllSensors();
     zero = false;
     Serial.println("Balança zerada.");
   }
@@ -346,6 +367,8 @@ void loop()
 
                     Serial.print(" | " + sensores[i].prefixo + " KG: ");
                     Serial.print(sensores[i].sensor->getKg(), 3);
+                    Serial.print(" | Peso Atual: ");
+                    Serial.println(pesoAtual, 3);
                     Serial.println();
                 }
             }
