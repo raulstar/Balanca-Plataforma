@@ -47,12 +47,6 @@ SensorBalanca sensor2(SerialPort, "S2");
 SensorBalanca sensor3(SerialPort, "S3");
 SensorBalanca sensor4(SerialPort, "S4");
 
-struct SensorConfig
-{
-  SensorBalanca *sensor;
-  String prefixo;
-};
-
 SensorConfig sensores[] = {
     {&sensor1, "S1"},
     {&sensor2, "S2"},
@@ -73,7 +67,7 @@ void handleZero() // FUNÇÕES WEB
 {
   pesoAtual = 0.0f;
 
-  sensor1.tare();
+  tareAllSensors();
 
   if (server.client())
   {
@@ -82,8 +76,6 @@ void handleZero() // FUNÇÕES WEB
 
   // nextionCmd("tPeso.txt=\"Zerado!\"");
   handle_bsom();
-
-  Serial.println("Balança zerada.");
 
   delay(800);
 }
@@ -346,7 +338,6 @@ void loop()
   {
     tareAllSensors();
     zero = false;
-    Serial.println("Balança zerada.");
   }
    //////////////////////////////////////////////////////////////////////////
     // LEITURA SENSOR

@@ -102,6 +102,13 @@ void updateDisplay()
         last_tplaca = tplaca;
     }
 
+    // Sensores
+    for (int i = 0; i < numSensores; i++)
+    {
+        String objName = "tPeso" + String(i + 1);
+        setNextionText(objName, String(sensores[i].sensor->getKg(), 1));
+    }
+
     // Peso Atual
     if (pesoAtual != last_pesoAtual)
     {

@@ -79,7 +79,22 @@ void setup() {
     // TESTE DE IMPRESSÃO
     // ===========================
 
-    imprimirRegistro();
+    DadosImpressao dados;
+    dados.placa = placaVeiculo;
+    dados.data = dataRegistro;
+    dados.hora = thora;
+    dados.contador = contadorRegistro;
+    dados.total = ttotal;
+    dados.tara = ttara;
+    dados.eixo = eixo;
+    dados.peixo1 = peixo1;
+    dados.peixo2 = peixo2;
+    dados.peixo3 = peixo3;
+    dados.peixo4 = peixo4;
+    dados.peixo5 = peixo5;
+    dados.peixo6 = peixo6;
+
+    imprimirRegistro(dados);
 }
 
 void loop() {

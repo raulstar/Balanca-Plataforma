@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include "../../include/config.hpp"
 
 // ======================================================
 // CONFIGURAÇÃO UART NEXTION
@@ -9,6 +10,9 @@
 #define NEXTION_TX 26
 
 extern HardwareSerial NEXTION_SERIAL;
+
+extern SensorConfig sensores[];
+extern int numSensores;
 
 // ======================================================
 // VARIÁVEIS GLOBAIS
