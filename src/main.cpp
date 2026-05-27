@@ -22,7 +22,7 @@ uint32_t displayUpdateInterval = 5000;
 HardwareSerial SerialPort(2);
 HardwareSerial impressoraSerial(3);
 float pesoCalibracao1 = 78000.0f;
-bool imprimir;
+volatile bool imprimir;
 
 void taskUpdateDisplay(void *pvParameters)
 {
@@ -104,38 +104,37 @@ void handleCalibrar() // CALIBRAÇÃO WEB
   server.send(200, "text/plain", "Modo calibração iniciado");
 }
 
-void printTask(void *pvParameters)
+void taskProcessarImpressao(void *pvParameters)
 {
-  DadosImpressao *dados = (DadosImpressao *)pvParameters;
-  imprimirRegistro(*dados);
-  delete dados;
-  vTaskDelete(NULL);
-}
-
-void processarImpressao()
-{
-  if (imprimir)
+  for (;;)
   {
-    DadosImpressao *dados = new DadosImpressao;
-    dados->placa = placaVeiculo;
-    dados->data = tdata;
-    dados->hora = thora;
-    dados->contador = contadorRegistro;
-    dados->total = ttotal;
-    dados->tara = ttara;
-    dados->eixo = eixo;
-    dados->peixo1 = peixo1;
-    dados->peixo2 = peixo2;
-    dados->peixo3 = peixo3;
-    dados->peixo4 = peixo4;
-    dados->peixo5 = peixo5;
-    dados->peixo6 = peixo6;
+    if (imprimir)
+    {
+      DadosImpressao dados;
+      dados.placa = placaVeiculo;
+      dados.data = tdata;
+      dados.hora = thora;
+      dados.contador = contadorRegistro;
+      dados.total = ttotal;
+      dados.tara = ttara;
+      dados.eixo = eixo;
+      dados.peixo1 = peixo1;
+      dados.peixo2 = peixo2;
+      dados.peixo3 = peixo3;
+      dados.peixo4 = peixo4;
+      dados.peixo5 = peixo5;
+      dados.peixo6 = peixo6;
 
-    xTaskCreate(printTask, "PrintTask", 4096, dados, 1, NULL);
-    imprimir = false;
-    Serial.println("Registro sendo impresso...");
+      imprimirRegistro(dados);
+
+      imprimir = false;
+      Serial.println("Registro impresso.");
+    }
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
+
+/////////////////////////////////////////////////////////////////////////////
 
 void processarSerial()
 {
@@ -298,6 +297,7 @@ void setup()
   initWebServer();
   initNextion();
   xTaskCreate(taskUpdateDisplay, "UpdateDisplay", 4096, NULL, 1, NULL);
+  xTaskCreate(taskProcessarImpressao, "ProcessarImpressao", 4096, NULL, 1, NULL);
   sensor1.tare();
 
   server.on("/zero", handleZero);
@@ -307,8 +307,8 @@ void setup()
 
   Serial.println("Comandos:");
   Serial.println("t -> Tara");
-  // Serial.println("c5000 -> Calibrar com 5000g");
   Serial.println("========================");
+  
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -325,7 +325,6 @@ void loop()
       pesoAtual += sensores[i].sensor->getKg();
     }
   }
-  processarImpressao();
 
   if (calibrando1)
   {
