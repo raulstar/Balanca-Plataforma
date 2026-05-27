@@ -1,12 +1,6 @@
 #include "HX711_Module.hpp"
 
 /////////////////////////////////////////////////////////////////////////////
-// VARIÁVEIS GLOBAIS
-/////////////////////////////////////////////////////////////////////////////
-
-float plataforma1 = 0.0f;
-
-/////////////////////////////////////////////////////////////////////////////
 // CONSTRUTOR HX711
 /////////////////////////////////////////////////////////////////////////////
 
@@ -39,9 +33,7 @@ void HX711::tare(float leituraAtual)
 
 float HX711::get_units(float leituraAtual)
 {
-    plataforma1 = (leituraAtual - offset) * scale_factor;
-
-    return plataforma1;
+    return (leituraAtual - offset) * scale_factor;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -98,6 +90,16 @@ void HX711::calibra(float leituraAtual, float known_weight)
     Serial.println("--------------------------------");
 }
 
+void HX711::setScale(float scale)
+{
+    scale_factor = scale;
+}
+
+float HX711::getScale()
+{
+    return scale_factor;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CONSTRUTOR SENSOR BALANÇA
 /////////////////////////////////////////////////////////////////////////////
@@ -139,6 +141,16 @@ bool SensorBalanca::processaString(String s)
 bool SensorBalanca::isReady()
 {
     return ready;
+}
+
+bool SensorBalanca::leitura()
+{
+    if (serial->available())
+    {
+        String s = serial->readStringUntil('\n');
+        return processaString(s);
+    }
+    return false;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -198,4 +210,14 @@ void SensorBalanca::calibra(float pesoConhecido)
     Serial.println(" g");
 
     Serial.println("--------------------------------");
+}
+
+void SensorBalanca::setScale(float scale)
+{
+    balanca.setScale(scale);
+}
+
+float SensorBalanca::getScale()
+{
+    return balanca.getScale();
 }

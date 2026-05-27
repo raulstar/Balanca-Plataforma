@@ -61,14 +61,14 @@ void setup()
 
     SerialPort.begin(9600, SERIAL_8N1, 16, 17);
 
-    delay(1000);
+    delay(600);
 
     Serial.println("\n=== SISTEMA BALANCA ===");
 
     Serial.println("Comandos:");
     Serial.println("t -> Tara");
     Serial.println("c -> Calibrar usando peso padrão");
-    Serial.println("c5000 -> Calibrar com 5000g");
+    //Serial.println("c5000 -> Calibrar com 5000g");
 
     Serial.println("========================");
 }
@@ -120,53 +120,125 @@ void loop()
         comando.trim();
 
         //////////////////////////////////////////////////////////////////////////
-        // TARA
+        // TARA (t1-t4)
         //////////////////////////////////////////////////////////////////////////
 
-        if (comando.equalsIgnoreCase("t"))
+        if (comando.startsWith("t") || comando.startsWith("T"))
         {
-            sensor1.tare();
+            int sensorIndex = comando.substring(1).toInt() - 1;
+            if (sensorIndex >= 0 && sensorIndex < numSensores)
+            {
+                sensores[sensorIndex].sensor.tare();
+                Serial.print("Sensor ");
+                Serial.print(sensorIndex + 1);
+                Serial.println(" zerado.");
+            }
+            else
+            {
+                Serial.println("ERRO: Sensor invalido (use t1-t4)");
+            }
         }
 
         //////////////////////////////////////////////////////////////////////////
-        // CALIBRAÇÃO COM PESO PADRÃO
+        // FATOR DE ESCALA (f[n] [fator] ou g[n])
         //////////////////////////////////////////////////////////////////////////
 
-        else if (comando.equalsIgnoreCase("c"))
+        else if (comando.startsWith("f") || comando.startsWith("F"))
         {
-            Serial.println("--------------------------------");
-            Serial.println("COLOQUE O PESO DE CALIBRACAO...");
-            Serial.println("--------------------------------");
+            // Formato "f[n] [fator]"
+            int espacoIndex = comando.indexOf(' ');
+            if (espacoIndex != -1)
+            {
+                int sensorIndex = comando.substring(1, espacoIndex).toInt() - 1;
+                float novoFator = comando.substring(espacoIndex + 1).toFloat();
 
-            delay(3000);
-
-            sensor1.calibra(pesoCalibracao1);
+                if (sensorIndex >= 0 && sensorIndex < numSensores)
+                {
+                    sensores[sensorIndex].sensor.setScale(novoFator);
+                    Serial.print("Sensor ");
+                    Serial.print(sensorIndex + 1);
+                    Serial.print(" fator definido: ");
+                    Serial.println(novoFator, 8);
+                }
+                else
+                {
+                    Serial.println("ERRO: Sensor invalido (use f[n] [fator])");
+                }
+            }
+        }
+        else if (comando.startsWith("g") || comando.startsWith("G"))
+        {
+            int sensorIndex = comando.substring(1).toInt() - 1;
+            if (sensorIndex >= 0 && sensorIndex < numSensores)
+            {
+                Serial.print("Sensor ");
+                Serial.print(sensorIndex + 1);
+                Serial.print(" fator: ");
+                Serial.println(sensores[sensorIndex].sensor.getScale(), 8);
+            }
+            else
+            {
+                Serial.println("ERRO: Sensor invalido (use g[n])");
+            }
         }
 
         //////////////////////////////////////////////////////////////////////////
-        // CALIBRAÇÃO COM PESO INFORMADO
+        // CALIBRAÇÃO COM PESO PADRÃO (c1, c2, c3, c4)
+        //////////////////////////////////////////////////////////////////////////
+
+        else if (comando.length() == 2 && (comando.startsWith("c") || comando.startsWith("C")))
+        {
+            int sensorIndex = comando.substring(1).toInt() - 1;
+            if (sensorIndex >= 0 && sensorIndex < numSensores)
+            {
+                Serial.println("--------------------------------");
+                Serial.print("COLOQUE O PESO DE CALIBRACAO NO SENSOR ");
+                Serial.println(sensorIndex + 1);
+                Serial.println("--------------------------------");
+
+                delay(3000);
+
+                sensores[sensorIndex].sensor.calibra(pesoCalibracao1);
+            }
+            else
+            {
+                Serial.println("ERRO: Sensor invalido (use c1-c4)");
+            }
+        }
+
+        //////////////////////////////////////////////////////////////////////////
+        // CALIBRAÇÃO COM PESO INFORMADO (c1 5000, c2 5000, ...)
         //////////////////////////////////////////////////////////////////////////
 
         else if (comando.startsWith("c") || comando.startsWith("C"))
         {
-            String pesoTexto = comando.substring(1);
-
-            float pesoConhecido = pesoTexto.toFloat();
-
-            if (pesoConhecido <= 0)
+            // Espera formato "c[n] [peso]"
+            int espacoIndex = comando.indexOf(' ');
+            if (espacoIndex != -1)
             {
-                Serial.println("ERRO: peso invalido");
+                int sensorIndex = comando.substring(1, espacoIndex).toInt() - 1;
+                float pesoConhecido = comando.substring(espacoIndex + 1).toFloat();
 
-                return;
+                if (sensorIndex >= 0 && sensorIndex < numSensores && pesoConhecido > 0)
+                {
+                    Serial.println("--------------------------------");
+                    Serial.print("AGUARDE ESTABILIZAR SENSOR ");
+                    Serial.println(sensorIndex + 1);
+                    Serial.println("--------------------------------");
+
+                    delay(3000);
+
+                    sensores[sensorIndex].sensor.calibra(pesoConhecido);
+                }
+                else
+                {
+                    Serial.println("ERRO: Formato invalido ou peso/sensor invalido (use c[n] [peso])");
+                }
             }
-
-            Serial.println("--------------------------------");
-            Serial.println("AGUARDE ESTABILIZAR...");
-            Serial.println("--------------------------------");
-
-            delay(3000);
-
-            sensor1.calibra(pesoConhecido);
+            else
+            {
+                Serial.println("ERRO: Formato invalido (use c[n] [peso])");
+            }
         }
     }
 }
