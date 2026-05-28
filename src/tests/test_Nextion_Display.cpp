@@ -6,7 +6,7 @@
 // TIMER UPDATE DISPLAY
 // ======================================================
 unsigned long tDisplay = 0;
-float pesoCalibracao1 = 78000.0f; // PESO CALIBRAÇÃO
+float pesoCalibracao1 = 84000.0f; // PESO CALIBRAÇÃO
 
 // ======================================================
 // SETUP

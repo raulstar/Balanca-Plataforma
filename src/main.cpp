@@ -22,7 +22,7 @@
 uint32_t displayUpdateInterval = 5000;
 HardwareSerial SerialPort(2);
 SoftwareSerial impressoraSerial(4, 5);
-float pesoCalibracao1 = 78000.0f;
+float pesoCalibracao1 = 84000.0f;
 extern volatile bool imprimir;
 
 void taskUpdateDisplay(void *pvParameters)
