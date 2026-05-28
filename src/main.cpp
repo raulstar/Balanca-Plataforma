@@ -32,6 +32,8 @@ SemaphoreHandle_t xSensorMutex = nullptr;
 TaskHandle_t hTareTask = nullptr;
 // Task handle for serial processing task
 TaskHandle_t hSerialTask = nullptr;
+// Task handle for Nextion display commands task
+TaskHandle_t hNextionTask = nullptr;
 
 void taskUpdateDisplay(void *pvParameters)
 {
@@ -173,6 +175,24 @@ void taskProcessarImpressao(void *pvParameters)
  * - Calibration commands (c)
  * All sensor access is protected with xSensorMutex.
  */
+// ---------------------------------------------------------------------------
+// Asynchronous Nextion Display Commands Task
+// ---------------------------------------------------------------------------
+/**
+ * This task continuously processes commands from the Nextion display.
+ * It monitors the display's serial communication independently of the main
+ * loop, ensuring timely response to user interactions on the touch screen.
+ */
+void taskProcessNextionCommands(void *pvParameters)
+{
+  for (;;) {
+    // Process any pending commands from Nextion display
+    processNextionCommands();
+    // Yield to other tasks
+    vTaskDelay(pdMS_TO_TICKS(50));
+  }
+}
+
 void taskProcessarSerial(void *pvParameters)
 {
   static String bufferCmd = "";
@@ -365,6 +385,8 @@ void setup()
   xTaskCreate(taskTareAllSensors, "TareAllSensors", 4096, NULL, 2, &hTareTask);
   // Create asynchronous serial processing task
   xTaskCreate(taskProcessarSerial, "ProcessarSerial", 4096, NULL, 2, &hSerialTask);
+  // Create asynchronous Nextion display commands task
+  xTaskCreate(taskProcessNextionCommands, "ProcessNextion", 4096, NULL, 1, &hNextionTask);
   xTaskCreate(taskUpdateDisplay, "UpdateDisplay", 4096, NULL, 1, NULL);
   xTaskCreate(taskProcessarImpressao, "ProcessarImpressao", 4096, NULL, 1, NULL);
   sensor1.tare();
@@ -385,7 +407,6 @@ void setup()
 void loop()
 {
   handleWeb();
-  processNextionCommands();
   pesoAtual = 0.0f;
   // Protect read access to sensor objects
   if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
