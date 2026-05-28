@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include "../../include/config.hpp"
+#include "../../lib/HX711_Module/HX711_Module.hpp"
 
 // ======================================================
 // CONFIGURAÇÃO UART NEXTION
@@ -10,9 +11,6 @@
 #define NEXTION_TX 26
 
 extern HardwareSerial NEXTION_SERIAL;
-
-extern SensorConfig sensores[];
-extern int numSensores;
 
 // ======================================================
 // VARIÁVEIS GLOBAIS
@@ -30,7 +28,11 @@ extern volatile bool imprimir;
 extern String tdata;
 extern String thora;
 extern String tbateria;
-
+extern String bplatafor1;
+extern String bplatafor2;
+extern String bplatafor3;
+extern String bplatafor4;
+extern int indexCalib;
 // ======================================================
 // PLACA
 // ======================================================
@@ -62,6 +64,8 @@ extern int peixo;
 // ======================================================
 void initNextion();
 
+void setSensores(SensorConfig* sens, int num);
+
 void updateDisplay();
 
 void processNextionCommands();
@@ -77,7 +81,5 @@ void handle_bsalvar();
 void handle_blimpar();
 
 void handle_bgeneric(String cmd);
-
-void processNextionCommands();
 
 void handle_bcalib(String cmd);

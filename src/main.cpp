@@ -6,6 +6,7 @@
 #include "Nextion_Display.hpp"
 #include "HX711_Module.hpp"
 #include "Thermal_Printer.hpp"
+#include <SoftwareSerial.h>
 #include "config.hpp"
 
 #define M0 19
@@ -20,9 +21,9 @@
 
 uint32_t displayUpdateInterval = 5000;
 HardwareSerial SerialPort(2);
-HardwareSerial impressoraSerial(3);
+SoftwareSerial impressoraSerial(4, 5);
 float pesoCalibracao1 = 78000.0f;
-volatile bool imprimir;
+extern volatile bool imprimir;
 
 void taskUpdateDisplay(void *pvParameters)
 {
@@ -282,7 +283,7 @@ void setup()
   m1;
   m0;
   Serial.begin(115200);
-  iniciarImpressora(impressoraSerial, 9600, 4, 5);
+  iniciarImpressora(impressoraSerial, 9600);
 
   SerialPort.begin(9600, SERIAL_8N1, 16, 17);
   Serial.println("\n=== SISTEMA BALANCA ===");
@@ -296,6 +297,7 @@ void setup()
   initWiFi();
   initWebServer();
   initNextion();
+  setSensores(sensores, numSensores);
   xTaskCreate(taskUpdateDisplay, "UpdateDisplay", 4096, NULL, 1, NULL);
   xTaskCreate(taskProcessarImpressao, "ProcessarImpressao", 4096, NULL, 1, NULL);
   sensor1.tare();

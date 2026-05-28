@@ -3,25 +3,20 @@
 
 #include <Arduino.h>
 #include "Adafruit_Thermal.h"
+#include <SoftwareSerial.h>
 
 // ===========================
 // VARIÁVEIS GLOBAIS
 // ===========================
 
 extern String placaVeiculo;
-
 extern String dataRegistro;
-
 extern String tdata;
 extern String thora;
-
 extern int contadorRegistro;
-
 extern float ttotal;
 extern float ttara;
-
 extern int eixo;
-
 extern int peixo1;
 extern int peixo2;
 extern int peixo3;
@@ -50,10 +45,8 @@ struct DadosImpressao {
 // ===========================
 
 void iniciarImpressora(
-    HardwareSerial &serial,
-    int baudrate,
-    int rxPin,
-    int txPin
+    SoftwareSerial &serial,
+    int baudrate
 );
 
 void imprimirRegistro(DadosImpressao dados);

@@ -4,6 +4,15 @@
 // SERIAL NEXTION
 // ======================================================
 HardwareSerial NEXTION_SERIAL(1);
+SensorConfig* _sensores = nullptr;
+int _numSensores = 0;
+volatile bool imprimir = false;
+
+void setSensores(SensorConfig* sens, int num) {
+    _sensores = sens;
+    _numSensores = num;
+}
+
 
 // ======================================================
 // VARIÁVEIS GLOBAIS
@@ -16,6 +25,11 @@ bool zero = false;
 String tdata = "";
 String thora = "";
 String tbateria = "90%";
+String bplatafor1;
+String bplatafor2;
+String bplatafor3;
+String bplatafor4;
+int indexCalib;
 
 String tplaca = "";
 
@@ -47,7 +61,6 @@ int peixo3;
 int peixo4;
 int peixo5;
 int peixo6;
-
 
 // ======================================================
 // ENVIA TEXTO PARA NEXTION
@@ -102,11 +115,15 @@ void updateDisplay()
         last_tplaca = tplaca;
     }
 
+    
+
     // Sensores
-    for (int i = 0; i < numSensores; i++)
-    {
-        String objName = "tPeso" + String(i + 1);
-        setNextionText(objName, String(sensores[i].sensor->getKg(), 1));
+    if (_sensores != nullptr) {
+        for (int i = 0; i < _numSensores; i++)
+        {
+            String objName = "tPeso" + String(i + 1);
+            setNextionText(objName, String(_sensores[i].sensor->getKg(), 1));
+        }
     }
 
     // Peso Atual
@@ -149,8 +166,8 @@ void processNextionCommands()
 
         command.trim();
 
-        //Serial.print("Comando Recebido: ");
-        //Serial.println(command);
+        // Serial.print("Comando Recebido: ");
+        // Serial.println(command);
 
         if (command.indexOf("bsom") >= 0)
         {
@@ -172,10 +189,30 @@ void processNextionCommands()
         {
             handle_bcalib(command);
         }
-         else if (command.indexOf("imprimi") >= 0)
+        else if (command.indexOf("imprimi") >= 0)
         {
             imprimir = true;
             Serial.println("Evento [imprimir]");
+        }
+         else if (command.indexOf("bplatafor1") >= 0)
+        {
+           indexCalib = 1;
+            Serial.println("Evento [bplatafor1]");
+        }
+        else if (command.indexOf("bplatafor2") >= 0)
+        {
+           indexCalib = 2;
+            Serial.println("Evento [bplatafor2]");
+        }
+        else if (command.indexOf("bplatafor3") >= 0)
+        {
+           indexCalib = 3;
+            Serial.println("Evento [bplatafor3]");
+        }
+        else if (command.indexOf("bplatafor4") >= 0)
+        {
+           indexCalib = 4;
+            Serial.println("Evento [bplatafor4]");
         }
         else if (command.indexOf("calib") >= 0)
         {
@@ -189,7 +226,7 @@ void processNextionCommands()
 
                 pesoCalibracao1 = valorStr.toFloat();
 
-                Serial.print("Peso de calibração 1: ");
+                Serial.print("Peso de calibração " + String(indexCalib) + ": ");
                 Serial.println(pesoCalibracao1, 2);
                 calibrando1 = true;
             }
@@ -209,7 +246,7 @@ void processNextionCommands()
 
             Serial.print("Placa recebida: ");
             Serial.println(placaVeiculo);
-           // handle_bsalvar();
+            // handle_bsalvar();
         }
         else if (command.startsWith("thora:"))
         {
@@ -227,7 +264,7 @@ void processNextionCommands()
             Serial.println(thora);
             // handle_bsalvar();
         }
-         else if (command.startsWith("tdata:"))
+        else if (command.startsWith("tdata:"))
         {
             Serial.println("Evento [tdata]");
 
@@ -274,7 +311,6 @@ void handle_bsom()
         ttotal += pesoAtual;
         eixo++;
         peixo = pesoAtual;
-
     }
 
     setNextionText("ttotal", String(ttotal, 1));
@@ -344,7 +380,6 @@ void handle_bsalvar()
     Serial.print("ttara");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][5]);
-
 
     setNextionText(objTN[contadorRegistro], tabela[contadorRegistro][0]);
 

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "Thermal_Printer.hpp"
+#include <SoftwareSerial.h>
 
 
 // ===========================
@@ -31,7 +32,7 @@ int peixo6;
 // SERIAL DA IMPRESSORA
 // ===========================
 
-HardwareSerial impressoraSerial(0);
+SoftwareSerial impressoraSerial(4, 5);
 
 // ===========================
 
@@ -45,9 +46,7 @@ void setup() {
 
     iniciarImpressora(
         impressoraSerial,
-        9600,
-        4,
-        5
+        9600
     );
 
     // ===========================

@@ -13,13 +13,11 @@ static Adafruit_Thermal *printer = nullptr;
 // ===========================
 
 void iniciarImpressora(
-    HardwareSerial &serial,
-    int baudrate,
-    int rxPin,
-    int txPin)
+    SoftwareSerial &serial,
+    int baudrate)
 {
 
-    serial.begin(baudrate, SERIAL_8N1, rxPin, txPin);
+    serial.begin(baudrate);
 
     printer = new Adafruit_Thermal(&serial);
 
