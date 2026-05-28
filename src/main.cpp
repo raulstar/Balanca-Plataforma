@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/semphr.h>
 
 #include "WiFi_Server.hpp"
 #include "Nextion_Display.hpp"
@@ -25,6 +26,13 @@ SoftwareSerial impressoraSerial(4, 5);
 float pesoCalibracao1 = 84000.0f;
 extern volatile bool imprimir;
 
+// Mutex to protect sensor array access
+SemaphoreHandle_t xSensorMutex = nullptr;
+// Task handle for tare task
+TaskHandle_t hTareTask = nullptr;
+// Task handle for serial processing task
+TaskHandle_t hSerialTask = nullptr;
+
 void taskUpdateDisplay(void *pvParameters)
 {
   TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -41,8 +49,6 @@ void taskUpdateDisplay(void *pvParameters)
   }
 }
 
-/////////////////////////////////////////////////////////////////////////////
-
 SensorBalanca sensor1(SerialPort, "S1");
 SensorBalanca sensor2(SerialPort, "S2");
 SensorBalanca sensor3(SerialPort, "S3");
@@ -55,13 +61,34 @@ SensorConfig sensores[] = {
     {&sensor4, "S4"}};
 int numSensores = sizeof(sensores) / sizeof(sensores[0]);
 
+// Legacy wrapper – now just notifies the async tare task.
 void tareAllSensors()
 {
-  for (int i = 0; i < numSensores; i++)
-  {
-    sensores[i].sensor->tare();
+  if (hTareTask) {
+    // Notify the tare task to run once.
+    xTaskNotifyGive(hTareTask);
   }
-  Serial.println("Todas as balanças zeradas.");
+}
+
+// ---------------------------------------------------------------------------
+// Definition of the asynchronous tare task (implemented after sensor array is
+// defined so that `sensores` and `numSensores` are visible).
+// ---------------------------------------------------------------------------
+void taskTareAllSensors(void *pvParameters)
+{
+  for (;;) {
+    // Wait for a notification from tareAllSensors()
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    // Protect the sensor array while performing tare
+    if (xSensorMutex && xSemaphoreTake(xSensorMutex, portMAX_DELAY) == pdTRUE) {
+      for (int i = 0; i < numSensores; ++i) {
+        sensores[i].sensor->tare();
+      }
+      xSemaphoreGive(xSensorMutex);
+      ESP_LOGI("TareTask", "Todas as balanças zeradas (async).");
+    }
+  }
 }
 
 void handleZero() // FUNÇÕES WEB
@@ -135,144 +162,175 @@ void taskProcessarImpressao(void *pvParameters)
   }
 }
 
-/////////////////////////////////////////////////////////////////////////////
-
-void processarSerial()
+// ---------------------------------------------------------------------------
+// Asynchronous Serial Command Processing Task
+// ---------------------------------------------------------------------------
+/**
+ * This task continuously monitors the Serial console (USB debug port) for
+ * commands and processes them independently of the main loop. It handles:
+ * - Tare commands (t, t1-t4)
+ * - Scale factor commands (f, g)
+ * - Calibration commands (c)
+ * All sensor access is protected with xSensorMutex.
+ */
+void taskProcessarSerial(void *pvParameters)
 {
+  static String bufferCmd = "";
 
-  if (Serial.available())
-  {
-    String comando = Serial.readStringUntil('\n');
-
-    comando.trim();
-
-    //////////////////////////////////////////////////////////////////////////
-    // TARA (t1-t4)
-    //////////////////////////////////////////////////////////////////////////
-
-    if (comando.startsWith("t") || comando.startsWith("T"))
+  for (;;) {
+    // Check for incoming serial data from debug console
+    if (Serial.available())
     {
-      int sensorIndex = comando.substring(1).toInt() - 1;
-      if (sensorIndex == -1) // Tare all (e.g. "t" or "t0")
-      {
-        tareAllSensors();
-      }
-      else if (sensorIndex >= 0 && sensorIndex < numSensores)
-      {
-        sensores[sensorIndex].sensor->tare();
-        Serial.print("Sensor ");
-        Serial.print(sensorIndex + 1);
-        Serial.println(" zerado.");
-      }
-      else
-      {
-        Serial.println("ERRO: Sensor invalido (use t0 para todos ou t1-t4)");
-      }
-    }
+      String comando = Serial.readStringUntil('\n');
+      comando.trim();
 
-    //////////////////////////////////////////////////////////////////////////
-    // FATOR DE ESCALA (f[n] [fator] ou g[n])
-    //////////////////////////////////////////////////////////////////////////
+      if (comando.length() == 0) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+        continue;
+      }
 
-    else if (comando.startsWith("f") || comando.startsWith("F"))
-    {
-      // Formato "f[n] [fator]"
-      int espacoIndex = comando.indexOf(' ');
-      if (espacoIndex != -1)
+      //////////////////////////////////////////////////////////////////////////
+      // TARA (t1-t4 or t for all)
+      //////////////////////////////////////////////////////////////////////////
+      if (comando.startsWith("t") || comando.startsWith("T"))
       {
-        int sensorIndex = comando.substring(1, espacoIndex).toInt() - 1;
-        float novoFator = comando.substring(espacoIndex + 1).toFloat();
-
-        if (sensorIndex >= 0 && sensorIndex < numSensores)
+        int sensorIndex = comando.substring(1).toInt() - 1;
+        if (sensorIndex == -1) // Tare all (e.g. "t" or "t0")
         {
-          sensores[sensorIndex].sensor->setScale(novoFator);
-          Serial.print("Sensor ");
-          Serial.print(sensorIndex + 1);
-          Serial.print(" fator definido: ");
-          Serial.println(novoFator, 8);
+          tareAllSensors();
+        }
+        else if (sensorIndex >= 0 && sensorIndex < numSensores)
+        {
+          if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            sensores[sensorIndex].sensor->tare();
+            xSemaphoreGive(xSensorMutex);
+            Serial.print("Sensor ");
+            Serial.print(sensorIndex + 1);
+            Serial.println(" zerado.");
+          }
         }
         else
         {
-          Serial.println("ERRO: Sensor invalido (use f[n] [fator])");
+          Serial.println("ERRO: Sensor invalido (use t0 para todos ou t1-t4)");
         }
       }
-    }
-    else if (comando.startsWith("g") || comando.startsWith("G"))
-    {
-      int sensorIndex = comando.substring(1).toInt() - 1;
-      if (sensorIndex >= 0 && sensorIndex < numSensores)
+
+      //////////////////////////////////////////////////////////////////////////
+      // FATOR DE ESCALA (f[n] [fator] ou g[n])
+      //////////////////////////////////////////////////////////////////////////
+      else if (comando.startsWith("f") || comando.startsWith("F"))
       {
-        Serial.print("Sensor ");
-        Serial.print(sensorIndex + 1);
-        Serial.print(" fator: ");
-        Serial.println(sensores[sensorIndex].sensor->getScale(), 8);
+        int espacoIndex = comando.indexOf(' ');
+        if (espacoIndex != -1)
+        {
+          int sensorIndex = comando.substring(1, espacoIndex).toInt() - 1;
+          float novoFator = comando.substring(espacoIndex + 1).toFloat();
+
+          if (sensorIndex >= 0 && sensorIndex < numSensores)
+          {
+            if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+              sensores[sensorIndex].sensor->setScale(novoFator);
+              xSemaphoreGive(xSensorMutex);
+              Serial.print("Sensor ");
+              Serial.print(sensorIndex + 1);
+              Serial.print(" fator definido: ");
+              Serial.println(novoFator, 8);
+            }
+          }
+          else
+          {
+            Serial.println("ERRO: Sensor invalido (use f[n] [fator])");
+          }
+        }
       }
-      else
+      else if (comando.startsWith("g") || comando.startsWith("G"))
       {
-        Serial.println("ERRO: Sensor invalido (use g[n])");
+        int sensorIndex = comando.substring(1).toInt() - 1;
+        if (sensorIndex >= 0 && sensorIndex < numSensores)
+        {
+          if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            Serial.print("Sensor ");
+            Serial.print(sensorIndex + 1);
+            Serial.print(" fator: ");
+            Serial.println(sensores[sensorIndex].sensor->getScale(), 8);
+            xSemaphoreGive(xSensorMutex);
+          }
+        }
+        else
+        {
+          Serial.println("ERRO: Sensor invalido (use g[n])");
+        }
       }
-    }
 
-    //////////////////////////////////////////////////////////////////////////
-    // CALIBRAÇÃO COM PESO PADRÃO (c1, c2, c3, c4)
-    //////////////////////////////////////////////////////////////////////////
-
-    else if (comando.length() == 2 && (comando.startsWith("c") || comando.startsWith("C")))
-    {
-      int sensorIndex = comando.substring(1).toInt() - 1;
-      if (sensorIndex >= 0 && sensorIndex < numSensores)
+      //////////////////////////////////////////////////////////////////////////
+      // CALIBRAÇÃO COM PESO PADRÃO (c1, c2, c3, c4)
+      //////////////////////////////////////////////////////////////////////////
+      else if (comando.length() == 2 && (comando.startsWith("c") || comando.startsWith("C")))
       {
-        Serial.println("--------------------------------");
-        Serial.print("COLOQUE O PESO DE CALIBRACAO NO SENSOR ");
-        Serial.println(sensorIndex + 1);
-        Serial.println("--------------------------------");
-
-        delay(3000);
-
-        sensores[sensorIndex].sensor->calibra(pesoCalibracao1);
-      }
-      else
-      {
-        Serial.println("ERRO: Sensor invalido (use c1-c4)");
-      }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    // CALIBRAÇÃO COM PESO INFORMADO (c1 5000, c2 5000, ...)
-    //////////////////////////////////////////////////////////////////////////
-
-    else if (comando.startsWith("c") || comando.startsWith("C"))
-    {
-      // Espera formato "c[n] [peso]"
-      int espacoIndex = comando.indexOf(' ');
-      if (espacoIndex != -1)
-      {
-        int sensorIndex = comando.substring(1, espacoIndex).toInt() - 1;
-        float pesoConhecido = comando.substring(espacoIndex + 1).toFloat();
-
-        if (sensorIndex >= 0 && sensorIndex < numSensores && pesoConhecido > 0)
+        int sensorIndex = comando.substring(1).toInt() - 1;
+        if (sensorIndex >= 0 && sensorIndex < numSensores)
         {
           Serial.println("--------------------------------");
-          Serial.print("AGUARDE ESTABILIZAR SENSOR ");
+          Serial.print("COLOQUE O PESO DE CALIBRACAO NO SENSOR ");
           Serial.println(sensorIndex + 1);
           Serial.println("--------------------------------");
 
-          delay(3000);
+          vTaskDelay(pdMS_TO_TICKS(3000));
 
-          sensores[sensorIndex].sensor->calibra(pesoConhecido);
+          if (xSensorMutex && xSemaphoreTake(xSensorMutex, portMAX_DELAY) == pdTRUE) {
+            sensores[sensorIndex].sensor->calibra(pesoCalibracao1);
+            xSemaphoreGive(xSensorMutex);
+          }
         }
         else
         {
-          Serial.println("ERRO: Formato invalido ou peso/sensor invalido (use c[n] [peso])");
+          Serial.println("ERRO: Sensor invalido (use c1-c4)");
         }
       }
-      else
+
+      //////////////////////////////////////////////////////////////////////////
+      // CALIBRAÇÃO COM PESO INFORMADO (c1 5000, c2 5000, ...)
+      //////////////////////////////////////////////////////////////////////////
+      else if (comando.startsWith("c") || comando.startsWith("C"))
       {
-        Serial.println("ERRO: Formato invalido (use c[n] [peso])");
+        int espacoIndex = comando.indexOf(' ');
+        if (espacoIndex != -1)
+        {
+          int sensorIndex = comando.substring(1, espacoIndex).toInt() - 1;
+          float pesoConhecido = comando.substring(espacoIndex + 1).toFloat();
+
+          if (sensorIndex >= 0 && sensorIndex < numSensores && pesoConhecido > 0)
+          {
+            Serial.println("--------------------------------");
+            Serial.print("AGUARDE ESTABILIZAR SENSOR ");
+            Serial.println(sensorIndex + 1);
+            Serial.println("--------------------------------");
+
+            vTaskDelay(pdMS_TO_TICKS(3000));
+
+            if (xSensorMutex && xSemaphoreTake(xSensorMutex, portMAX_DELAY) == pdTRUE) {
+              sensores[sensorIndex].sensor->calibra(pesoConhecido);
+              xSemaphoreGive(xSensorMutex);
+            }
+          }
+          else
+          {
+            Serial.println("ERRO: Formato invalido ou peso/sensor invalido (use c[n] [peso])");
+          }
+        }
+        else
+        {
+          Serial.println("ERRO: Formato invalido (use c[n] [peso])");
+        }
       }
+    }
+    else {
+      // No data available, yield to other tasks
+      vTaskDelay(pdMS_TO_TICKS(50));
     }
   }
 }
+
 /////////////////////////////////////////////////////////////////////////////
 // SETUP
 void setup()
@@ -298,6 +356,15 @@ void setup()
   initWebServer();
   initNextion();
   setSensores(sensores, numSensores);
+  // Create mutex for sensor array protection
+  xSensorMutex = xSemaphoreCreateMutex();
+  if (xSensorMutex == nullptr) {
+    ESP_LOGE("Setup", "Failed to create sensor mutex");
+  }
+  // Create asynchronous tare task (priority higher than print task)
+  xTaskCreate(taskTareAllSensors, "TareAllSensors", 4096, NULL, 2, &hTareTask);
+  // Create asynchronous serial processing task
+  xTaskCreate(taskProcessarSerial, "ProcessarSerial", 4096, NULL, 2, &hSerialTask);
   xTaskCreate(taskUpdateDisplay, "UpdateDisplay", 4096, NULL, 1, NULL);
   xTaskCreate(taskProcessarImpressao, "ProcessarImpressao", 4096, NULL, 1, NULL);
   sensor1.tare();
@@ -320,12 +387,16 @@ void loop()
   handleWeb();
   processNextionCommands();
   pesoAtual = 0.0f;
-  for (int i = 0; i < numSensores; i++)
-  {
-    if (sensores[i].sensor->isReady())
+  // Protect read access to sensor objects
+  if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+    for (int i = 0; i < numSensores; i++)
     {
-      pesoAtual += sensores[i].sensor->getKg();
+      if (sensores[i].sensor->isReady())
+      {
+        pesoAtual += sensores[i].sensor->getKg();
+      }
     }
+    xSemaphoreGive(xSensorMutex);
   }
 
   if (calibrando1)
@@ -350,19 +421,23 @@ void loop()
         char c = SerialPort.read();
         if (c == '\n')
         {
-            for (int i = 0; i < numSensores; i++)
-            {
+            // Protect sensor processing with mutex
+            if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+              for (int i = 0; i < numSensores; i++)
+              {
                 if (sensores[i].sensor->processaString(bufferSerial))
                 {
-                    Serial.print(sensores[i].prefixo + " RAW: ");
-                    Serial.print(sensores[i].sensor->getRaw(), 3);
+                  Serial.print(sensores[i].prefixo + " RAW: ");
+                  Serial.print(sensores[i].sensor->getRaw(), 3);
 
-                    Serial.print(" | " + sensores[i].prefixo + " KG: ");
-                    Serial.print(sensores[i].sensor->getKg(), 3);
-                    Serial.print(" | Peso Atual: ");
-                    Serial.println(pesoAtual, 3);
-                    Serial.println();
+                  Serial.print(" | " + sensores[i].prefixo + " KG: ");
+                  Serial.print(sensores[i].sensor->getKg(), 3);
+                  Serial.print(" | Peso Atual: ");
+                  Serial.println(pesoAtual, 3);
+                  Serial.println();
                 }
+              }
+              xSemaphoreGive(xSensorMutex);
             }
             bufferSerial = "";
         }
@@ -371,8 +446,6 @@ void loop()
             bufferSerial += c;
         }
     }
-
-  processarSerial();
 
   delay(5);
 }
