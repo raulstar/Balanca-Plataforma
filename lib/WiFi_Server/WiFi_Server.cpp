@@ -6,9 +6,9 @@
 
 WebServer server(80);
 
-const char *ssid = "Revlo_Claro";
-const char *password = "Revlo@2025";
-int tentativas = 0;
+const char *ssid = "raulstar";
+const char *password = "72989400";
+int tentativas = 2;
 const int maxTentativas = 10;
 
 bool ledState = false;
