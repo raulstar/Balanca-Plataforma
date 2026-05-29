@@ -34,6 +34,8 @@ TaskHandle_t hTareTask = nullptr;
 TaskHandle_t hSerialTask = nullptr;
 // Task handle for Nextion display commands task
 TaskHandle_t hNextionTask = nullptr;
+// Task handle for SerialPort reading task
+TaskHandle_t hPortTask = nullptr;
 
 void taskUpdateDisplay(void *pvParameters)
 {
@@ -189,6 +191,48 @@ void taskProcessNextionCommands(void *pvParameters)
     // Process any pending commands from Nextion display
     processNextionCommands();
     // Yield to other tasks
+    vTaskDelay(pdMS_TO_TICKS(50));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Asynchronous SerialPort Reader Task
+// ---------------------------------------------------------------------------
+/**
+ * This task continuously reads from the secondary hardware SerialPort (UART2).
+ * It builds a line buffer until a newline character is received, then processes
+ * the string for each sensor. Access to the shared sensor array is protected
+ * with the xSensorMutex to avoid race conditions with other tasks.
+ */
+void taskSerialPortReader(void *pvParameters)
+{
+  static String bufferSerial;
+  for (;;) {
+    // Read all available characters
+    while (SerialPort.available()) {
+      char c = SerialPort.read();
+      if (c == '\n') {
+        // Process completed line under mutex protection
+        if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+          for (int i = 0; i < numSensores; i++) {
+            if (sensores[i].sensor->processaString(bufferSerial)) {
+              Serial.print(sensores[i].prefixo + " RAW: ");
+              Serial.print(sensores[i].sensor->getRaw(), 3);
+              Serial.print(" | " + sensores[i].prefixo + " KG: ");
+              Serial.print(sensores[i].sensor->getKg(), 3);
+              Serial.print(" | Peso Atual: ");
+              Serial.println(pesoAtual, 3);
+              Serial.println();
+            }
+          }
+          xSemaphoreGive(xSensorMutex);
+        }
+        bufferSerial = "";
+      } else if (c != '\r') {
+        bufferSerial += c;
+      }
+    }
+    // No data available, yield to other tasks
     vTaskDelay(pdMS_TO_TICKS(50));
   }
 }
@@ -400,6 +444,8 @@ void setup()
   Serial.println("t -> Tara");
   Serial.println("========================");
   
+  // Create asynchronous SerialPort reading task
+  xTaskCreate(taskSerialPortReader, "SerialPortReader", 4096, NULL, 2, &hPortTask);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -436,37 +482,7 @@ void loop()
     // LEITURA SENSOR
     //////////////////////////////////////////////////////////////////////////
 
-    static String bufferSerial;
-   while (SerialPort.available())
-    {
-        char c = SerialPort.read();
-        if (c == '\n')
-        {
-            // Protect sensor processing with mutex
-            if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
-              for (int i = 0; i < numSensores; i++)
-              {
-                if (sensores[i].sensor->processaString(bufferSerial))
-                {
-                  Serial.print(sensores[i].prefixo + " RAW: ");
-                  Serial.print(sensores[i].sensor->getRaw(), 3);
-
-                  Serial.print(" | " + sensores[i].prefixo + " KG: ");
-                  Serial.print(sensores[i].sensor->getKg(), 3);
-                  Serial.print(" | Peso Atual: ");
-                  Serial.println(pesoAtual, 3);
-                  Serial.println();
-                }
-              }
-              xSemaphoreGive(xSensorMutex);
-            }
-            bufferSerial = "";
-        }
-        else if (c != '\r')
-        {
-            bufferSerial += c;
-        }
-    }
+    // SerialPort reading is now handled by taskSerialPortReader.
 
   delay(5);
 }
