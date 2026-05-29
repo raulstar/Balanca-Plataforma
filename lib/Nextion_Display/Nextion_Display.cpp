@@ -131,6 +131,8 @@ void updateDisplay()
     {
         setNextionText("tPeso", String(pesoAtual, 1));
         last_pesoAtual = pesoAtual;
+        Serial.print("Peso Atual no display: ");
+        Serial.println(pesoAtual, 1);
     }
 
     // Total

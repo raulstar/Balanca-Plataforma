@@ -39,6 +39,9 @@ SensorConfig sensores[] = {
 };
 const int numSensores = sizeof(sensores) / sizeof(sensores[0]);
 
+// Variável global que armazenará a soma dos valores (kg) de todos os sensores.
+float pesoAtual = 0.0f;
+
 /////////////////////////////////////////////////////////////////////////////
 // PESO CALIBRAÇÃO
 /////////////////////////////////////////////////////////////////////////////
@@ -93,11 +96,21 @@ void loop()
             {
                 if (sensores[i].sensor.processaString(bufferSerial))
                 {
+                    // Zera a soma a cada nova linha recebida
+                    pesoAtual = 0.0f;
+
                     Serial.print(sensores[i].prefixo + " RAW: ");
                     Serial.print(sensores[i].sensor.getRaw(), 3);
 
                     Serial.print(" | " + sensores[i].prefixo + " KG: ");
                     Serial.print(sensores[i].sensor.getKg(), 3);
+
+                    // Acumula o valor em kg para o total
+                    pesoAtual += sensores[i].sensor.getKg();
+
+                    // Imprime o total acumulado até o momento
+                    Serial.print(" | Total KG: ");
+                    Serial.print(pesoAtual, 3);
                     Serial.println();
                 }
             }

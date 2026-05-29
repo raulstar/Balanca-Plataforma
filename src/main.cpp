@@ -2,6 +2,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
+#include <cmath> // for fabs
 
 #include "WiFi_Server.hpp"
 #include "Nextion_Display.hpp"
@@ -75,10 +76,6 @@ void tareAllSensors()
   }
 }
 
-// ---------------------------------------------------------------------------
-// Definition of the asynchronous tare task (implemented after sensor array is
-// defined so that `sensores` and `numSensores` are visible).
-// ---------------------------------------------------------------------------
 void taskTareAllSensors(void *pvParameters)
 {
   for (;;) {
@@ -167,13 +164,22 @@ void taskProcessarImpressao(void *pvParameters)
   }
 }
 
-
 void taskProcessNextionCommands(void *pvParameters)
 {
   for (;;) {
     // Process any pending commands from Nextion display
     processNextionCommands();
     // Yield to other tasks
+    vTaskDelay(pdMS_TO_TICKS(50));
+  }
+}
+
+void taskHandleWeb(void *pvParameters)
+{
+  for (;;) {
+    // Process any pending HTTP client requests
+    handleWeb();
+    // Small delay to yield CPU time to other tasks
     vTaskDelay(pdMS_TO_TICKS(50));
   }
 }
@@ -188,17 +194,23 @@ void taskSerialPortReader(void *pvParameters)
       if (c == '\n') {
         // Process completed line under mutex protection
         if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+          // Compute sum of absolute sensor values for immediate display
+          float sumAbs = 0.0f;
           for (int i = 0; i < numSensores; i++) {
             if (sensores[i].sensor->processaString(bufferSerial)) {
               Serial.print(sensores[i].prefixo + " RAW: ");
               Serial.print(sensores[i].sensor->getRaw(), 3);
               Serial.print(" | " + sensores[i].prefixo + " KG: ");
               Serial.print(sensores[i].sensor->getKg(), 3);
+              // Update sum with absolute value
+              sumAbs += fabs(sensores[i].sensor->getKg());
               Serial.print(" | Peso Atual: ");
-              Serial.println(pesoAtual, 3);
+              Serial.println(sumAbs, 3);
               Serial.println();
             }
           }
+          // Update global pesoAtual with the computed sum
+          pesoAtual = sumAbs;
           xSemaphoreGive(xSensorMutex);
         }
         bufferSerial = "";
@@ -417,6 +429,8 @@ void setup()
   xTaskCreate(taskProcessNextionCommands, "ProcessNextion", 4096, NULL, 1, &hNextionTask);
   xTaskCreate(taskUpdateDisplay, "UpdateDisplay", 4096, NULL, 1, NULL);
   xTaskCreate(taskProcessarImpressao, "ProcessarImpressao", 4096, NULL, 1, NULL);
+  // Create asynchronous web handling task (priority 1)
+  xTaskCreate(taskHandleWeb, "HandleWeb", 4096, NULL, 1, NULL);
   sensor1.tare();
 
   server.on("/zero", handleZero);
@@ -436,7 +450,6 @@ void setup()
 // LOOP
 void loop()
 {
-  handleWeb();
   pesoAtual = 0.0f;
   // Protect read access to sensor objects
   if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
@@ -444,7 +457,8 @@ void loop()
     {
       if (sensores[i].sensor->isReady())
       {
-        pesoAtual += sensores[i].sensor->getKg();
+        // Use absolute value to ignore sign of individual sensor readings
+        pesoAtual += fabs(sensores[i].sensor->getKg());
       }
     }
     xSemaphoreGive(xSensorMutex);
@@ -468,5 +482,5 @@ void loop()
 
     // SerialPort reading is now handled by taskSerialPortReader.
 
-  delay(5);
+  //delay(2);
 }

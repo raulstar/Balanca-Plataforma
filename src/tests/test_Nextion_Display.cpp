@@ -48,7 +48,7 @@ void loop()
     // Atualiza display a cada 2 segundos
     // ==================================================
 
-    if (millis() - tDisplay > 2000)
+    if (millis() - tDisplay > 500)
     {
         // Simula alteração de peso
         pesoAtual += 1.5;
