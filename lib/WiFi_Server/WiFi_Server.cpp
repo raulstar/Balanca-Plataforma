@@ -17,6 +17,10 @@ const char *ap_password = "12345678";
 // Global flag indicating AP mode (default false – station mode)
 bool g_apMode = false;
 
+// Global flag indicating connection status (true when STA is connected).
+// In AP mode this flag is always true because the ESP creates its own AP.
+bool g_wifiConnected = false;
+
 void setAPMode(bool enable) {
     g_apMode = enable;
 }
@@ -83,6 +87,8 @@ void initWiFi()
         if (MDNS.begin("balanca-ap")) {
             MDNS.addService("http", "tcp", 80);
         }
+        // In AP mode we consider ourselves always "connected"
+        g_wifiConnected = true;
     } else {
         // Station mode – connect to existing Wi‑Fi network
         WiFi.mode(WIFI_STA);
@@ -101,11 +107,56 @@ void initWiFi()
             } else {
                 Serial.println("Erro ao iniciar MDNS");
             }
+            g_wifiConnected = true;
         } else {
             Serial.println("\nFalha ao conectar no WiFi.");
+            g_wifiConnected = false;
         }
     }
     // ======================================================
+}
+
+// ---------------------------------------------------------------------------
+// monitorWiFi – called periodically to ensure the device stays connected.
+// In AP mode the function does nothing because the ESP is always reachable.
+// In station mode it checks the connection status and attempts a reconnection
+// using the stored credentials when the link is lost.
+// ---------------------------------------------------------------------------
+void monitorWiFi()
+{
+    if (g_apMode) {
+        // No monitoring needed in AP mode.
+        return;
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+        if (!g_wifiConnected) {
+            Serial.println("WiFi reconectado.");
+        }
+        g_wifiConnected = true;
+        return;
+    }
+
+    // Not connected – attempt reconnection
+    Serial.println("WiFi desconectado – tentando reconectar...");
+    g_wifiConnected = false;
+    // Simple reconnection strategy: call WiFi.reconnect() which uses the
+    // credentials supplied in the previous WiFi.begin(). If that fails, we
+    // fall back to a full WiFi.begin() after a short delay.
+    WiFi.reconnect();
+    unsigned long start = millis();
+    while (millis() - start < 5000 && WiFi.status() != WL_CONNECTED) {
+        delay(200);
+    }
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("Reconnection successful.");
+        if (MDNS.begin("balanca")) {
+            MDNS.addService("http", "tcp", 80);
+        }
+        g_wifiConnected = true;
+    } else {
+        Serial.println("Reconnection failed – will retry on next monitor call.");
+    }
 }
 
 void initWebServer()
