@@ -25,6 +25,7 @@ HardwareSerial SerialPort(2);
 SoftwareSerial impressoraSerial(4, 5);
 float pesoCalibracao1 = 84000.0f;
 extern volatile bool imprimir;
+ bool useAP = true; // altere para false para usar modo estação
 
 // Mutex to protect sensor array access
 SemaphoreHandle_t xSensorMutex = nullptr;
@@ -166,25 +167,7 @@ void taskProcessarImpressao(void *pvParameters)
   }
 }
 
-// ---------------------------------------------------------------------------
-// Asynchronous Serial Command Processing Task
-// ---------------------------------------------------------------------------
-/**
- * This task continuously monitors the Serial console (USB debug port) for
- * commands and processes them independently of the main loop. It handles:
- * - Tare commands (t, t1-t4)
- * - Scale factor commands (f, g)
- * - Calibration commands (c)
- * All sensor access is protected with xSensorMutex.
- */
-// ---------------------------------------------------------------------------
-// Asynchronous Nextion Display Commands Task
-// ---------------------------------------------------------------------------
-/**
- * This task continuously processes commands from the Nextion display.
- * It monitors the display's serial communication independently of the main
- * loop, ensuring timely response to user interactions on the touch screen.
- */
+
 void taskProcessNextionCommands(void *pvParameters)
 {
   for (;;) {
@@ -195,15 +178,6 @@ void taskProcessNextionCommands(void *pvParameters)
   }
 }
 
-// ---------------------------------------------------------------------------
-// Asynchronous SerialPort Reader Task
-// ---------------------------------------------------------------------------
-/**
- * This task continuously reads from the secondary hardware SerialPort (UART2).
- * It builds a line buffer until a newline character is received, then processes
- * the string for each sensor. Access to the shared sensor array is protected
- * with the xSensorMutex to avoid race conditions with other tasks.
- */
 void taskSerialPortReader(void *pvParameters)
 {
   static String bufferSerial;
@@ -415,11 +389,21 @@ void setup()
   Serial.println("c -> Calibrar");
 
   Serial.println("========================");
-
+  setAPMode(useAP);
   initWiFi();
   initWebServer();
   initNextion();
   setSensores(sensores, numSensores);
+  if (useAP) {
+        Serial.print("AP ativo – SSID: ");
+        Serial.println("Balanca_AP");
+        Serial.print("IP: ");
+        Serial.println(WiFi.softAPIP());
+    } else {
+        Serial.print("Conectado, IP: ");
+        Serial.println(WiFi.localIP());
+    }
+
   // Create mutex for sensor array protection
   xSensorMutex = xSemaphoreCreateMutex();
   if (xSensorMutex == nullptr) {
