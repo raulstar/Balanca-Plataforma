@@ -6,8 +6,20 @@
 
 WebServer server(80);
 
-const char *ssid = "raulstar";
-const char *password = "72989400";
+// Default credentials for station mode (client)
+const char *sta_ssid = "raulstar";
+const char *sta_password = "72989400";
+
+// Credentials for AP mode – can be changed via setAPMode if needed
+const char *ap_ssid = "Balanca_AP";
+const char *ap_password = "12345678";
+
+// Global flag indicating AP mode (default false – station mode)
+bool g_apMode = false;
+
+void setAPMode(bool enable) {
+    g_apMode = enable;
+}
 int tentativas = 2;
 const int maxTentativas = 10;
 
@@ -53,38 +65,47 @@ void handlePeso()
 
 void initWiFi()
 {
-    WiFi.begin(ssid, password);
-
-    while (WiFi.status() != WL_CONNECTED && tentativas < maxTentativas)
-    {
-        delay(500);
-        Serial.print(".");
-        tentativas++;
+    if (g_apMode) {
+        // Start Access Point mode
+        Serial.println("Iniciando modo Access Point...");
+        WiFi.mode(WIFI_AP);
+        bool result = WiFi.softAP(ap_ssid, ap_password);
+        if (result) {
+            Serial.println("AP iniciado com sucesso.");
+            Serial.print("SSID: ");
+            Serial.println(ap_ssid);
+            Serial.print("IP: ");
+            Serial.println(WiFi.softAPIP());
+        } else {
+            Serial.println("Falha ao iniciar AP.");
+        }
+        // MDNS can also be started for AP if desired
+        if (MDNS.begin("balanca-ap")) {
+            MDNS.addService("http", "tcp", 80);
+        }
+    } else {
+        // Station mode – connect to existing Wi‑Fi network
+        WiFi.mode(WIFI_STA);
+        WiFi.begin(sta_ssid, sta_password);
+        while (WiFi.status() != WL_CONNECTED && tentativas < maxTentativas) {
+            delay(500);
+            Serial.print('.');
+            tentativas++;
+        }
+        if (WiFi.status() == WL_CONNECTED) {
+            Serial.println("\nWiFi Conectado!");
+            Serial.println("IP: " + WiFi.localIP().toString());
+            if (MDNS.begin("balanca")) {
+                Serial.println("MDNS iniciado: http://balanca.local");
+                MDNS.addService("http", "tcp", 80);
+            } else {
+                Serial.println("Erro ao iniciar MDNS");
+            }
+        } else {
+            Serial.println("\nFalha ao conectar no WiFi.");
+        }
     }
-
-   if (WiFi.status() == WL_CONNECTED)
-  {
-    Serial.println("\nWiFi Conectado!");
-    Serial.println("IP: " + WiFi.localIP().toString());
-
-    if (MDNS.begin("balanca"))
-    {
-      Serial.println("MDNS iniciado: http://balanca.local");
-      MDNS.addService("http", "tcp", 80);
-    }
-    else
-    {
-      Serial.println("Erro ao iniciar MDNS");
-    }
-  }
-  else
-  {
-    Serial.println("\nFalha ao conectar no WiFi.");
-    // Opcional: reiniciar automaticamente
-    // ESP.restart();
-  }
-  // ======================================================
-
+    // ======================================================
 }
 
 void initWebServer()

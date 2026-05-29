@@ -13,24 +13,29 @@ void setup() {
     Serial.begin(115200);
     Serial.println("\n=== TESTE WIFI ===");
 
-    // Configura WiFi usando WiFi (ESP32) – substitua pelos seus SSID/PASS
-    const char* ssid = "raulstar";
-    const char* password = "72989400";
-    Serial.print("Conectando a ");
-    Serial.println(ssid);
-    WiFi.begin(ssid, password);
-    // Aguarda conexão
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print('.');
-    }
-    Serial.println();
-    Serial.print("Conectado, IP: ");
-    Serial.println(WiFi.localIP());
+    // ---------------------------------------------------------------
+    // Seleciona modo de operação Wi‑Fi.
+    //   false – modo estação (conecta a rede existente)
+    //   true  – modo Access Point (AP) – permite conexão direta ao
+    //            controlador e acesso à página HTML.
+    // ---------------------------------------------------------------
+    bool useAP = true; // altere para false para usar modo estação
+    setAPMode(useAP);
 
-    // Inicializa o servidor web definido em lib/WiFi_Server
+    // Inicializa Wi‑Fi (modo escolhido acima) e o servidor web.
     initWiFi();          // garante que o objeto server esteja configurado
     initWebServer();
+
+    // Exibe informações de rede
+    if (useAP) {
+        Serial.print("AP ativo – SSID: ");
+        Serial.println("Balanca_AP");
+        Serial.print("IP: ");
+        Serial.println(WiFi.softAPIP());
+    } else {
+        Serial.print("Conectado, IP: ");
+        Serial.println(WiFi.localIP());
+    }
 
     // Rota raiz que devolve a página HTML de exemplo
     server.on("/", [](){
