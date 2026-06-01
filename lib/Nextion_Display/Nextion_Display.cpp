@@ -176,22 +176,27 @@ void processNextionCommands()
                 if (command.indexOf("bsom") >= 0)
                 {
                     handle_bsom();
+                    Serial.println("Evento [bsom]");
                 }
                 else if (command.indexOf("bzero") >= 0)
                 {
                     handle_bzero();
+                    Serial.println("Evento [bzero]");
                 }
                 else if (command.indexOf("bsalva") >= 0)
                 {
                     handle_bsalvar();
+                    Serial.println("Evento [bsalva]");  
                 }
                 else if (command.indexOf("blimpar") >= 0)
                 {
                     handle_blimpar();
+                    Serial.println("Evento [blimpar]");
                 }
                 else if (command.indexOf("bcalib") >= 0)
                 {
                     handle_bcalib(command);
+                    Serial.println("Evento [bcalib]");
                 }
                 else if (command.indexOf("imprimi") >= 0)
                 {
