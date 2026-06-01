@@ -6,6 +6,9 @@ extern WebServer server;
 void initWiFi();
 void initWebServer();
 void handleWeb();
+// New request handlers for zeroing and data retrieval
+void handleZero();
+void handleDados();
 
 // ---------------------------------------------------------------------------
 // AP mode support

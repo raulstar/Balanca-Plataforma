@@ -1,4 +1,7 @@
 #include "WiFi_Server.hpp"
+
+// Forward declaration of the tare function defined in main.cpp.
+extern void tareAllSensors();
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
@@ -175,4 +178,23 @@ void initWebServer()
 void handleWeb()
 {
     server.handleClient();
+}
+
+// Handler for "/zero" endpoint – performs tare (zero) of all sensors.
+// Returns a simple plain‑text confirmation.
+void handleZero()
+{
+    // Reuse existing tare wrapper to zero all sensors.
+    tareAllSensors();
+    server.send(200, "text/plain", "Sensors zeroed");
+}
+
+// Handler for "/dados" endpoint – returns current weight data.
+// For now we provide a minimal JSON payload with the current total weight.
+void handleDados()
+{
+    // Assuming pesoAtual is a global variable representing the current weight.
+    extern float pesoAtual; // declared elsewhere (e.g., in main.cpp)
+    String json = "{\"peso\":" + String(pesoAtual, 2) + "}";
+    server.send(200, "application/json", json);
 }

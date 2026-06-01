@@ -21,8 +21,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // VARIÁVEIS GLOBAIS
 
-// Interval (ms) for updating the Nextion display. Reduced to improve responsiveness.
-uint32_t displayUpdateInterval = 200;
+uint32_t displayUpdateInterval = 500;
 HardwareSerial SerialPort(2);
 SoftwareSerial impressoraSerial(4, 5);
 float pesoCalibracao1 = 84000.0f;
@@ -94,42 +93,6 @@ void taskTareAllSensors(void *pvParameters)
   }
 }
 
-void handleZero() // FUNÇÕES WEB
-{
-  pesoAtual = 0.0f;
-
-  tareAllSensors();
-
-  if (server.client())
-  {
-    server.send(200, "text/plain", "Zerado!");
-  }
-
-  // nextionCmd("tPeso.txt=\"Zerado!\"");
-  handle_bsom();
-
-  delay(800);
-}
-void handleDados() // DADOS WEB
-{
-  String json = "{";
-
-  json += "\"pesoAtual\":" + String(pesoAtual, 3);
-
-  // json += ",";
-
-  // json += "\"noise\":" + String(sensor1.getNoise(), 5);
-
-  // json += ",";
-
-  // json += "\"stable\":";
-
-  // json += sensor1.isStable() ? "true" : "false";
-
-  json += "}";
-
-  server.send(200, "application/json", json);
-}
 void handleCalibrar() // CALIBRAÇÃO WEB
 {
   server.send(200, "text/plain", "Modo calibração iniciado");
