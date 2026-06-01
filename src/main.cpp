@@ -414,7 +414,7 @@ void setup()
 // LOOP
 void loop()
 {
-  pesoAtual = 0.0f;
+  float currentPeso = 0.0f;
   // Protect read access to sensor objects
   if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
     for (int i = 0; i < numSensores; i++)
@@ -422,10 +422,11 @@ void loop()
       if (sensores[i].sensor->isReady())
       {
         // Use absolute value to ignore sign of individual sensor readings
-        pesoAtual += fabs(sensores[i].sensor->getKg());
+        currentPeso += fabs(sensores[i].sensor->getKg());
       }
     }
     xSemaphoreGive(xSensorMutex);
+    pesoAtual = currentPeso;
   }
 
   if (calibrando1)

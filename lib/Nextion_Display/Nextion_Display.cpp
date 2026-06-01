@@ -162,125 +162,126 @@ void updateDisplay()
 // ======================================================
 void processNextionCommands()
 {
-    if (NEXTION_SERIAL.available())
-    {
-        String command = NEXTION_SERIAL.readStringUntil('\n');
+    // Non-blocking read: accumulate bytes and process complete lines terminated by '\n'.
+    static String commandBuf = "";
 
-        command.trim();
+    while (NEXTION_SERIAL.available()) {
+        char c = (char)NEXTION_SERIAL.read();
 
-        // Serial.print("Comando Recebido: ");
-        // Serial.println(command);
+        if (c == '\n') {
+            String command = commandBuf;
+            command.trim();
 
-        if (command.indexOf("bsom") >= 0)
-        {
-            handle_bsom();
-        }
-        else if (command.indexOf("bzero") >= 0)
-        {
-            handle_bzero();
-        }
-        else if (command.indexOf("bsalva") >= 0)
-        {
-            handle_bsalvar();
-        }
-        else if (command.indexOf("blimpar") >= 0)
-        {
-            handle_blimpar();
-        }
-        else if (command.indexOf("bcalib") >= 0)
-        {
-            handle_bcalib(command);
-        }
-        else if (command.indexOf("imprimi") >= 0)
-        {
-            imprimir = true;
-            Serial.println("Evento [imprimir]");
-        }
-         else if (command.indexOf("bplatafor1") >= 0)
-        {
-           indexCalib = 1;
-            Serial.println("Evento [bplatafor1]");
-        }
-        else if (command.indexOf("bplatafor2") >= 0)
-        {
-           indexCalib = 2;
-            Serial.println("Evento [bplatafor2]");
-        }
-        else if (command.indexOf("bplatafor3") >= 0)
-        {
-           indexCalib = 3;
-            Serial.println("Evento [bplatafor3]");
-        }
-        else if (command.indexOf("bplatafor4") >= 0)
-        {
-           indexCalib = 4;
-            Serial.println("Evento [bplatafor4]");
-        }
-        else if (command.indexOf("calib") >= 0)
-        {
-            Serial.println("Evento [calib]");
+            if (command.length() > 0) {
+                if (command.indexOf("bsom") >= 0)
+                {
+                    handle_bsom();
+                }
+                else if (command.indexOf("bzero") >= 0)
+                {
+                    handle_bzero();
+                }
+                else if (command.indexOf("bsalva") >= 0)
+                {
+                    handle_bsalvar();
+                }
+                else if (command.indexOf("blimpar") >= 0)
+                {
+                    handle_blimpar();
+                }
+                else if (command.indexOf("bcalib") >= 0)
+                {
+                    handle_bcalib(command);
+                }
+                else if (command.indexOf("imprimi") >= 0)
+                {
+                    imprimir = true;
+                    Serial.println("Evento [imprimir]");
+                }
+                else if (command.indexOf("bplatafor1") >= 0)
+                {
+                    indexCalib = 1;
+                    Serial.println("Evento [bplatafor1]");
+                }
+                else if (command.indexOf("bplatafor2") >= 0)
+                {
+                    indexCalib = 2;
+                    Serial.println("Evento [bplatafor2]");
+                }
+                else if (command.indexOf("bplatafor3") >= 0)
+                {
+                    indexCalib = 3;
+                    Serial.println("Evento [bplatafor3]");
+                }
+                else if (command.indexOf("bplatafor4") >= 0)
+                {
+                    indexCalib = 4;
+                    Serial.println("Evento [bplatafor4]");
+                }
+                else if (command.indexOf("calib") >= 0)
+                {
+                    Serial.println("Evento [calib]");
 
-            int pos = command.indexOf(':');
+                    int pos = command.indexOf(':');
 
-            if (pos > 0)
-            {
-                String valorStr = command.substring(pos + 1);
+                    if (pos > 0)
+                    {
+                        String valorStr = command.substring(pos + 1);
 
-                pesoCalibracao1 = valorStr.toFloat();
+                        pesoCalibracao1 = valorStr.toFloat();
 
-                Serial.print("Peso de calibração " + String(indexCalib) + ": ");
-                Serial.println(pesoCalibracao1, 2);
-                calibrando1 = true;
+                        Serial.print("Peso de calibração " + String(indexCalib) + ": ");
+                        Serial.println(pesoCalibracao1, 2);
+                        calibrando1 = true;
+                    }
+                }
+                else if (command.startsWith("placa:"))
+                {
+                    Serial.println("Evento [placa]");
+
+                    String valorStr = command.substring(6);
+                    valorStr.trim();
+                    placaVeiculo = valorStr;
+
+                    Serial.print("Placa recebida: ");
+                    Serial.println(placaVeiculo);
+                }
+                else if (command.startsWith("thora:"))
+                {
+                    Serial.println("Evento [thora]");
+
+                    String valorStr = command.substring(6);
+                    valorStr.trim();
+                    thora = valorStr;
+
+                    Serial.print("hora recebida: ");
+                    Serial.println(thora);
+                }
+                else if (command.startsWith("tdata:"))
+                {
+                    Serial.println("Evento [tdata]");
+
+                    String valorStr = command.substring(6);
+                    valorStr.trim();
+                    tdata = valorStr;
+
+                    Serial.print("data recebida: ");
+                    Serial.println(tdata);
+                }
+                else {
+                    handle_bgeneric(command);
+                }
             }
+
+            // Clear buffer for next line
+            commandBuf = "";
         }
-        else if (command.startsWith("placa:"))
-        {
-            Serial.println("Evento [placa]");
-
-            // pega tudo após "placa:"
-            String valorStr = command.substring(6);
-
-            // remove espaços extras no início/fim
-            valorStr.trim();
-
-            // salva na variável
-            placaVeiculo = valorStr;
-
-            Serial.print("Placa recebida: ");
-            Serial.println(placaVeiculo);
-            // handle_bsalvar();
-        }
-        else if (command.startsWith("thora:"))
-        {
-            Serial.println("Evento [thora]");
-
-            // pega tudo após "thora:"
-            String valorStr = command.substring(6);
-
-            // remove espaços extras no início/fim
-            valorStr.trim();
-            // salva na variável
-            thora = valorStr;
-
-            Serial.print("hora recebida: ");
-            Serial.println(thora);
-            // handle_bsalvar();
-        }
-        else if (command.startsWith("tdata:"))
-        {
-            Serial.println("Evento [tdata]");
-
-            // pega tudo após "tdata:"
-            String valorStr = command.substring(6);
-
-            // remove espaços extras no início/fim
-            valorStr.trim();
-            // salva na variável
-            tdata = valorStr;
-
-            Serial.print("data recebida: ");
-            Serial.println(tdata);
-            // handle_bsalvar();
+        else if (c != '\r') {
+            // Append char, but guard buffer size to avoid runaway memory use
+            commandBuf += c;
+            if (commandBuf.length() > 512) {
+                commandBuf = commandBuf.substring(commandBuf.length() - 512);
+            }
         }
     }
 }
