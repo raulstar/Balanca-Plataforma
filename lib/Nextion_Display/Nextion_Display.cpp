@@ -29,6 +29,10 @@ String bplatafor1;
 String bplatafor2;
 String bplatafor3;
 String bplatafor4;
+String tpeso1 = "";
+String tpeso2 = "";
+String tpeso3 = "";
+String tpeso4 = "";
 int indexCalib;
 
 String tplaca = "";
@@ -46,6 +50,10 @@ String last_thora = "";
 String last_tdata = "";
 String last_tplaca = "";
 String last_tbateria = "";
+String last_tpeso1 = "";
+String last_tpeso2 = "";
+String last_tpeso3 = "";
+String last_tpeso4 = "";
 
 float last_pesoAtual = -999999.0;
 float last_ttara = -999999.0;
@@ -121,15 +129,23 @@ void updateDisplay()
     if (_sensores != nullptr) {
         for (int i = 0; i < _numSensores; i++)
         {
+            String sensorVal = String(_sensores[i].sensor->getKg(), 1);
             String objName = "tPeso" + String(i + 1);
-            setNextionText(objName, String(_sensores[i].sensor->getKg(), 1));
+            setNextionText(objName, sensorVal);
+
+            switch (i) {
+                case 0: tpeso1 = sensorVal; break;
+                case 1: tpeso2 = sensorVal; break;
+                case 2: tpeso3 = sensorVal; break;
+                case 3: tpeso4 = sensorVal; break;
+            }
         }
     }
 
     // Peso Atual
     if (pesoAtual != last_pesoAtual)
     {
-        setNextionText("tPeso", String(pesoAtual, 1));
+        setNextionText("tPeso", String(pesoAtual, 1) + " kg");
         last_pesoAtual = pesoAtual;
         Serial.print("Peso Atual no display: ");
         Serial.println(pesoAtual, 1);
@@ -138,14 +154,14 @@ void updateDisplay()
     // Total
     if (ttotal != last_ttotal)
     {
-        setNextionText("ttotal", String(ttotal, 1));
+        setNextionText("ttotal", String(ttotal, 1) + " kg");
         last_ttotal = ttotal;
     }
 
     // Tara
     if (ttara != last_ttara)
     {
-        setNextionText("ttara", String(ttara, 1));
+        setNextionText("ttara", String(ttara, 1) + " kg");
         last_ttara = ttara;
     }
 
@@ -154,6 +170,28 @@ void updateDisplay()
     {
         setNextionText("tn0", String(contadorRegistro));
         last_contadorRegistro = contadorRegistro;
+    }
+
+    // Sensor display fallback values
+    if (tpeso1 != last_tpeso1)
+    {
+        setNextionText("tpeso1", tpeso1 + " kg");
+        last_tpeso1 = tpeso1;
+    }
+    if (tpeso2 != last_tpeso2)
+    {
+        setNextionText("tpeso2", tpeso2 + " kg");
+        last_tpeso2 = tpeso2;
+    }
+    if (tpeso3 != last_tpeso3)
+    {
+        setNextionText("tpeso3", tpeso3 + " kg");
+        last_tpeso3 = tpeso3;
+    }
+    if (tpeso4 != last_tpeso4)
+    {
+        setNextionText("tpeso4", tpeso4 + " kg");
+        last_tpeso4 = tpeso4;
     }
 }
 
