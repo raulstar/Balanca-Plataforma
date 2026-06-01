@@ -21,7 +21,8 @@
 /////////////////////////////////////////////////////////////////////////////
 // VARIÁVEIS GLOBAIS
 
-uint32_t displayUpdateInterval = 5000;
+// Interval (ms) for updating the Nextion display. Reduced to improve responsiveness.
+uint32_t displayUpdateInterval = 200;
 HardwareSerial SerialPort(2);
 SoftwareSerial impressoraSerial(4, 5);
 float pesoCalibracao1 = 84000.0f;
