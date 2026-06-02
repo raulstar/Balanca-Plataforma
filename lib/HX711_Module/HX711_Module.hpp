@@ -12,12 +12,16 @@ private:
 
     float offset;
     float scale_factor;
+    float sensorKnownWeight;
+    int sensorId;
+    static const float defaultKnownWeight[4];
+    static const float defaultScaleFactor[4];
 
 public:
 
     HX711();
 
-    void tare(float leituraAtual);
+    void tare(float leituraAtual, int sensorIndex);
 
     float get_units(float leituraAtual);
 
@@ -65,6 +69,7 @@ private:
     float pesoGramas = 0.0f;
 
     float pesoKg = 0.0f;
+    int sensorIndex = 0;
 
     //////////////////////////////////////////////////////////////////////////
     // STATUS
@@ -78,7 +83,7 @@ public:
     // CONSTRUTOR
     //////////////////////////////////////////////////////////////////////////
 
-    SensorBalanca(HardwareSerial &porta, String prefixoSensor);
+    SensorBalanca(HardwareSerial &porta, String prefixoSensor, int sensorIndex);
 
     //////////////////////////////////////////////////////////////////////////
     // LEITURA

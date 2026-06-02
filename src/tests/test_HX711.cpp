@@ -21,10 +21,10 @@ HardwareSerial SerialPort(2);
 // SENSOR HX711
 /////////////////////////////////////////////////////////////////////////////
 
-SensorBalanca sensor1(SerialPort, "S1");
-SensorBalanca sensor2(SerialPort, "S2");
-SensorBalanca sensor3(SerialPort, "S3");
-SensorBalanca sensor4(SerialPort, "S4");
+SensorBalanca sensor1(SerialPort, "S1", 0);
+SensorBalanca sensor2(SerialPort, "S2", 1);
+SensorBalanca sensor3(SerialPort, "S3", 2);
+SensorBalanca sensor4(SerialPort, "S4", 3);
 
 struct SensorConfig {
     SensorBalanca &sensor;

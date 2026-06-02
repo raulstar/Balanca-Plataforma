@@ -1,5 +1,8 @@
 #include "HX711_Module.hpp"
 
+const float HX711::defaultKnownWeight[4] = {78000.0f, 79000.0f, 80000.0f, 81000.0f};
+const float HX711::defaultScaleFactor[4] = {-5412.36425781f, -5410.0f, -5420.0f, -5400.0f};
+
 /////////////////////////////////////////////////////////////////////////////
 // CONSTRUTOR HX711
 /////////////////////////////////////////////////////////////////////////////
@@ -7,24 +10,39 @@
 HX711::HX711()
 {
     offset = 0.0f;
+    sensorKnownWeight = defaultKnownWeight[0];
+    sensorId = 0;
 
     //////////////////////////////////////////////////////////////////////////
     // FATOR PADRÃO
     //////////////////////////////////////////////////////////////////////////
 
-    scale_factor = -5412.36425781f;
+    scale_factor = defaultScaleFactor[0];
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // TARA
 /////////////////////////////////////////////////////////////////////////////
 
-void HX711::tare(float leituraAtual)
+void HX711::tare(float leituraAtual, int sensorIndex)
 {
-    offset = leituraAtual;
+    if (sensorIndex < 0 || sensorIndex >= 4) {
+        sensorIndex = 0;
+    }
 
-    Serial.println("OFFSET:");
+    sensorId = sensorIndex;
+    offset = leituraAtual;
+    sensorKnownWeight = defaultKnownWeight[sensorIndex];
+    scale_factor = defaultScaleFactor[sensorIndex];
+
+    Serial.print("OFFSET (Sensor ");
+    Serial.print(sensorIndex + 1);
+    Serial.println("):");
     Serial.println(offset);
+    Serial.print("Known weight:");
+    Serial.println(sensorKnownWeight);
+    Serial.print("Scale factor:");
+    Serial.println(scale_factor, 8);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -104,10 +122,11 @@ float HX711::getScale()
 // CONSTRUTOR SENSOR BALANÇA
 /////////////////////////////////////////////////////////////////////////////
 
-SensorBalanca::SensorBalanca(HardwareSerial &porta, String prefixoSensor)
+SensorBalanca::SensorBalanca(HardwareSerial &porta, String prefixoSensor, int sensorIndex)
 {
     serial = &porta;
     prefixo = prefixoSensor;
+    this->sensorIndex = sensorIndex;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -186,7 +205,7 @@ float SensorBalanca::getGramas()
 
 void SensorBalanca::tare()
 {
-    balanca.tare(valorLido);
+    balanca.tare(valorLido, sensorIndex);
 
     Serial.println("--------------------------------");
     Serial.println("BALANCA ZERADA");
