@@ -292,10 +292,14 @@ void processNextionCommands()
                     {
                         String valorStr = command.substring(pos + 1);
 
-                        pesoCalibracao1 = valorStr.toFloat();
+                        pesoCalibracao1 = valorStr.toFloat() * 1000.0f;  // Converter kg para gramas
 
                         Serial.print("Peso de calibração " + String(indexCalib) + ": ");
-                        Serial.println(pesoCalibracao1, 2);
+                        Serial.println(pesoCalibracao1 / 1000.0f, 2);
+                        Serial.print("calibrando");
+                        Serial.print(indexCalib);
+                        Serial.print(" ");
+                        Serial.println(pesoCalibracao1 / 1000.0f, 2);
                         calibrando1 = true;
                     }
                 }
@@ -513,9 +517,9 @@ void handle_bcalib(String cmd)
 
         memcpy(&valor, &hexInt, sizeof(valor));
 
-        pesoCalibracao1 = valor;
+        pesoCalibracao1 = valor * 1000.0f;  // Converter kg para gramas
 
         Serial.print("pesoCalibracao1 = ");
-        Serial.println(pesoCalibracao1, 4);
+        Serial.println(pesoCalibracao1 / 1000.0f, 4);
     }
 }
