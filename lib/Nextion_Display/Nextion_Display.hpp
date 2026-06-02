@@ -21,6 +21,8 @@ extern float pesoCalibracao1;
 extern bool calibrando1;
 extern bool zero;
 extern volatile bool imprimir;
+extern SemaphoreHandle_t xSensorMutex;
+extern String calib;
 
 // ======================================================
 // DATA / HORA

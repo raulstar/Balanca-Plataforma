@@ -33,6 +33,7 @@ String tpeso1 = "";
 String tpeso2 = "";
 String tpeso3 = "";
 String tpeso4 = "";
+String calib = "";
 int indexCalib;
 
 String tplaca = "";
@@ -245,21 +246,41 @@ void processNextionCommands()
                 {
                     indexCalib = 1;
                     Serial.println("Evento [bplatafor1]");
+                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                        _sensores[0].sensor->calibra(pesoCalibracao1);
+                        xSemaphoreGive(xSensorMutex);
+                        Serial.println("Sensor 1 calibrado");
+                    }
                 }
                 else if (command.indexOf("bplatafor2") >= 0)
                 {
                     indexCalib = 2;
                     Serial.println("Evento [bplatafor2]");
+                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                        _sensores[1].sensor->calibra(pesoCalibracao1);
+                        xSemaphoreGive(xSensorMutex);
+                        Serial.println("Sensor 2 calibrado");
+                    }
                 }
                 else if (command.indexOf("bplatafor3") >= 0)
                 {
                     indexCalib = 3;
                     Serial.println("Evento [bplatafor3]");
+                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                        _sensores[2].sensor->calibra(pesoCalibracao1);
+                        xSemaphoreGive(xSensorMutex);
+                        Serial.println("Sensor 3 calibrado");
+                    }
                 }
                 else if (command.indexOf("bplatafor4") >= 0)
                 {
                     indexCalib = 4;
                     Serial.println("Evento [bplatafor4]");
+                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                        _sensores[3].sensor->calibra(pesoCalibracao1);
+                        xSemaphoreGive(xSensorMutex);
+                        Serial.println("Sensor 4 calibrado");
+                    }
                 }
                 else if (command.indexOf("calib") >= 0)
                 {
