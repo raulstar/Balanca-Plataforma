@@ -61,6 +61,15 @@ float last_ttara = -999999.0;
 float last_ttotal = -999999.0;
 
 int last_contadorRegistro = 0;
+
+// WiFi status variables tracking
+String last_sta_ssid = "";
+String last_sta_password = "";
+String last_ap_ssid = "";
+String last_ap_password = "";
+bool last_g_wifiConnected = false;
+bool last_g_apMode = false;
+
 int eixo = 0;
 int peixo = 0;
 
@@ -193,6 +202,50 @@ void updateDisplay()
     {
         setNextionText("tpeso4", tpeso4 + " kg");
         last_tpeso4 = tpeso4;
+    }
+
+    // WiFi Status - STA SSID
+    if (sta_ssid != last_sta_ssid)
+    {
+        setNextionText("gssid", sta_ssid);
+        last_sta_ssid = sta_ssid;
+    }
+
+    // WiFi Status - STA Password
+    if (sta_password != last_sta_password)
+    {
+        setNextionText("gpassword", sta_password);
+        last_sta_password = sta_password;
+    }
+
+    // WiFi Status - AP SSID
+    if (ap_ssid != last_ap_ssid)
+    {
+        setNextionText("gapssi", ap_ssid);
+        last_ap_ssid = ap_ssid;
+    }
+
+    // WiFi Status - AP Password
+    if (ap_password != last_ap_password)
+    {
+        setNextionText("gaaappword", ap_password);
+        last_ap_password = ap_password;
+    }
+
+    // WiFi Status - Connection Status
+    if (g_wifiConnected != last_g_wifiConnected)
+    {
+        last_g_wifiConnected = g_wifiConnected;
+        Serial.print("WiFi Connected status changed to: ");
+        Serial.println(g_wifiConnected ? "true" : "false");
+    }
+
+    // WiFi Status - AP Mode
+    if (g_apMode != last_g_apMode)
+    {
+        last_g_apMode = g_apMode;
+        Serial.print("AP Mode status changed to: ");
+        Serial.println(g_apMode ? "true" : "false");
     }
 }
 

@@ -10,12 +10,12 @@ extern void tareAllSensors();
 WebServer server(80);
 
 // Default credentials for station mode (client)
-const char *sta_ssid = "raulstar";
-const char *sta_password = "72989400";
+String sta_ssid = "raulstar";
+String sta_password = "72989400";
 
 // Credentials for AP mode – can be changed via setAPMode if needed
-const char *ap_ssid = "Balanca_AP";
-const char *ap_password = "12345678";
+String ap_ssid = "Balanca_AP";
+String ap_password = "12345678";
 
 // Global flag indicating AP mode (default false – station mode)
 bool g_apMode = false;
@@ -76,7 +76,7 @@ void initWiFi()
         // Start Access Point mode
         Serial.println("Iniciando modo Access Point...");
         WiFi.mode(WIFI_AP);
-        bool result = WiFi.softAP(ap_ssid, ap_password);
+        bool result = WiFi.softAP(ap_ssid.c_str(), ap_password.c_str());
         if (result) {
             Serial.println("AP iniciado com sucesso.");
             Serial.print("SSID: ");
@@ -95,7 +95,7 @@ void initWiFi()
     } else {
         // Station mode – connect to existing Wi‑Fi network
         WiFi.mode(WIFI_STA);
-        WiFi.begin(sta_ssid, sta_password);
+        WiFi.begin(sta_ssid.c_str(), sta_password.c_str());
         while (WiFi.status() != WL_CONNECTED && tentativas < maxTentativas) {
             delay(500);
             Serial.print('.');

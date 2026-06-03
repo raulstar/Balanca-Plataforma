@@ -23,10 +23,10 @@ void setAPMode(bool enable);
 // ---------------------------------------------------------------------------
 // Global Wi‑Fi configuration / state variables (extern declarations)
 // ---------------------------------------------------------------------------
-extern const char *sta_ssid;      // SSID for station mode
-extern const char *sta_password; // Password for station mode
-extern const char *ap_ssid;      // SSID for Access Point mode
-extern const char *ap_password; // Password for Access Point mode
+extern String sta_ssid;      // SSID for station mode
+extern String sta_password; // Password for station mode
+extern String ap_ssid;      // SSID for Access Point mode
+extern String ap_password; // Password for Access Point mode
 
 extern bool g_apMode;            // true → AP mode, false → station mode
 extern bool g_wifiConnected;    // connection status flag

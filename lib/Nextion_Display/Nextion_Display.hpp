@@ -25,6 +25,16 @@ extern SemaphoreHandle_t xSensorMutex;
 extern String calib;
 
 // ======================================================
+// WiFi Configuration Variables
+// ======================================================
+extern String sta_ssid;
+extern String sta_password;
+extern String ap_ssid;
+extern String ap_password;
+extern bool g_wifiConnected;
+extern bool g_apMode;
+
+// ======================================================
 // DATA / HORA
 // ======================================================
 extern String tdata;
