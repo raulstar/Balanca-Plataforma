@@ -4,15 +4,15 @@
 // SERIAL NEXTION
 // ======================================================
 HardwareSerial NEXTION_SERIAL(1);
-SensorConfig* _sensores = nullptr;
+SensorConfig *_sensores = nullptr;
 int _numSensores = 0;
 volatile bool imprimir = false;
 
-void setSensores(SensorConfig* sens, int num) {
+void setSensores(SensorConfig *sens, int num)
+{
     _sensores = sens;
     _numSensores = num;
 }
-
 
 // ======================================================
 // VARIÁVEIS GLOBAIS
@@ -69,6 +69,7 @@ String last_ap_ssid = "";
 String last_ap_password = "";
 bool last_g_wifiConnected = false;
 bool last_g_apMode = false;
+bool wifi_initialized = false;
 
 int eixo = 0;
 int peixo = 0;
@@ -104,6 +105,21 @@ void initNextion()
 
     Serial.println("Nextion iniciado");
 
+    // Send initial WiFi configuration values to display
+    setNextionText("page3.gssid", sta_ssid);
+    last_sta_ssid = sta_ssid;
+
+    setNextionText("page3.gpassword", sta_password);
+    last_sta_password = sta_password;
+
+    setNextionText("page3.gapssi", ap_ssid);
+    last_ap_ssid = ap_ssid;
+
+    setNextionText("page3.gappssword", ap_password);
+    last_ap_password = ap_password;
+
+    wifi_initialized = true;
+
     updateDisplay();
 }
 
@@ -133,21 +149,29 @@ void updateDisplay()
         last_tplaca = tplaca;
     }
 
-    
-
     // Sensores
-    if (_sensores != nullptr) {
+    if (_sensores != nullptr)
+    {
         for (int i = 0; i < _numSensores; i++)
         {
             String sensorVal = String(_sensores[i].sensor->getKg(), 1);
             String objName = "tPeso" + String(i + 1);
             setNextionText(objName, sensorVal);
 
-            switch (i) {
-                case 0: tpeso1 = sensorVal; break;
-                case 1: tpeso2 = sensorVal; break;
-                case 2: tpeso3 = sensorVal; break;
-                case 3: tpeso4 = sensorVal; break;
+            switch (i)
+            {
+            case 0:
+                tpeso1 = sensorVal;
+                break;
+            case 1:
+                tpeso2 = sensorVal;
+                break;
+            case 2:
+                tpeso3 = sensorVal;
+                break;
+            case 3:
+                tpeso4 = sensorVal;
+                break;
             }
         }
     }
@@ -186,49 +210,53 @@ void updateDisplay()
     if (tpeso1 != last_tpeso1)
     {
         setNextionText("tpeso1", tpeso1 + " kg");
+        setNextionText("page4.tpeso1", tpeso1 + " kg");
         last_tpeso1 = tpeso1;
     }
     if (tpeso2 != last_tpeso2)
     {
         setNextionText("tpeso2", tpeso2 + " kg");
+        setNextionText("page4.tpeso2", tpeso2 + " kg");
         last_tpeso2 = tpeso2;
     }
     if (tpeso3 != last_tpeso3)
     {
         setNextionText("tpeso3", tpeso3 + " kg");
+        setNextionText("page4.tpeso3", tpeso3 + " kg");
         last_tpeso3 = tpeso3;
     }
     if (tpeso4 != last_tpeso4)
     {
         setNextionText("tpeso4", tpeso4 + " kg");
+        setNextionText("page4.tpeso4", tpeso4 + " kg");
         last_tpeso4 = tpeso4;
     }
 
     // WiFi Status - STA SSID
     if (sta_ssid != last_sta_ssid)
     {
-        setNextionText("gssid", sta_ssid);
+        setNextionText("page6.gssid", sta_ssid);
         last_sta_ssid = sta_ssid;
     }
 
     // WiFi Status - STA Password
     if (sta_password != last_sta_password)
     {
-        setNextionText("gpassword", sta_password);
+        setNextionText("page6.gpassword", sta_password);
         last_sta_password = sta_password;
     }
 
     // WiFi Status - AP SSID
     if (ap_ssid != last_ap_ssid)
     {
-        setNextionText("gapssi", ap_ssid);
+        setNextionText("page6.gapssi", ap_ssid);
         last_ap_ssid = ap_ssid;
     }
 
     // WiFi Status - AP Password
     if (ap_password != last_ap_password)
     {
-        setNextionText("gaaappword", ap_password);
+        setNextionText("page6.gpasspword", ap_password);
         last_ap_password = ap_password;
     }
 
@@ -257,14 +285,17 @@ void processNextionCommands()
     // Non-blocking read: accumulate bytes and process complete lines terminated by '\n'.
     static String commandBuf = "";
 
-    while (NEXTION_SERIAL.available()) {
+    while (NEXTION_SERIAL.available())
+    {
         char c = (char)NEXTION_SERIAL.read();
 
-        if (c == '\n') {
+        if (c == '\n')
+        {
             String command = commandBuf;
             command.trim();
 
-            if (command.length() > 0) {
+            if (command.length() > 0)
+            {
                 if (command.indexOf("bsom") >= 0)
                 {
                     handle_bsom();
@@ -278,7 +309,7 @@ void processNextionCommands()
                 else if (command.indexOf("bsalva") >= 0)
                 {
                     handle_bsalvar();
-                    Serial.println("Evento [bsalva]");  
+                    Serial.println("Evento [bsalva]");
                 }
                 else if (command.indexOf("blimpar") >= 0)
                 {
@@ -299,7 +330,8 @@ void processNextionCommands()
                 {
                     indexCalib = 1;
                     Serial.println("Evento [bplatafor1]");
-                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
+                    {
                         _sensores[0].sensor->calibra(pesoCalibracao1);
                         xSemaphoreGive(xSensorMutex);
                         Serial.println("Sensor 1 calibrado");
@@ -309,7 +341,8 @@ void processNextionCommands()
                 {
                     indexCalib = 2;
                     Serial.println("Evento [bplatafor2]");
-                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
+                    {
                         _sensores[1].sensor->calibra(pesoCalibracao1);
                         xSemaphoreGive(xSensorMutex);
                         Serial.println("Sensor 2 calibrado");
@@ -319,7 +352,8 @@ void processNextionCommands()
                 {
                     indexCalib = 3;
                     Serial.println("Evento [bplatafor3]");
-                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
+                    {
                         _sensores[2].sensor->calibra(pesoCalibracao1);
                         xSemaphoreGive(xSensorMutex);
                         Serial.println("Sensor 3 calibrado");
@@ -329,7 +363,8 @@ void processNextionCommands()
                 {
                     indexCalib = 4;
                     Serial.println("Evento [bplatafor4]");
-                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                    if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
+                    {
                         _sensores[3].sensor->calibra(pesoCalibracao1);
                         xSemaphoreGive(xSensorMutex);
                         Serial.println("Sensor 4 calibrado");
@@ -345,7 +380,7 @@ void processNextionCommands()
                     {
                         String valorStr = command.substring(pos + 1);
 
-                        pesoCalibracao1 = valorStr.toFloat() * 1000.0f;  // Converter kg para gramas
+                        pesoCalibracao1 = valorStr.toFloat() * 1000.0f; // Converter kg para gramas
 
                         Serial.print("Peso de calibração " + String(indexCalib) + ": ");
                         Serial.println(pesoCalibracao1 / 1000.0f, 2);
@@ -389,7 +424,8 @@ void processNextionCommands()
                     Serial.print("data recebida: ");
                     Serial.println(tdata);
                 }
-                else {
+                else
+                {
                     handle_bgeneric(command);
                 }
             }
@@ -397,10 +433,12 @@ void processNextionCommands()
             // Clear buffer for next line
             commandBuf = "";
         }
-        else if (c != '\r') {
+        else if (c != '\r')
+        {
             // Append char, but guard buffer size to avoid runaway memory use
             commandBuf += c;
-            if (commandBuf.length() > 512) {
+            if (commandBuf.length() > 512)
+            {
                 commandBuf = commandBuf.substring(commandBuf.length() - 512);
             }
         }
@@ -570,7 +608,7 @@ void handle_bcalib(String cmd)
 
         memcpy(&valor, &hexInt, sizeof(valor));
 
-        pesoCalibracao1 = valor * 1000.0f;  // Converter kg para gramas
+        pesoCalibracao1 = valor * 1000.0f; // Converter kg para gramas
 
         Serial.print("pesoCalibracao1 = ");
         Serial.println(pesoCalibracao1 / 1000.0f, 4);
