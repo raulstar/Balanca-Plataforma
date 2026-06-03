@@ -20,6 +20,7 @@ private:
 public:
 
     HX711();
+    HX711(int sensorIndex);
 
     void tare(float leituraAtual, int sensorIndex);
 
@@ -113,13 +114,13 @@ public:
     // TARA
     //////////////////////////////////////////////////////////////////////////
 
-    void tare();
+    bool tare();
 
     //////////////////////////////////////////////////////////////////////////
     // CALIBRAÇÃO
     //////////////////////////////////////////////////////////////////////////
 
-    void calibra(float pesoConhecido);
+    bool calibra(float pesoConhecido);
 
     void setScale(float scale);
     float getScale();

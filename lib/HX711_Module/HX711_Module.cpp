@@ -8,16 +8,25 @@ const float HX711::defaultScaleFactor[4] = {-5412.36425781f, -5410.0f, -5420.0f,
 /////////////////////////////////////////////////////////////////////////////
 
 HX711::HX711()
+    : HX711(0)
 {
+}
+
+HX711::HX711(int sensorIndex)
+{
+    if (sensorIndex < 0 || sensorIndex >= 4) {
+        sensorIndex = 0;
+    }
+
     offset = 0.0f;
-    sensorKnownWeight = defaultKnownWeight[0];
-    sensorId = 0;
+    sensorKnownWeight = defaultKnownWeight[sensorIndex];
+    sensorId = sensorIndex;
 
     //////////////////////////////////////////////////////////////////////////
     // FATOR PADRÃO
     //////////////////////////////////////////////////////////////////////////
 
-    scale_factor = defaultScaleFactor[0];
+    scale_factor = defaultScaleFactor[sensorIndex];
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -32,8 +41,6 @@ void HX711::tare(float leituraAtual, int sensorIndex)
 
     sensorId = sensorIndex;
     offset = leituraAtual;
-    sensorKnownWeight = defaultKnownWeight[sensorIndex];
-    scale_factor = defaultScaleFactor[sensorIndex];
 
     Serial.print("OFFSET (Sensor ");
     Serial.print(sensorIndex + 1);
@@ -123,10 +130,8 @@ float HX711::getScale()
 /////////////////////////////////////////////////////////////////////////////
 
 SensorBalanca::SensorBalanca(HardwareSerial &porta, String prefixoSensor, int sensorIndex)
+    : serial(&porta), prefixo(prefixoSensor), balanca(sensorIndex), sensorIndex(sensorIndex)
 {
-    serial = &porta;
-    prefixo = prefixoSensor;
-    this->sensorIndex = sensorIndex;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -203,21 +208,38 @@ float SensorBalanca::getGramas()
 // TARA
 /////////////////////////////////////////////////////////////////////////////
 
-void SensorBalanca::tare()
+bool SensorBalanca::tare()
 {
+    if (!ready)
+    {
+        Serial.print("ERRO: Sensor ");
+        Serial.print(sensorIndex + 1);
+        Serial.println(" nao pronto para tara");
+        return false;
+    }
+
     balanca.tare(valorLido, sensorIndex);
 
     Serial.println("--------------------------------");
     Serial.println("BALANCA ZERADA");
     Serial.println("--------------------------------");
+    return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // CALIBRAÇÃO
 /////////////////////////////////////////////////////////////////////////////
 
-void SensorBalanca::calibra(float pesoConhecido)
+bool SensorBalanca::calibra(float pesoConhecido)
 {
+    if (!ready)
+    {
+        Serial.print("ERRO: Sensor ");
+        Serial.print(sensorIndex + 1);
+        Serial.println(" nao pronto para calibracao");
+        return false;
+    }
+
     balanca.calibra(valorLido, pesoConhecido);
 
     Serial.println("--------------------------------");
@@ -229,6 +251,7 @@ void SensorBalanca::calibra(float pesoConhecido)
     Serial.println(" g");
 
     Serial.println("--------------------------------");
+    return true;
 }
 
 void SensorBalanca::setScale(float scale)
