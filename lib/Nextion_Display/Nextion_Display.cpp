@@ -181,7 +181,7 @@ void updateDisplay()
     {
         setNextionText("tPeso", String(pesoAtual, 1) + " kg");
         last_pesoAtual = pesoAtual;
-        Serial.print("Peso Atual no display: ");
+        //Serial.print("Peso Atual no display: ");
         Serial.println(pesoAtual, 1);
     }
 
@@ -296,10 +296,25 @@ void processNextionCommands()
 
             if (command.length() > 0)
             {
+                
                 if (command.indexOf("bsom") >= 0)
                 {
                     handle_bsom();
                     Serial.println("Evento [bsom]");
+                }
+                 else if (command.startsWith("gcalib:"))
+                {
+                    Serial.println("Evento [gcalib]");
+
+                    int colonPos = command.indexOf(':');
+                    String valorStr = command.substring(colonPos + 1);
+                    valorStr.trim();
+                    pesoCalibracao1 = atof(valorStr.c_str());
+
+                    Serial.print("valorStr: ");
+                    Serial.println(valorStr);
+                    Serial.print("peso Calibracao1: ");
+                    Serial.println(pesoCalibracao1);
                 }
                 else if (command.indexOf("bzero") >= 0)
                 {
