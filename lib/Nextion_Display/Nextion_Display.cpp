@@ -1,4 +1,5 @@
 #include "Nextion_Display.hpp"
+#include "../WiFi_Server/WiFi_Server.hpp"
 
 // ======================================================
 // SERIAL NEXTION
@@ -7,6 +8,7 @@ HardwareSerial NEXTION_SERIAL(1);
 SensorConfig *_sensores = nullptr;
 int _numSensores = 0;
 volatile bool imprimir = false;
+SemaphoreHandle_t xSensorMutex = nullptr;
 
 void setSensores(SensorConfig *sens, int num)
 {

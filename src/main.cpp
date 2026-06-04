@@ -29,7 +29,8 @@ extern volatile bool imprimir;
  bool useAP = true; // altere para false para usar modo estação
 
 // Mutex to protect sensor array access
-SemaphoreHandle_t xSensorMutex = nullptr;
+// Defined in Nextion_Display.cpp so it is available to both firmware and unit tests.
+//SemaphoreHandle_t xSensorMutex = nullptr;
 // Task handle for tare task
 TaskHandle_t hTareTask = nullptr;
 // Task handle for serial processing task
