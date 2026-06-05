@@ -10,6 +10,7 @@
 #include "Thermal_Printer.hpp"
 #include <SoftwareSerial.h>
 #include "config.hpp"
+#include "EEPROM_Module.hpp"
 
 #define M0 19
 #define M1 21
@@ -409,6 +410,25 @@ void setup()
   
   // Create asynchronous SerialPort reading task
   xTaskCreate(taskSerialPortReader, "SerialPortReader", 4096, NULL, 2, &hPortTask);
+  Serial.println("Loading EEPROM data...");
+    carregarComEEPROM();
+    Serial.print("pesoAtual = ");
+    Serial.println(pesoAtual, 2);
+    Serial.print("ttotal = ");
+    Serial.println(ttotal, 2);
+    Serial.print("sta_ssid = ");
+    Serial.println(sta_ssid);
+    Serial.print("sta_password = ");
+    Serial.println(sta_password);
+    Serial.print("ap_ssid = ");
+    Serial.println(ap_ssid);
+    Serial.print("ap_password = ");
+    Serial.println(ap_password);
+    Serial.print("g_wifiConnected = ");
+    Serial.println(g_wifiConnected ? "true" : "false");
+    Serial.print("g_apMode = ");
+    Serial.println(g_apMode ? "true" : "false");
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
