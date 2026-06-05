@@ -3,6 +3,9 @@
 const float HX711::defaultKnownWeight[4] = {78000.0f, 79000.0f, 80000.0f, 81000.0f};
 const float HX711::defaultScaleFactor[4] = {-5412.36425781f, -5410.0f, -5420.0f, -5400.0f};
 
+int sensorIndex[4] = {0, 1, 2, 3};
+float novoFator[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+
 /////////////////////////////////////////////////////////////////////////////
 // CONSTRUTOR HX711
 /////////////////////////////////////////////////////////////////////////////
@@ -12,38 +15,48 @@ HX711::HX711()
 {
 }
 
-HX711::HX711(int sensorIndex)
+HX711::HX711(int sensorSlot)
 {
-    if (sensorIndex < 0 || sensorIndex >= 4) {
-        sensorIndex = 0;
+    if (sensorSlot < 0 || sensorSlot >= 4) {
+        sensorSlot = 0;
+    }
+
+    int mappedIndex = ::sensorIndex[sensorSlot];
+    if (mappedIndex < 0 || mappedIndex >= 4) {
+        mappedIndex = 0;
     }
 
     offset = 0.0f;
-    sensorKnownWeight = defaultKnownWeight[sensorIndex];
-    sensorId = sensorIndex;
+    sensorKnownWeight = defaultKnownWeight[mappedIndex];
+    sensorId = mappedIndex;
 
     //////////////////////////////////////////////////////////////////////////
     // FATOR PADRÃO
     //////////////////////////////////////////////////////////////////////////
 
-    scale_factor = defaultScaleFactor[sensorIndex];
+    scale_factor = defaultScaleFactor[mappedIndex];
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // TARA
 /////////////////////////////////////////////////////////////////////////////
 
-void HX711::tare(float leituraAtual, int sensorIndex)
+void HX711::tare(float leituraAtual, int sensorSlot)
 {
-    if (sensorIndex < 0 || sensorIndex >= 4) {
-        sensorIndex = 0;
+    if (sensorSlot < 0 || sensorSlot >= 4) {
+        sensorSlot = 0;
     }
 
-    sensorId = sensorIndex;
+    int mappedIndex = ::sensorIndex[sensorSlot];
+    if (mappedIndex < 0 || mappedIndex >= 4) {
+        mappedIndex = 0;
+    }
+
+    sensorId = mappedIndex;
     offset = leituraAtual;
 
     Serial.print("OFFSET (Sensor ");
-    Serial.print(sensorIndex + 1);
+    Serial.print(mappedIndex + 1);
     Serial.println("):");
     Serial.println(offset);
     Serial.print("Known weight:");
@@ -129,9 +142,19 @@ float HX711::getScale()
 // CONSTRUTOR SENSOR BALANÇA
 /////////////////////////////////////////////////////////////////////////////
 
-SensorBalanca::SensorBalanca(HardwareSerial &porta, String prefixoSensor, int sensorIndex)
-    : serial(&porta), prefixo(prefixoSensor), balanca(sensorIndex), sensorIndex(sensorIndex)
+SensorBalanca::SensorBalanca(HardwareSerial &porta, String prefixoSensor, int sensorSlot)
+    : serial(&porta), prefixo(prefixoSensor), balanca(sensorSlot)
 {
+    if (sensorSlot < 0 || sensorSlot >= 4) {
+        sensorSlot = 0;
+    }
+
+    int mappedIndex = ::sensorIndex[sensorSlot];
+    if (mappedIndex < 0 || mappedIndex >= 4) {
+        mappedIndex = 0;
+    }
+
+    sensorIndex = mappedIndex;
 }
 
 /////////////////////////////////////////////////////////////////////////////

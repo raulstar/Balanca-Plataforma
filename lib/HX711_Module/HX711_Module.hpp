@@ -20,9 +20,9 @@ private:
 public:
 
     HX711();
-    HX711(int sensorIndex);
+    HX711(int sensorSlot);
 
-    void tare(float leituraAtual, int sensorIndex);
+    void tare(float leituraAtual, int sensorSlot);
 
     float get_units(float leituraAtual);
 
@@ -31,6 +31,9 @@ public:
     void setScale(float scale);
     float getScale();
 };
+
+extern int sensorIndex[4];
+extern float novoFator[4];
 
 /////////////////////////////////////////////////////////////////////////////
 // CLASSE SENSOR BALANCA
@@ -84,7 +87,7 @@ public:
     // CONSTRUTOR
     //////////////////////////////////////////////////////////////////////////
 
-    SensorBalanca(HardwareSerial &porta, String prefixoSensor, int sensorIndex);
+    SensorBalanca(HardwareSerial &porta, String prefixoSensor, int sensorSlot);
 
     //////////////////////////////////////////////////////////////////////////
     // LEITURA

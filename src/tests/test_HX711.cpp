@@ -37,6 +37,9 @@ SensorConfig sensores[] = {
     {sensor3, "S3"},
     {sensor4, "S4"}
 };
+
+extern const int numSensores;
+
 const int numSensores = sizeof(sensores) / sizeof(sensores[0]);
 
 // Variável global que armazenará a soma dos valores (kg) de todos os sensores.
@@ -138,12 +141,13 @@ void loop()
 
         if (comando.startsWith("t") || comando.startsWith("T"))
         {
-            int sensorIndex = comando.substring(1).toInt() - 1;
-            if (sensorIndex >= 0 && sensorIndex < numSensores)
+            int selectedSensorIndex = comando.substring(1).toInt() - 1;
+            if (selectedSensorIndex >= 0 && selectedSensorIndex < numSensores)
             {
-                sensores[sensorIndex].sensor.tare();
+                sensores[selectedSensorIndex].sensor.tare();
+                sensorIndex[selectedSensorIndex] = selectedSensorIndex;
                 Serial.print("Sensor ");
-                Serial.print(sensorIndex + 1);
+                Serial.print(selectedSensorIndex + 1);
                 Serial.println(" zerado.");
             }
             else
@@ -162,16 +166,18 @@ void loop()
             int espacoIndex = comando.indexOf(' ');
             if (espacoIndex != -1)
             {
-                int sensorIndex = comando.substring(1, espacoIndex).toInt() - 1;
-                float novoFator = comando.substring(espacoIndex + 1).toFloat();
+                int selectedSensorIndex = comando.substring(1, espacoIndex).toInt() - 1;
+                float novoFatorValor = comando.substring(espacoIndex + 1).toFloat();
 
-                if (sensorIndex >= 0 && sensorIndex < numSensores)
+                if (selectedSensorIndex >= 0 && selectedSensorIndex < numSensores)
                 {
-                    sensores[sensorIndex].sensor.setScale(novoFator);
+                    sensores[selectedSensorIndex].sensor.setScale(novoFatorValor);
+                    sensorIndex[selectedSensorIndex] = selectedSensorIndex;
+                    novoFator[selectedSensorIndex] = novoFatorValor;
                     Serial.print("Sensor ");
-                    Serial.print(sensorIndex + 1);
+                    Serial.print(selectedSensorIndex + 1);
                     Serial.print(" fator definido: ");
-                    Serial.println(novoFator, 8);
+                    Serial.println(novoFatorValor, 8);
                 }
                 else
                 {
@@ -181,13 +187,13 @@ void loop()
         }
         else if (comando.startsWith("g") || comando.startsWith("G"))
         {
-            int sensorIndex = comando.substring(1).toInt() - 1;
-            if (sensorIndex >= 0 && sensorIndex < numSensores)
+            int selectedSensorIndex = comando.substring(1).toInt() - 1;
+            if (selectedSensorIndex >= 0 && selectedSensorIndex < numSensores)
             {
                 Serial.print("Sensor ");
-                Serial.print(sensorIndex + 1);
+                Serial.print(selectedSensorIndex + 1);
                 Serial.print(" fator: ");
-                Serial.println(sensores[sensorIndex].sensor.getScale(), 8);
+                Serial.println(sensores[selectedSensorIndex].sensor.getScale(), 8);
             }
             else
             {
@@ -201,17 +207,17 @@ void loop()
 
         else if (comando.length() == 2 && (comando.startsWith("c") || comando.startsWith("C")))
         {
-            int sensorIndex = comando.substring(1).toInt() - 1;
-            if (sensorIndex >= 0 && sensorIndex < numSensores)
+            int selectedSensorIndex = comando.substring(1).toInt() - 1;
+            if (selectedSensorIndex >= 0 && selectedSensorIndex < numSensores)
             {
                 Serial.println("--------------------------------");
                 Serial.print("COLOQUE O PESO DE CALIBRACAO NO SENSOR ");
-                Serial.println(sensorIndex + 1);
+                Serial.println(selectedSensorIndex + 1);
                 Serial.println("--------------------------------");
 
                 delay(3000);
 
-                sensores[sensorIndex].sensor.calibra(pesoCalibracao1);
+                sensores[selectedSensorIndex].sensor.calibra(pesoCalibracao1);
             }
             else
             {
@@ -229,19 +235,19 @@ void loop()
             int espacoIndex = comando.indexOf(' ');
             if (espacoIndex != -1)
             {
-                int sensorIndex = comando.substring(1, espacoIndex).toInt() - 1;
+                int selectedSensorIndex = comando.substring(1, espacoIndex).toInt() - 1;
                 float pesoConhecido = comando.substring(espacoIndex + 1).toFloat();
 
-                if (sensorIndex >= 0 && sensorIndex < numSensores && pesoConhecido > 0)
+                if (selectedSensorIndex >= 0 && selectedSensorIndex < numSensores && pesoConhecido > 0)
                 {
                     Serial.println("--------------------------------");
                     Serial.print("AGUARDE ESTABILIZAR SENSOR ");
-                    Serial.println(sensorIndex + 1);
+                    Serial.println(selectedSensorIndex + 1);
                     Serial.println("--------------------------------");
 
                     delay(3000);
 
-                    sensores[sensorIndex].sensor.calibra(pesoConhecido);
+                    sensores[selectedSensorIndex].sensor.calibra(pesoConhecido);
                 }
                 else
                 {
