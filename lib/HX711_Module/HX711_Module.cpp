@@ -5,6 +5,7 @@ const float HX711::defaultScaleFactor[4] = {-5412.36425781f, -5410.0f, -5420.0f,
 
 int sensorIndex[4] = {0, 1, 2, 3};
 float novoFator[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+float scale_factor = 0.0f;
 
 /////////////////////////////////////////////////////////////////////////////
 // CONSTRUTOR HX711
@@ -34,7 +35,7 @@ HX711::HX711(int sensorSlot)
     // FATOR PADRÃO
     //////////////////////////////////////////////////////////////////////////
 
-    scale_factor = defaultScaleFactor[mappedIndex];
+    ::scale_factor = defaultScaleFactor[mappedIndex];
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -62,7 +63,7 @@ void HX711::tare(float leituraAtual, int sensorSlot)
     Serial.print("Known weight:");
     Serial.println(sensorKnownWeight);
     Serial.print("Scale factor:");
-    Serial.println(scale_factor, 8);
+    Serial.println(::scale_factor, 8);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -116,26 +117,31 @@ void HX711::calibra(float leituraAtual, float known_weight)
     // CALIBRAÇÃO
     //////////////////////////////////////////////////////////////////////////
 
-    scale_factor = known_weight / leituraLiquida;
+    ::scale_factor = known_weight / leituraLiquida;
+    
+    // Atualiza o fator para o sensor específico no índice mapeado
+    if (sensorId >= 0 && sensorId < 4) {
+        novoFator[sensorId] = ::scale_factor;
+    }
 
     //////////////////////////////////////////////////////////////////////////
     // RESULTADO
     //////////////////////////////////////////////////////////////////////////
 
-    Serial.print("FACTOR: ");
-    Serial.println(scale_factor, 8);
+    Serial.print("FACTOR (Sensor "); Serial.print(sensorId); Serial.print("): ");
+    Serial.println(::scale_factor, 8);
 
     Serial.println("--------------------------------");
 }
 
 void HX711::setScale(float scale)
 {
-    scale_factor = scale;
+    ::scale_factor = scale;
 }
 
 float HX711::getScale()
 {
-    return scale_factor;
+    return ::scale_factor;
 }
 
 /////////////////////////////////////////////////////////////////////////////

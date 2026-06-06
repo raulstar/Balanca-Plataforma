@@ -1,8 +1,8 @@
 #include "EEPROM_Module.hpp"
 #include <EEPROM.h>
+#include "../HX711_Module/HX711_Module.hpp"
 
 float offset = 0.0f;
-float scale_factor = 0.0f;
 float sensorKnownWeight = 0.0f;
 int sensorId = 0;
 float defaultKnownWeight[4] = {78000.0f, 79000.0f, 80000.0f, 81000.0f};
@@ -80,8 +80,9 @@ void salvarComEEPROM()
 
     for (int i = 0; i < 4; ++i)
     {
-        EEPROM.put(addr, defaultScaleFactor[i]);
-        addr += sizeof(defaultScaleFactor[i]);
+        EEPROM.put(addr, novoFator[i]);
+        Serial.print("Salvando fator de escala ["); Serial.print(i); Serial.print("] no endereço: "); Serial.print(addr); Serial.print(" Valor: "); Serial.println(novoFator[i]);
+        addr += sizeof(novoFator[i]);
     }
 
     salvarString(addr, sta_ssid, MAX_STR_LEN);
@@ -140,8 +141,8 @@ void carregarComEEPROM()
 
     for (int i = 0; i < 4; ++i)
     {
-        EEPROM.get(addr, defaultScaleFactor[i]);
-        addr += sizeof(defaultScaleFactor[i]);
+        EEPROM.get(addr, novoFator[i]);
+        addr += sizeof(novoFator[i]);
     }
 
     sta_ssid = carregarString(addr, MAX_STR_LEN);

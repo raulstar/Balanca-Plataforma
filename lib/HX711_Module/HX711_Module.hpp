@@ -11,7 +11,6 @@ class HX711
 private:
 
     float offset;
-    float scale_factor;
     float sensorKnownWeight;
     int sensorId;
     static const float defaultKnownWeight[4];
@@ -34,6 +33,7 @@ public:
 
 extern int sensorIndex[4];
 extern float novoFator[4];
+extern float scale_factor;
 
 /////////////////////////////////////////////////////////////////////////////
 // CLASSE SENSOR BALANCA
