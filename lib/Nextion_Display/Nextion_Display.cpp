@@ -310,7 +310,7 @@ void processNextionCommands()
                 else if (command.startsWith("gcalib:"))
                 {
                     Serial.println("Evento [gcalib]");
-
+                    salvarRegistro = true;
                     int colonPos = command.indexOf(':');
                     String valorStr = command.substring(colonPos + 1);
                     valorStr.trim();
@@ -394,7 +394,7 @@ void processNextionCommands()
                 else if (command.indexOf("calib") >= 0)
                 {
                     Serial.println("Evento [calib]");
-
+                    salvarRegistro = true;
                     int pos = command.indexOf(':');
 
                     if (pos > 0)
