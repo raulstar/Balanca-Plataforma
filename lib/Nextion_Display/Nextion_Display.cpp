@@ -23,6 +23,7 @@ String placaVeiculo = "";
 String dataRegistro = "";
 bool calibrando1 = false;
 bool zero = false;
+bool salvarRegistro = false;
 
 String tdata = "";
 String thora = "";
@@ -183,7 +184,7 @@ void updateDisplay()
     {
         setNextionText("tPeso", String(pesoAtual, 1) + " kg");
         last_pesoAtual = pesoAtual;
-        //Serial.print("Peso Atual no display: ");
+        // Serial.print("Peso Atual no display: ");
         Serial.println(pesoAtual, 1);
     }
 
@@ -298,13 +299,13 @@ void processNextionCommands()
 
             if (command.length() > 0)
             {
-                
+
                 if (command.indexOf("bsom") >= 0)
                 {
                     handle_bsom();
                     Serial.println("Evento [bsom]");
                 }
-                 else if (command.startsWith("gcalib:"))
+                else if (command.startsWith("gcalib:"))
                 {
                     Serial.println("Evento [gcalib]");
 
@@ -326,6 +327,7 @@ void processNextionCommands()
                 else if (command.indexOf("bsalva") >= 0)
                 {
                     handle_bsalvar();
+                    salvarRegistro = true;
                     Serial.println("Evento [bsalva]");
                 }
                 else if (command.indexOf("blimpar") >= 0)
@@ -408,7 +410,7 @@ void processNextionCommands()
                         calibrando1 = true;
                     }
                 }
-                else if (command.startsWith("placa:"))
+                else if (command.startsWith("placa"))
                 {
                     Serial.println("Evento [placa]");
 

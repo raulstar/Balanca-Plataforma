@@ -88,7 +88,7 @@ void salvarComEEPROM()
             salvarString(addr, tabela[row][col], MAX_STR_LEN);
         }
     }
-
+    Serial.println("EEPROM salva.");
     EEPROM.commit();
 }
 

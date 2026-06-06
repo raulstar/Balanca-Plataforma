@@ -27,11 +27,11 @@ HardwareSerial SerialPort(2);
 SoftwareSerial impressoraSerial(4, 5);
 float pesoCalibracao1 = 84000.0f;
 extern volatile bool imprimir;
- bool useAP = true; // altere para false para usar modo estação
+bool useAP = true; // altere para false para usar modo estação
 
 // Mutex to protect sensor array access
 // Defined in Nextion_Display.cpp so it is available to both firmware and unit tests.
-//SemaphoreHandle_t xSensorMutex = nullptr;
+// SemaphoreHandle_t xSensorMutex = nullptr;
 // Task handle for tare task
 TaskHandle_t hTareTask = nullptr;
 // Task handle for serial processing task
@@ -72,7 +72,8 @@ int numSensores = sizeof(sensores) / sizeof(sensores[0]);
 // Legacy wrapper – now just notifies the async tare task.
 void tareAllSensors()
 {
-  if (hTareTask) {
+  if (hTareTask)
+  {
     // Notify the tare task to run once.
     xTaskNotifyGive(hTareTask);
   }
@@ -80,13 +81,16 @@ void tareAllSensors()
 
 void taskTareAllSensors(void *pvParameters)
 {
-  for (;;) {
+  for (;;)
+  {
     // Wait for a notification from tareAllSensors()
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     // Protect the sensor array while performing tare
-    if (xSensorMutex && xSemaphoreTake(xSensorMutex, portMAX_DELAY) == pdTRUE) {
-      for (int i = 0; i < numSensores; ++i) {
+    if (xSensorMutex && xSemaphoreTake(xSensorMutex, portMAX_DELAY) == pdTRUE)
+    {
+      for (int i = 0; i < numSensores; ++i)
+      {
         sensores[i].sensor->tare();
       }
       xSemaphoreGive(xSensorMutex);
@@ -132,7 +136,8 @@ void taskProcessarImpressao(void *pvParameters)
 
 void taskProcessNextionCommands(void *pvParameters)
 {
-  for (;;) {
+  for (;;)
+  {
     // Process any pending commands from Nextion display
     processNextionCommands();
     // Yield to other tasks
@@ -142,7 +147,8 @@ void taskProcessNextionCommands(void *pvParameters)
 
 void taskHandleWeb(void *pvParameters)
 {
-  for (;;) {
+  for (;;)
+  {
     // Process any pending HTTP client requests
     handleWeb();
     // Small delay to yield CPU time to other tasks
@@ -153,17 +159,23 @@ void taskHandleWeb(void *pvParameters)
 void taskSerialPortReader(void *pvParameters)
 {
   static String bufferSerial;
-  for (;;) {
+  for (;;)
+  {
     // Read all available characters
-    while (SerialPort.available()) {
+    while (SerialPort.available())
+    {
       char c = SerialPort.read();
-      if (c == '\n') {
+      if (c == '\n')
+      {
         // Process completed line under mutex protection
-        if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+        if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE)
+        {
           // Compute sum of absolute sensor values for immediate display
           float sumAbs = 0.0f;
-          for (int i = 0; i < numSensores; i++) {
-            if (sensores[i].sensor->processaString(bufferSerial)) {
+          for (int i = 0; i < numSensores; i++)
+          {
+            if (sensores[i].sensor->processaString(bufferSerial))
+            {
               Serial.print(sensores[i].prefixo + " RAW: ");
               Serial.print(sensores[i].sensor->getRaw(), 3);
               Serial.print(" | " + sensores[i].prefixo + " KG: ");
@@ -180,7 +192,9 @@ void taskSerialPortReader(void *pvParameters)
           xSemaphoreGive(xSensorMutex);
         }
         bufferSerial = "";
-      } else if (c != '\r') {
+      }
+      else if (c != '\r')
+      {
         bufferSerial += c;
       }
     }
@@ -193,14 +207,16 @@ void taskProcessarSerial(void *pvParameters)
 {
   static String bufferCmd = "";
 
-  for (;;) {
+  for (;;)
+  {
     // Check for incoming serial data from debug console
     if (Serial.available())
     {
       String comando = Serial.readStringUntil('\n');
       comando.trim();
 
-      if (comando.length() == 0) {
+      if (comando.length() == 0)
+      {
         vTaskDelay(pdMS_TO_TICKS(10));
         continue;
       }
@@ -217,7 +233,8 @@ void taskProcessarSerial(void *pvParameters)
         }
         else if (sensorIndex >= 0 && sensorIndex < numSensores)
         {
-          if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+          if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
+          {
             sensores[sensorIndex].sensor->tare();
             xSemaphoreGive(xSensorMutex);
             Serial.print("Sensor ");
@@ -244,7 +261,8 @@ void taskProcessarSerial(void *pvParameters)
 
           if (sensorIndex >= 0 && sensorIndex < numSensores)
           {
-            if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
+            {
               sensores[sensorIndex].sensor->setScale(novoFator);
               xSemaphoreGive(xSensorMutex);
               Serial.print("Sensor ");
@@ -264,7 +282,8 @@ void taskProcessarSerial(void *pvParameters)
         int sensorIndex = comando.substring(1).toInt() - 1;
         if (sensorIndex >= 0 && sensorIndex < numSensores)
         {
-          if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+          if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
+          {
             Serial.print("Sensor ");
             Serial.print(sensorIndex + 1);
             Serial.print(" fator: ");
@@ -293,7 +312,8 @@ void taskProcessarSerial(void *pvParameters)
 
           vTaskDelay(pdMS_TO_TICKS(3000));
 
-          if (xSensorMutex && xSemaphoreTake(xSensorMutex, portMAX_DELAY) == pdTRUE) {
+          if (xSensorMutex && xSemaphoreTake(xSensorMutex, portMAX_DELAY) == pdTRUE)
+          {
             sensores[sensorIndex].sensor->calibra(pesoCalibracao1);
             xSemaphoreGive(xSensorMutex);
           }
@@ -324,7 +344,8 @@ void taskProcessarSerial(void *pvParameters)
 
             vTaskDelay(pdMS_TO_TICKS(3000));
 
-            if (xSensorMutex && xSemaphoreTake(xSensorMutex, portMAX_DELAY) == pdTRUE) {
+            if (xSensorMutex && xSemaphoreTake(xSensorMutex, portMAX_DELAY) == pdTRUE)
+            {
               sensores[sensorIndex].sensor->calibra(pesoConhecido);
               xSemaphoreGive(xSensorMutex);
             }
@@ -340,7 +361,8 @@ void taskProcessarSerial(void *pvParameters)
         }
       }
     }
-    else {
+    else
+    {
       // No data available, yield to other tasks
       vTaskDelay(pdMS_TO_TICKS(50));
     }
@@ -372,19 +394,23 @@ void setup()
   initWebServer();
   initNextion();
   setSensores(sensores, numSensores);
-  if (useAP) {
-        Serial.print("AP ativo – SSID: ");
-        Serial.println("Balanca_AP");
-        Serial.print("IP: ");
-        Serial.println(WiFi.softAPIP());
-    } else {
-        Serial.print("Conectado, IP: ");
-        Serial.println(WiFi.localIP());
-    }
+  if (useAP)
+  {
+    Serial.print("AP ativo – SSID: ");
+    Serial.println("Balanca_AP");
+    Serial.print("IP: ");
+    Serial.println(WiFi.softAPIP());
+  }
+  else
+  {
+    Serial.print("Conectado, IP: ");
+    Serial.println(WiFi.localIP());
+  }
 
   // Create mutex for sensor array protection
   xSensorMutex = xSemaphoreCreateMutex();
-  if (xSensorMutex == nullptr) {
+  if (xSensorMutex == nullptr)
+  {
     ESP_LOGE("Setup", "Failed to create sensor mutex");
   }
   // Create asynchronous tare task (priority higher than print task)
@@ -407,28 +433,27 @@ void setup()
   Serial.println("Comandos:");
   Serial.println("t -> Tara");
   Serial.println("========================");
-  
+
   // Create asynchronous SerialPort reading task
   xTaskCreate(taskSerialPortReader, "SerialPortReader", 4096, NULL, 2, &hPortTask);
   Serial.println("Loading EEPROM data...");
-    carregarComEEPROM();
-    Serial.print("pesoAtual = ");
-    Serial.println(pesoAtual, 2);
-    Serial.print("ttotal = ");
-    Serial.println(ttotal, 2);
-    Serial.print("sta_ssid = ");
-    Serial.println(sta_ssid);
-    Serial.print("sta_password = ");
-    Serial.println(sta_password);
-    Serial.print("ap_ssid = ");
-    Serial.println(ap_ssid);
-    Serial.print("ap_password = ");
-    Serial.println(ap_password);
-    Serial.print("g_wifiConnected = ");
-    Serial.println(g_wifiConnected ? "true" : "false");
-    Serial.print("g_apMode = ");
-    Serial.println(g_apMode ? "true" : "false");
-
+  carregarComEEPROM();
+  Serial.print("pesoAtual = ");
+  Serial.println(pesoAtual, 2);
+  Serial.print("ttotal = ");
+  Serial.println(ttotal, 2);
+  Serial.print("sta_ssid = ");
+  Serial.println(sta_ssid);
+  Serial.print("sta_password = ");
+  Serial.println(sta_password);
+  Serial.print("ap_ssid = ");
+  Serial.println(ap_ssid);
+  Serial.print("ap_password = ");
+  Serial.println(ap_password);
+  Serial.print("g_wifiConnected = ");
+  Serial.println(g_wifiConnected ? "true" : "false");
+  Serial.print("g_apMode = ");
+  Serial.println(g_apMode ? "true" : "false");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -437,7 +462,8 @@ void loop()
 {
   float currentPeso = 0.0f;
   // Protect read access to sensor objects
-  if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+  if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE)
+  {
     for (int i = 0; i < numSensores; i++)
     {
       if (sensores[i].sensor->isReady())
@@ -462,11 +488,16 @@ void loop()
     tareAllSensors();
     zero = false;
   }
-   //////////////////////////////////////////////////////////////////////////
-    // LEITURA SENSOR
-    //////////////////////////////////////////////////////////////////////////
+  if (salvarRegistro)
+  {
+    salvarComEEPROM();
+    salvarRegistro = false;
+  }
+  //////////////////////////////////////////////////////////////////////////
+  // LEITURA SENSOR
+  //////////////////////////////////////////////////////////////////////////
 
-    // SerialPort reading is now handled by taskSerialPortReader.
+  // SerialPort reading is now handled by taskSerialPortReader.
 
-  //delay(2);
+  // delay(2);
 }

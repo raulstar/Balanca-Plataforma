@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include "../../include/config.hpp"
 #include "../../lib/HX711_Module/HX711_Module.hpp"
+#include "../../lib/WiFi_Server/WiFi_Server.hpp"
 
 // ======================================================
 // CONFIGURAÇÃO UART NEXTION
@@ -20,6 +21,7 @@ extern String dataRegistro;
 extern float pesoCalibracao1;
 extern bool calibrando1;
 extern bool zero;
+extern bool salvarRegistro;
 extern volatile bool imprimir;
 extern SemaphoreHandle_t xSensorMutex;
 extern String calib;
