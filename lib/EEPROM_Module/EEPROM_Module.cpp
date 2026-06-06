@@ -41,27 +41,35 @@ void salvarComEEPROM()
 
     int addr = 0;
     EEPROM.put(addr, pesoAtual);
+    Serial.print("Salvando pesoAtual no endereço: "); Serial.print(addr); Serial.print(" Valor: "); Serial.println(pesoAtual);
     addr += sizeof(pesoAtual);
 
     EEPROM.put(addr, ttotal);
+    Serial.print("Salvando ttotal no endereço: "); Serial.print(addr); Serial.print(" Valor: "); Serial.println(ttotal);
     addr += sizeof(ttotal);
 
     EEPROM.put(addr, g_wifiConnected);
+    Serial.print("Salvando g_wifiConnected no endereço: "); Serial.print(addr); Serial.print(" Valor: "); Serial.println(g_wifiConnected);
     addr += sizeof(g_wifiConnected);
 
     EEPROM.put(addr, g_apMode);
+    Serial.print("Salvando g_apMode no endereço: "); Serial.print(addr); Serial.print(" Valor: "); Serial.println(g_apMode);
     addr += sizeof(g_apMode);
 
     EEPROM.put(addr, offset);
+    Serial.print("Salvando offset no endereço: "); Serial.print(addr); Serial.print(" Valor: "); Serial.println(offset);
     addr += sizeof(offset);
 
     EEPROM.put(addr, scale_factor);
+    Serial.print("Salvando scale_factor no endereço: "); Serial.print(addr); Serial.print(" Valor: "); Serial.println(scale_factor);
     addr += sizeof(scale_factor);
 
     EEPROM.put(addr, sensorKnownWeight);
+    Serial.print("Salvando sensorKnownWeight no endereço: "); Serial.print(addr); Serial.print(" Valor: "); Serial.println(sensorKnownWeight);
     addr += sizeof(sensorKnownWeight);
 
     EEPROM.put(addr, sensorId);
+    Serial.print("Salvando sensorId no endereço: "); Serial.print(addr); Serial.print(" Valor: "); Serial.println(sensorId);
     addr += sizeof(sensorId);
 
     for (int i = 0; i < 4; ++i)
@@ -115,6 +123,8 @@ void carregarComEEPROM()
 
     EEPROM.get(addr, scale_factor);
     addr += sizeof(scale_factor);
+    Serial.print("Scale Factor carregado: ");
+    Serial.println(scale_factor);
 
     EEPROM.get(addr, sensorKnownWeight);
     addr += sizeof(sensorKnownWeight);

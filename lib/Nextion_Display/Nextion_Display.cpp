@@ -1,5 +1,6 @@
 #include "Nextion_Display.hpp"
 #include "../WiFi_Server/WiFi_Server.hpp"
+#include "../EEPROM_Module/EEPROM_Module.hpp"
 
 // ======================================================
 // SERIAL NEXTION
@@ -587,6 +588,7 @@ void handle_bsalvar()
     setNextionText(objTARA[contadorRegistro], tabela[contadorRegistro][5]);
 
     contadorRegistro++;
+    salvarComEEPROM();
     delay(2);
 }
 
