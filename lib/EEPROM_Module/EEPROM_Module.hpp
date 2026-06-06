@@ -8,6 +8,7 @@ extern String sta_ssid;
 extern String sta_password;
 extern String ap_ssid;
 extern String ap_password;
+extern String tplaca;
 extern bool g_wifiConnected;
 extern bool g_apMode;
 extern String tabela[20][6];

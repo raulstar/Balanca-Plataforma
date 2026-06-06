@@ -80,6 +80,7 @@ void salvarComEEPROM()
     salvarString(addr, sta_password, MAX_STR_LEN);
     salvarString(addr, ap_ssid, MAX_STR_LEN);
     salvarString(addr, ap_password, MAX_STR_LEN);
+    salvarString(addr, tplaca, MAX_STR_LEN);
 
     for (int row = 0; row < TABLE_ROWS; ++row)
     {
@@ -137,6 +138,7 @@ void carregarComEEPROM()
     sta_password = carregarString(addr, MAX_STR_LEN);
     ap_ssid = carregarString(addr, MAX_STR_LEN);
     ap_password = carregarString(addr, MAX_STR_LEN);
+    tplaca = carregarString(addr, MAX_STR_LEN);
 
     for (int row = 0; row < TABLE_ROWS; ++row)
     {

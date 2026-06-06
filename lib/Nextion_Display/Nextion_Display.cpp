@@ -150,6 +150,8 @@ void updateDisplay()
     {
         setNextionText("tplaca", tplaca);
         last_tplaca = tplaca;
+        Serial.print("Placa no display: ");
+        Serial.println(tplaca);
     }
 
     // Sensores
@@ -413,11 +415,21 @@ void processNextionCommands()
                 else if (command.startsWith("placa"))
                 {
                     Serial.println("Evento [placa]");
+                    int pos = command.indexOf(':');
+                    String valorStr;
 
-                    String valorStr = command.substring(6);
+                    if (pos >= 0)
+                    {
+                        valorStr = command.substring(pos + 1);
+                    }
+                    else
+                    {
+                        valorStr = command.substring(5);
+                    }
+
                     valorStr.trim();
                     placaVeiculo = valorStr;
-
+                    tplaca = valorStr;
                     Serial.print("Placa recebida: ");
                     Serial.println(placaVeiculo);
                 }
