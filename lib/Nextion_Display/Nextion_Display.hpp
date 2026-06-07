@@ -81,6 +81,7 @@ extern String tabela[20][11];
 // ======================================================
 extern int linhaAtual;
 extern int contadorRegistro;
+extern int contEixo;
 extern int eixo;
 extern int peixo;
 

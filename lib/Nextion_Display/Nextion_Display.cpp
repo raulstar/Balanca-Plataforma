@@ -55,6 +55,7 @@ String tabela[20][11];
 
 int linhaAtual = 0;
 int contadorRegistro = 0;
+int contEixo = 0;
 
 String last_thora = "";
 String last_tdata = "";
@@ -503,28 +504,27 @@ void handle_bsom()
     Serial.println("Evento [bsom]");
 
     ttotal += pesoAtual;
-    eixo++;
     peixo = (int)pesoAtual;
 
-    switch (eixo)
+    switch (contEixo)
     {
-    case 1:
+    case 0:
         eixo1 = peixo;
         peixo1 = peixo;
         break;
-    case 2:
+    case 1:
         eixo2 = peixo;
         peixo2 = peixo;
         break;
-    case 3:
+    case 2:
         eixo3 = peixo;
         peixo3 = peixo;
         break;
-    case 4:
+    case 3:
         eixo4 = peixo;
         peixo4 = peixo;
         break;
-    case 5:
+    case 4:
         eixo5 = peixo;
         peixo5 = peixo;
         break;
@@ -532,6 +532,9 @@ void handle_bsom()
         peixo6 = peixo;
         break;
     }
+
+    contEixo++;
+    eixo++;
 
     setNextionText("ttotal", String(ttotal, 1));
 }
@@ -650,6 +653,7 @@ void handle_blimpar()
     ttara = 0.0;
     tplaca = "";
     placaVeiculo = "";
+    contEixo = 0;
     eixo = 0;
     peixo = 0;
     eixo1 = 0;
