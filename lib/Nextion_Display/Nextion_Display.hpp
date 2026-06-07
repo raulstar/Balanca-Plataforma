@@ -59,11 +59,22 @@ extern String placa;
 extern float pesoAtual;
 extern float ttotal;
 extern float ttara;
+extern int eixo1;
+extern int eixo2;
+extern int eixo3;
+extern int eixo4;
+extern int eixo5;
+extern int peixo1;
+extern int peixo2;
+extern int peixo3;
+extern int peixo4;
+extern int peixo5;
+extern int peixo6;
 
 // ======================================================
 // MATRIZ DE REGISTROS
 // ======================================================
-extern String tabela[20][6];
+extern String tabela[20][11];
 
 // ======================================================
 // CONTADORES

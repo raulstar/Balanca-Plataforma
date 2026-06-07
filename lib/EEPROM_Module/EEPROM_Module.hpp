@@ -11,7 +11,7 @@ extern String ap_password;
 extern String tplaca;
 extern bool g_wifiConnected;
 extern bool g_apMode;
-extern String tabela[20][6];
+extern String tabela[20][11];
 
 extern float offset;
 extern float scale_factor;

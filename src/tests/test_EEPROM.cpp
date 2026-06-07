@@ -9,7 +9,7 @@ String ap_ssid = "";
 String ap_password = "";
 bool g_wifiConnected = false;
 bool g_apMode = false;
-String tabela[20][6];
+String tabela[20][11];
 
 void setup()
 {
@@ -28,7 +28,7 @@ void setup()
 
     for (int row = 0; row < 20; ++row)
     {
-        for (int col = 0; col < 6; ++col)
+        for (int col = 0; col < 11; ++col)
         {
             tabela[row][col] = "R" + String(row) + "C" + String(col);
         }
@@ -49,7 +49,7 @@ void setup()
     g_apMode = false;
     for (int row = 0; row < 20; ++row)
     {
-        for (int col = 0; col < 6; ++col)
+        for (int col = 0; col < 11; ++col)
         {
             tabela[row][col] = "";
         }
@@ -79,7 +79,7 @@ void setup()
     Serial.println("Tabela sample:");
     for (int row = 0; row < 3; ++row)
     {
-        for (int col = 0; col < 6; ++col)
+        for (int col = 0; col < 11; ++col)
         {
             Serial.print(tabela[row][col]);
             Serial.print(" ");

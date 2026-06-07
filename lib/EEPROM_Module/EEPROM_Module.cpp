@@ -8,10 +8,10 @@ int sensorId = 0;
 float defaultKnownWeight[4] = {78000.0f, 79000.0f, 80000.0f, 81000.0f};
 float defaultScaleFactor[4] = {-5412.36425781f, -5410.0f, -5420.0f, -5400.0f};
 
-static const int EEPROM_SIZE = 4096;
+static const int EEPROM_SIZE = 8192;
 static const int MAX_STR_LEN = 32;
 static const int TABLE_ROWS = 20;
-static const int TABLE_COLS = 6;
+static const int TABLE_COLS = 11;
 
 static void salvarString(int &addr, const String &value, int maxLen)
 {

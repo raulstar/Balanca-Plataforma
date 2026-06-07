@@ -45,8 +45,13 @@ String tplaca = "";
 float pesoAtual = 0.0;
 float ttotal = 0.0;
 float ttara = 0.0;
+int eixo1 = 0;
+int eixo2 = 0;
+int eixo3 = 0;
+int eixo4 = 0;
+int eixo5 = 0;
 
-String tabela[20][6];
+String tabela[20][11];
 
 int linhaAtual = 0;
 int contadorRegistro = 0;
@@ -497,15 +502,35 @@ void handle_bsom()
 {
     Serial.println("Evento [bsom]");
 
-    if (ttotal == 0.0)
+    ttotal += pesoAtual;
+    eixo++;
+    peixo = (int)pesoAtual;
+
+    switch (eixo)
     {
-        ttotal = pesoAtual;
-    }
-    else
-    {
-        ttotal += pesoAtual;
-        eixo++;
-        peixo = pesoAtual;
+    case 1:
+        eixo1 = peixo;
+        peixo1 = peixo;
+        break;
+    case 2:
+        eixo2 = peixo;
+        peixo2 = peixo;
+        break;
+    case 3:
+        eixo3 = peixo;
+        peixo3 = peixo;
+        break;
+    case 4:
+        eixo4 = peixo;
+        peixo4 = peixo;
+        break;
+    case 5:
+        eixo5 = peixo;
+        peixo5 = peixo;
+        break;
+    default:
+        peixo6 = peixo;
+        break;
     }
 
     setNextionText("ttotal", String(ttotal, 1));
@@ -544,7 +569,7 @@ void handle_bsalvar()
 
     // for (int i = 6; i > 0; i--)
     // {
-    //     for (int j = 0; j < 6; j++)
+    //     for (int j = 0; j < 11; j++)
     //     {
     //         tabela[i][j] = tabela[i - 1][j];
     //     }
@@ -554,8 +579,13 @@ void handle_bsalvar()
     tabela[contadorRegistro][1] = tplaca;
     tabela[contadorRegistro][2] = tdata;
     tabela[contadorRegistro][3] = thora;
-    tabela[contadorRegistro][4] = String(ttotal, 1);
-    tabela[contadorRegistro][5] = String(ttara, 1);
+    tabela[contadorRegistro][4] = String((float)eixo1, 1);
+    tabela[contadorRegistro][5] = String((float)eixo2, 1);
+    tabela[contadorRegistro][6] = String((float)eixo3, 1);
+    tabela[contadorRegistro][7] = String((float)eixo4, 1);
+    tabela[contadorRegistro][8] = String((float)eixo5, 1);
+    tabela[contadorRegistro][9] = String(ttotal, 1);
+    tabela[contadorRegistro][10] = String(ttara, 1);
     Serial.print("//////////////////////////////////////");
     Serial.println("contadorRegistro");
     Serial.print(": ");
@@ -569,12 +599,27 @@ void handle_bsalvar()
     Serial.print("thora");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][3]);
-    Serial.print("ttotal");
+    Serial.print("eixo1");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][4]);
-    Serial.print("ttara");
+    Serial.print("eixo2");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][5]);
+    Serial.print("eixo3");
+    Serial.print(": ");
+    Serial.println(tabela[contadorRegistro][6]);
+    Serial.print("eixo4");
+    Serial.print(": ");
+    Serial.println(tabela[contadorRegistro][7]);
+    Serial.print("eixo5");
+    Serial.print(": ");
+    Serial.println(tabela[contadorRegistro][8]);
+    Serial.print("ttotal");
+    Serial.print(": ");
+    Serial.println(tabela[contadorRegistro][9]);
+    Serial.print("ttara");
+    Serial.print(": ");
+    Serial.println(tabela[contadorRegistro][10]);
 
     setNextionText(objTN[contadorRegistro], tabela[contadorRegistro][0]);
 
@@ -584,9 +629,9 @@ void handle_bsalvar()
 
     setNextionText(objHORA[contadorRegistro], tabela[contadorRegistro][3]);
 
-    setNextionText(objTOTAL[contadorRegistro], tabela[contadorRegistro][4]);
+    setNextionText(objTOTAL[contadorRegistro], tabela[contadorRegistro][9]);
 
-    setNextionText(objTARA[contadorRegistro], tabela[contadorRegistro][5]);
+    setNextionText(objTARA[contadorRegistro], tabela[contadorRegistro][10]);
 
     contadorRegistro++;
     salvarComEEPROM();
@@ -607,6 +652,17 @@ void handle_blimpar()
     placaVeiculo = "";
     eixo = 0;
     peixo = 0;
+    eixo1 = 0;
+    eixo2 = 0;
+    eixo3 = 0;
+    eixo4 = 0;
+    eixo5 = 0;
+    peixo1 = 0;
+    peixo2 = 0;
+    peixo3 = 0;
+    peixo4 = 0;
+    peixo5 = 0;
+    peixo6 = 0;
 
     updateDisplay();
 }
