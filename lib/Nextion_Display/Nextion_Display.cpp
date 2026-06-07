@@ -71,6 +71,7 @@ float last_ttara = -999999.0;
 float last_ttotal = -999999.0;
 
 int last_contadorRegistro = 0;
+int last_contEixo = -1;
 
 // WiFi status variables tracking
 String last_sta_ssid = "";
@@ -217,6 +218,13 @@ void updateDisplay()
     {
         setNextionText("tn0", String(contadorRegistro));
         last_contadorRegistro = contadorRegistro;
+    }
+
+    // Contador de eixos
+    if (contEixo != last_contEixo)
+    {
+        setNextionText("tcontEixo", String(contEixo));
+        last_contEixo = contEixo;
     }
 
     // Sensor display fallback values

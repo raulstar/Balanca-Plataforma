@@ -120,6 +120,7 @@ void taskProcessarImpressao(void *pvParameters)
       dados.contador = contadorRegistro;
       dados.total = ttotal;
       dados.tara = ttara;
+      eixo = contEixo;
       dados.eixo = eixo;
       dados.peixo1 = peixo1;
       dados.peixo2 = peixo2;
