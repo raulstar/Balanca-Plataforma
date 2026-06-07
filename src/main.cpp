@@ -91,6 +91,9 @@ void taskTareAllSensors(void *pvParameters)
     {
       for (int i = 0; i < numSensores; ++i)
       {
+        // Força a atualização do valor do sensor antes de zerar
+        // Isso assume que o objeto sensor tem acesso à última leitura lida.
+        // O valorLido é mantido na instância de SensorBalanca.
         sensores[i].sensor->tare();
       }
       xSemaphoreGive(xSensorMutex);

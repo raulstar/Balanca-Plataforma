@@ -239,18 +239,11 @@ float SensorBalanca::getGramas()
 
 bool SensorBalanca::tare()
 {
-    if (!ready)
-    {
-        Serial.print("ERRO: Sensor ");
-        Serial.print(sensorIndex + 1);
-        Serial.println(" nao pronto para tara");
-        return false;
-    }
-
+    // Zeragem forçada: ignora verificação de ready
     balanca.tare(valorLido, sensorIndex);
 
     Serial.println("--------------------------------");
-    Serial.println("BALANCA ZERADA");
+    Serial.println("BALANCA ZERADA (FORCADA)");
     Serial.println("--------------------------------");
     return true;
 }

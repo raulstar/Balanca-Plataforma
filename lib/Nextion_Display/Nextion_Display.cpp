@@ -162,6 +162,8 @@ void updateDisplay()
         {
             String sensorVal = String(_sensores[i].sensor->getKg(), 1);
             String objName = "tPeso" + String(i + 1);
+            
+            // Sempre envia o texto atualizado para o display
             setNextionText(objName, sensorVal);
 
             switch (i)
@@ -180,16 +182,15 @@ void updateDisplay()
                 break;
             }
         }
+        Serial.println(tpeso1 + " | " + tpeso2 + " | " + tpeso3 + " | " + tpeso4);
     }
 
     // Peso Atual
-    if (pesoAtual != last_pesoAtual)
-    {
-        setNextionText("tPeso", String(pesoAtual, 1) + " kg");
-        last_pesoAtual = pesoAtual;
-        // Serial.print("Peso Atual no display: ");
-        Serial.println(pesoAtual, 1);
-    }
+    // Atualiza independentemente se houve mudança ou não, pois a tara pode ter zerado
+    // mas o valor absoluto (0.0) ainda pode ser considerado igual ao anterior.
+    setNextionText("tPeso", String(pesoAtual, 1) + " kg");
+    last_pesoAtual = pesoAtual;
+    Serial.println(pesoAtual, 1);
 
     // Total
     if (ttotal != last_ttotal)
