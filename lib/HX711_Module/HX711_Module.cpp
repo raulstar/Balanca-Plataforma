@@ -173,15 +173,19 @@ bool SensorBalanca::processaString(String s)
     {
         valorLido = atof(s.c_str() + prefixo.length());
 
+        // Apenas marca como pronto se o valor é válido.
+        // Não descartamos o valor lido aqui para permitir a tara de valores brutos.
         if (fabs(valorLido) < 0.0001f)
         {
             ready = false;
-            return false;
+        }
+        else
+        {
+            ready = true;
         }
 
         pesoGramas = balanca.get_units(valorLido);
         pesoKg = pesoGramas / 1000.0f;
-        ready = true;
         return true;
     }
     return false;
@@ -242,8 +246,14 @@ bool SensorBalanca::tare()
     // Zeragem forçada: ignora verificação de ready
     balanca.tare(valorLido, sensorIndex);
 
+    // Forçar recalculamento imediato após definir novo offset
+    pesoGramas = balanca.get_units(valorLido);
+    pesoKg = pesoGramas / 1000.0f;
+
     Serial.println("--------------------------------");
     Serial.println("BALANCA ZERADA (FORCADA)");
+    Serial.print("Novo Valor (KG): ");
+    Serial.println(pesoKg, 3);
     Serial.println("--------------------------------");
     return true;
 }

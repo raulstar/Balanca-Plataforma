@@ -182,7 +182,7 @@ void updateDisplay()
                 break;
             }
         }
-        Serial.println(tpeso1 + " | " + tpeso2 + " | " + tpeso3 + " | " + tpeso4);
+        //Serial.println(tpeso1 + " | " + tpeso2 + " | " + tpeso3 + " | " + tpeso4);
     }
 
     // Peso Atual
@@ -190,7 +190,7 @@ void updateDisplay()
     // mas o valor absoluto (0.0) ainda pode ser considerado igual ao anterior.
     setNextionText("tPeso", String(pesoAtual, 1) + " kg");
     last_pesoAtual = pesoAtual;
-    Serial.println(pesoAtual, 1);
+    //Serial.println(pesoAtual, 1);
 
     // Total
     if (ttotal != last_ttotal)
