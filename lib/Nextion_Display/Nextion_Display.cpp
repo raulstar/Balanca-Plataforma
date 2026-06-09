@@ -714,5 +714,6 @@ void handle_bcalib(String cmd)
 
         Serial.print("pesoCalibracao1 = ");
         Serial.println(pesoCalibracao1 / 1000.0f, 4);
+        salvarComEEPROM();
     }
 }

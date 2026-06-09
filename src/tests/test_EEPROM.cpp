@@ -7,6 +7,7 @@ String sta_ssid = "";
 String sta_password = "";
 String ap_ssid = "";
 String ap_password = "";
+String tplaca = "";
 bool g_wifiConnected = false;
 bool g_apMode = false;
 String tabela[20][11];
