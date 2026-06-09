@@ -71,7 +71,7 @@ float last_ttara = -999999.0;
 float last_ttotal = -999999.0;
 
 int last_contadorRegistro = 0;
-int last_contEixo = -1;
+int last_contEixo = 0;
 
 // WiFi status variables tracking
 String last_sta_ssid = "";
@@ -169,7 +169,7 @@ void updateDisplay()
         {
             String sensorVal = String(_sensores[i].sensor->getKg(), 1);
             String objName = "tPeso" + String(i + 1);
-            
+
             // Sempre envia o texto atualizado para o display
             setNextionText(objName, sensorVal);
 
@@ -189,7 +189,7 @@ void updateDisplay()
                 break;
             }
         }
-        //Serial.println(tpeso1 + " | " + tpeso2 + " | " + tpeso3 + " | " + tpeso4);
+        // Serial.println(tpeso1 + " | " + tpeso2 + " | " + tpeso3 + " | " + tpeso4);
     }
 
     // Peso Atual
@@ -197,7 +197,7 @@ void updateDisplay()
     // mas o valor absoluto (0.0) ainda pode ser considerado igual ao anterior.
     setNextionText("tPeso", String(pesoAtual, 1) + " kg");
     last_pesoAtual = pesoAtual;
-    //Serial.println(pesoAtual, 1);
+    // Serial.println(pesoAtual, 1);
 
     // Total
     if (ttotal != last_ttotal)
@@ -569,6 +569,9 @@ void handle_bsalvar()
     String objHORA[7] =
         {
             "page1.thora0", "page1.thora1", "page1.thora2", "page1.thora3", "page1.thora4", "page1.thora5", "page1.thora6"};
+    String objEIXO[7] =
+        {
+            "page1.contEixo0", "page1.contEixo1", "page1.contEixo2", "page1.contEixo3", "page1.contEixo4", "page1.contEixo5", "page1.contEixo6"};
 
     String objTOTAL[7] =
         {
@@ -590,13 +593,13 @@ void handle_bsalvar()
     tabela[contadorRegistro][1] = tplaca;
     tabela[contadorRegistro][2] = tdata;
     tabela[contadorRegistro][3] = thora;
-    tabela[contadorRegistro][4] = String((float)eixo1, 1);
-    tabela[contadorRegistro][5] = String((float)eixo2, 1);
-    tabela[contadorRegistro][6] = String((float)eixo3, 1);
-    tabela[contadorRegistro][7] = String((float)eixo4, 1);
-    tabela[contadorRegistro][8] = String((float)eixo5, 1);
-    tabela[contadorRegistro][9] = String(ttotal, 1);
-    tabela[contadorRegistro][10] = String(ttara, 1);
+    tabela[contadorRegistro][4] = contEixo;
+    tabela[contadorRegistro][5] = String((float)eixo1, 1);
+    tabela[contadorRegistro][6] = String((float)eixo2, 1);
+    tabela[contadorRegistro][7] = String((float)eixo3, 1);
+    tabela[contadorRegistro][8] = String((float)eixo4, 1);
+    tabela[contadorRegistro][9] = String((float)eixo5, 1);
+    tabela[contadorRegistro][10] = String(ttotal, 1);
     Serial.print("//////////////////////////////////////");
     Serial.println("contadorRegistro");
     Serial.print(": ");
@@ -610,27 +613,30 @@ void handle_bsalvar()
     Serial.print("thora");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][3]);
-    Serial.print("eixo1");
+    Serial.print("contaeixo");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][4]);
-    Serial.print("eixo2");
+    Serial.print("eixo1");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][5]);
-    Serial.print("eixo3");
+    Serial.print("eixo2");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][6]);
-    Serial.print("eixo4");
+    Serial.print("eixo3");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][7]);
-    Serial.print("eixo5");
+    Serial.print("eixo4");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][8]);
-    Serial.print("ttotal");
+    Serial.print("eixo5");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][9]);
-    Serial.print("ttara");
+    Serial.print("ttotal");
     Serial.print(": ");
     Serial.println(tabela[contadorRegistro][10]);
+    Serial.print("ttara");
+    Serial.print(": ");
+    Serial.println(tabela[contadorRegistro][11]);
 
     setNextionText(objTN[contadorRegistro], tabela[contadorRegistro][0]);
 
@@ -639,6 +645,8 @@ void handle_bsalvar()
     setNextionText(objDATA[contadorRegistro], tabela[contadorRegistro][2]);
 
     setNextionText(objHORA[contadorRegistro], tabela[contadorRegistro][3]);
+
+    setNextionText(objEIXO[contadorRegistro], tabela[contadorRegistro][4]);
 
     setNextionText(objTOTAL[contadorRegistro], tabela[contadorRegistro][9]);
 
