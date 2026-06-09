@@ -1,6 +1,6 @@
 #include "HX711_Module.hpp"
 
-const float HX711::defaultKnownWeight[4] = {78000.0f, 79000.0f, 80000.0f, 81000.0f};
+const float HX711::defaultKnownWeight[4] = {84000.0f, 84000.0f, 84000.0f, 84000.0f};
 const float HX711::defaultScaleFactor[4] = {-5412.36425781f, -5410.0f, -5420.0f, -5400.0f};
 
 int sensorIndex[4] = {0, 1, 2, 3};

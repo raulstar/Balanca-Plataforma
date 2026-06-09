@@ -661,7 +661,7 @@ void handle_blimpar()
     ttara = 0.0;
     tplaca = "";
     placaVeiculo = "";
-    contEixo = 0;
+    contEixo = 1;
     eixo = 0;
     peixo = 0;
     eixo1 = 0;

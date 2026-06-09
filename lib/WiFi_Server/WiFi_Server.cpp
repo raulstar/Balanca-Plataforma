@@ -1,7 +1,4 @@
 #include "WiFi_Server.hpp"
-
-// Forward declaration of the tare function defined in main.cpp.
-extern void tareAllSensors();
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
@@ -10,12 +7,12 @@ extern void tareAllSensors();
 WebServer server(80);
 
 // Default credentials for station mode (client)
-String sta_ssid = "raulstar";
-String sta_password = "72989400";
+const char *sta_ssid = "raulstar";
+const char *sta_password = "72989400";
 
 // Credentials for AP mode – can be changed via setAPMode if needed
-String ap_ssid = "Balanca_AP";
-String ap_password = "12345678";
+const char *ap_ssid = "Balanca_AP";
+const char *ap_password = "12345678";
 
 // Global flag indicating AP mode (default false – station mode)
 bool g_apMode = false;
@@ -76,7 +73,7 @@ void initWiFi()
         // Start Access Point mode
         Serial.println("Iniciando modo Access Point...");
         WiFi.mode(WIFI_AP);
-        bool result = WiFi.softAP(ap_ssid.c_str(), ap_password.c_str());
+        bool result = WiFi.softAP(ap_ssid, ap_password);
         if (result) {
             Serial.println("AP iniciado com sucesso.");
             Serial.print("SSID: ");
@@ -95,7 +92,7 @@ void initWiFi()
     } else {
         // Station mode – connect to existing Wi‑Fi network
         WiFi.mode(WIFI_STA);
-        WiFi.begin(sta_ssid.c_str(), sta_password.c_str());
+        WiFi.begin(sta_ssid, sta_password);
         while (WiFi.status() != WL_CONNECTED && tentativas < maxTentativas) {
             delay(500);
             Serial.print('.');
@@ -178,23 +175,4 @@ void initWebServer()
 void handleWeb()
 {
     server.handleClient();
-}
-
-// Handler for "/zero" endpoint – performs tare (zero) of all sensors.
-// Returns a simple plain‑text confirmation.
-void handleZero()
-{
-    // Reuse existing tare wrapper to zero all sensors.
-    tareAllSensors();
-    server.send(200, "text/plain", "Sensors zeroed");
-}
-
-// Handler for "/dados" endpoint – returns current weight data.
-// For now we provide a minimal JSON payload with the current total weight.
-void handleDados()
-{
-    // Assuming pesoAtual is a global variable representing the current weight.
-    extern float pesoAtual; // declared elsewhere (e.g., in main.cpp)
-    String json = "{\"peso\":" + String(pesoAtual, 2) + "}";
-    server.send(200, "application/json", json);
 }
