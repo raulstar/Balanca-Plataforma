@@ -1,7 +1,7 @@
 #include "HX711_Module.hpp"
 
 const float HX711::defaultKnownWeight[4] = {84000.0f, 84000.0f, 84000.0f, 84000.0f};
-const float HX711::defaultScaleFactor[4] = {-5412.36425781f, -5410.0f, -5420.0f, -5400.0f};
+const float HX711::defaultScaleFactor[4] = {-6259.31f,-5201.24f, -5420.0f, -5400.0f};
 
 int sensorIndex[4] = {0, 1, 2, 3};
 float novoFator[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -62,7 +62,7 @@ void HX711::tare(float leituraAtual, int sensorSlot)
     Serial.println(offset);
     Serial.print("Known weight:");
     Serial.println(sensorKnownWeight);
-    Serial.print("Scale factor:");
+    Serial.print("Scale factor padrao:");
     Serial.println(::scale_factor, 8);
 }
 
@@ -118,7 +118,9 @@ void HX711::calibra(float leituraAtual, float known_weight)
     //////////////////////////////////////////////////////////////////////////
 
     ::scale_factor = known_weight / leituraLiquida;
-    
+    Serial.print("Scale factor calculado:");
+    Serial.println(::scale_factor, 8);
+
     // Atualiza o fator para o sensor específico no índice mapeado
     if (sensorId >= 0 && sensorId < 4) {
         novoFator[sensorId] = ::scale_factor;

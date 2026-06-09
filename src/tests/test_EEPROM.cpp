@@ -12,6 +12,50 @@ bool g_wifiConnected = false;
 bool g_apMode = false;
 String tabela[20][11];
 
+static const float expectedPesoConhecido[4] = {11111.1f, 22222.2f, 33333.3f, 44444.4f};
+static const float expectedFatorEscalaConhecido[4] = {-1111.1f, -2222.2f, -3333.3f, -4444.4f};
+
+static bool floatEquals(float a, float b, float epsilon = 0.01f)
+{
+    return fabs(a - b) <= epsilon;
+}
+
+static void printFloatArray(const char *label, const float values[4])
+{
+    Serial.print(label);
+    Serial.print(" = [");
+    for (int i = 0; i < 4; ++i)
+    {
+        Serial.print(values[i], 2);
+        if (i < 3)
+        {
+            Serial.print(", ");
+        }
+    }
+    Serial.println("]");
+}
+
+static bool validateFloatArray(const char *label, const float values[4], const float expected[4])
+{
+    bool ok = true;
+    for (int i = 0; i < 4; ++i)
+    {
+        if (!floatEquals(values[i], expected[i]))
+        {
+            Serial.print("FAIL ");
+            Serial.print(label);
+            Serial.print("[");
+            Serial.print(i);
+            Serial.print("] esperado=");
+            Serial.print(expected[i], 2);
+            Serial.print(" obtido=");
+            Serial.println(values[i], 2);
+            ok = false;
+        }
+    }
+    return ok;
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -26,6 +70,12 @@ void setup()
     ap_password = "AP_Senha";
     g_wifiConnected = true;
     g_apMode = false;
+
+    for (int i = 0; i < 4; ++i)
+    {
+        pesoConhecido[i] = expectedPesoConhecido[i];
+        fatorEscalaConhecido[i] = expectedFatorEscalaConhecido[i];
+    }
 
     for (int row = 0; row < 20; ++row)
     {
@@ -48,6 +98,11 @@ void setup()
     ap_password = "";
     g_wifiConnected = false;
     g_apMode = false;
+    for (int i = 0; i < 4; ++i)
+    {
+        pesoConhecido[i] = 0.0f;
+        fatorEscalaConhecido[i] = 0.0f;
+    }
     for (int row = 0; row < 20; ++row)
     {
         for (int col = 0; col < 11; ++col)
@@ -76,6 +131,17 @@ void setup()
     Serial.println(g_wifiConnected ? "true" : "false");
     Serial.print("g_apMode = ");
     Serial.println(g_apMode ? "true" : "false");
+
+    printFloatArray("pesoConhecido", pesoConhecido);
+    printFloatArray("fatorEscalaConhecido", fatorEscalaConhecido);
+
+    bool pesoConhecidoOk = validateFloatArray("pesoConhecido", pesoConhecido, expectedPesoConhecido);
+    bool fatorEscalaConhecidoOk = validateFloatArray("fatorEscalaConhecido", fatorEscalaConhecido, expectedFatorEscalaConhecido);
+
+    Serial.print("Teste pesoConhecido: ");
+    Serial.println(pesoConhecidoOk ? "PASS" : "FAIL");
+    Serial.print("Teste fatorEscalaConhecido: ");
+    Serial.println(fatorEscalaConhecidoOk ? "PASS" : "FAIL");
 
     Serial.println("Tabela sample:");
     for (int row = 0; row < 3; ++row)

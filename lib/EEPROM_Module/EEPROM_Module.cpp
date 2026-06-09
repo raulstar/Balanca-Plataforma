@@ -5,13 +5,21 @@
 float offset = 0.0f;
 float sensorKnownWeight = 0.0f;
 int sensorId = 0;
-float defaultKnownWeight[4] = {78000.0f, 79000.0f, 80000.0f, 81000.0f};
-float defaultScaleFactor[4] = {-5412.36425781f, -5410.0f, -5420.0f, -5400.0f};
+float pesoConhecido[4] = {78000.0f, 79000.0f, 80000.0f, 81000.0f};
+float fatorEscalaConhecido[4] = {-5801.10f, -5410.0f, -5420.0f, -5400.0f};
 
 static const int EEPROM_SIZE = 8192;
 static const int MAX_STR_LEN = 32;
 static const int TABLE_ROWS = 20;
 static const int TABLE_COLS = 11;
+
+static int tamanhoEEPROMUsado()
+{
+    return (sizeof(pesoAtual) + sizeof(ttotal) + sizeof(g_wifiConnected) + sizeof(g_apMode) +
+            sizeof(offset) + sizeof(scale_factor) + sizeof(sensorKnownWeight) + sizeof(sensorId) +
+            sizeof(pesoConhecido) + sizeof(fatorEscalaConhecido) +
+            (5 * MAX_STR_LEN) + (TABLE_ROWS * TABLE_COLS * MAX_STR_LEN));
+}
 
 static void salvarString(int &addr, const String &value, int maxLen)
 {
@@ -37,7 +45,7 @@ static String carregarString(int &addr, int maxLen)
 
 void salvarComEEPROM()
 {
-    EEPROM.begin(EEPROM_SIZE);
+    EEPROM.begin(tamanhoEEPROMUsado());
 
     int addr = 0;
     EEPROM.put(addr, pesoAtual);
@@ -98,20 +106,20 @@ void salvarComEEPROM()
 
     for (int i = 0; i < 4; ++i)
     {
-        EEPROM.put(addr, defaultKnownWeight[i]);
-        addr += sizeof(defaultKnownWeight[i]);
+        EEPROM.put(addr, pesoConhecido[i]);
+        addr += sizeof(pesoConhecido[i]);
     }
 
     for (int i = 0; i < 4; ++i)
     {
-        EEPROM.put(addr, novoFator[i]);
+        EEPROM.put(addr, fatorEscalaConhecido[i]);
         Serial.print("Salvando fator de escala [");
         Serial.print(i);
         Serial.print("] no endereço: ");
         Serial.print(addr);
         Serial.print(" Valor: ");
-        Serial.println(novoFator[i]);
-        addr += sizeof(novoFator[i]);
+        Serial.println(fatorEscalaConhecido[i]);
+        addr += sizeof(fatorEscalaConhecido[i]);
     }
 
     salvarString(addr, sta_ssid, MAX_STR_LEN);
@@ -128,12 +136,15 @@ void salvarComEEPROM()
         }
     }
     Serial.println("EEPROM salva.");
-    EEPROM.commit();
+    if (!EEPROM.commit())
+    {
+        Serial.println("ERRO: EEPROM.commit() falhou. Dados nao foram gravados.");
+    }
 }
 
 void carregarComEEPROM()
 {
-    EEPROM.begin(EEPROM_SIZE);
+    EEPROM.begin(tamanhoEEPROMUsado());
 
     int addr = 0;
     EEPROM.get(addr, pesoAtual);
@@ -164,20 +175,20 @@ void carregarComEEPROM()
 
     for (int i = 0; i < 4; ++i)
     {
-        EEPROM.get(addr, defaultKnownWeight[i]);
-        addr += sizeof(defaultKnownWeight[i]);
+        EEPROM.get(addr, pesoConhecido[i]);
+        addr += sizeof(pesoConhecido[i]);
     }
 
     for (int i = 0; i < 4; ++i)
     {
-        EEPROM.get(addr, novoFator[i]);
+        EEPROM.get(addr, fatorEscalaConhecido[i]);
         Serial.print("Carregando fator de escala [");
         Serial.print(i);
         Serial.print("] do endereço: ");
         Serial.print(addr);
         Serial.print(" Valor: ");
-        Serial.println(novoFator[i]);
-        addr += sizeof(novoFator[i]);
+        Serial.println(fatorEscalaConhecido[i]);
+        addr += sizeof(fatorEscalaConhecido[i]);
     }
 
     sta_ssid = carregarString(addr, MAX_STR_LEN);

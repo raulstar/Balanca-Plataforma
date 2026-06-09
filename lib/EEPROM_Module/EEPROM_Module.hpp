@@ -17,6 +17,8 @@ extern float offset;
 extern float scale_factor;
 extern float sensorKnownWeight;
 extern int sensorId;
+extern float pesoConhecido[4];
+extern float fatorEscalaConhecido[4];
 extern float defaultKnownWeight[4];
 extern float defaultScaleFactor[4];
 
