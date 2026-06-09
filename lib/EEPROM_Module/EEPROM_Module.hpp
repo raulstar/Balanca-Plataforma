@@ -4,6 +4,7 @@
 
 extern float pesoAtual;
 extern float ttotal;
+extern int contEixo;
 extern String sta_ssid;
 extern String sta_password;
 extern String ap_ssid;
