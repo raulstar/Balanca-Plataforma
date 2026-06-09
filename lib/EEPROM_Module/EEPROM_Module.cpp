@@ -62,6 +62,13 @@ void salvarComEEPROM()
     Serial.println(ttotal);
     addr += sizeof(ttotal);
 
+    EEPROM.put(addr, contEixo);
+    Serial.print("Salvando contEixo no endereço: ");
+    Serial.print(addr);
+    Serial.print(" Valor: ");
+    Serial.println(contEixo);
+    addr += sizeof(contEixo);
+
     EEPROM.put(addr, g_wifiConnected);
     Serial.print("Salvando g_wifiConnected no endereço: ");
     Serial.print(addr);
@@ -152,6 +159,9 @@ void carregarComEEPROM()
 
     EEPROM.get(addr, ttotal);
     addr += sizeof(ttotal);
+
+    EEPROM.get(addr, contEixo);
+    addr += sizeof(contEixo);
 
     EEPROM.get(addr, g_wifiConnected);
     addr += sizeof(g_wifiConnected);

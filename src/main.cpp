@@ -428,6 +428,9 @@ void setup()
   // Create asynchronous web handling task (priority 1)
   xTaskCreate(taskHandleWeb, "HandleWeb", 4096, NULL, 1, NULL);
   sensor1.tare();
+  sensor2.tare();
+  sensor3.tare();
+  sensor4.tare();
 
   server.on("/zero", handleZero);
   server.on("/dados", handleDados);
@@ -441,7 +444,7 @@ void setup()
   // Create asynchronous SerialPort reading task
   xTaskCreate(taskSerialPortReader, "SerialPortReader", 4096, NULL, 2, &hPortTask);
   Serial.println("Loading EEPROM data...");
-  carregarComEEPROM();
+  //carregarComEEPROM();
   Serial.print("pesoAtual = ");
   Serial.println(pesoAtual, 2);
   Serial.print("ttotal = ");
