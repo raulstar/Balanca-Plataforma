@@ -19,7 +19,6 @@ extern float sensorKnownWeight;
 extern int sensorId;
 extern float defaultKnownWeight[4];
 extern float defaultScaleFactor[4];
-extern float novoFator[4];
 
 void salvarComEEPROM();
 void carregarComEEPROM();
