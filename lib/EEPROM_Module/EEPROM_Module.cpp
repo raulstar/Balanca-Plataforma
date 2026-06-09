@@ -5,8 +5,8 @@
 float offset = 0.0f;
 float sensorKnownWeight = 0.0f;
 int sensorId = 0;
-float defaultKnownWeight[4] = {78000.0f, 79000.0f, 80000.0f, 81000.0f};
-float defaultScaleFactor[4] = {-5412.36425781f, -5410.0f, -5420.0f, -5400.0f};
+float defaultKnownWeight[4] = {84000.0f, 84000.0f, 84000.0f, 84000.0f};
+float defaultScaleFactor[4] = {-5401.92968750f, -5166.05f, -5420.0f, -5400.0f};
 
 static const int EEPROM_SIZE = 8192;
 static const int MAX_STR_LEN = 32;

@@ -55,7 +55,7 @@ String tabela[20][11];
 
 int linhaAtual = 0;
 int contadorRegistro = 0;
-int contEixo = 0;
+int contEixo = 1;
 
 String last_thora = "";
 String last_tdata = "";
