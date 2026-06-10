@@ -17,7 +17,7 @@ static int tamanhoEEPROMUsado()
 {
     return (sizeof(pesoAtual) + sizeof(ttotal) + sizeof(contEixo) +
             sizeof(g_wifiConnected) + sizeof(g_apMode) +
-            sizeof(offset) + sizeof(scale_factor) + sizeof(sensorKnownWeight) + sizeof(sensorId) +
+            sizeof(offset) + sizeof(float) + sizeof(sensorKnownWeight) + sizeof(sensorId) +
             sizeof(pesoConhecido) + sizeof(fatorEscalaConhecido) +
             (5 * MAX_STR_LEN) + (TABLE_ROWS * TABLE_COLS * MAX_STR_LEN));
 }
@@ -105,12 +105,10 @@ void salvarComEEPROM()
     Serial.println(offset);
     addr += sizeof(offset);
 
-    EEPROM.put(addr, scale_factor);
-    Serial.print("Salvando scale_factor no endereço: ");
-    Serial.print(addr);
-    Serial.print(" Valor: ");
-    Serial.println(scale_factor);
-    addr += sizeof(scale_factor);
+    // Endereço reservado para compatibilidade do layout antigo.
+    // O fator de escala de cada sensor é salvo em fatorEscalaConhecido[0..3]
+    // nos endereços 46, 50, 54 e 58.
+    addr += sizeof(float);
 
     EEPROM.put(addr, sensorKnownWeight);
     Serial.print("Salvando sensorKnownWeight no endereço: ");
@@ -201,10 +199,9 @@ void carregarComEEPROM()
     EEPROM.get(addr, offset);
     addr += sizeof(offset);
 
-    EEPROM.get(addr, scale_factor);
-    addr += sizeof(scale_factor);
-    Serial.print("Scale Factor carregado: ");
-    Serial.println(scale_factor);
+    // Endereço reservado para compatibilidade do layout antigo.
+    // O scale_factor global é derivado de fatorEscalaConhecido[sensorId].
+    addr += sizeof(float);
 
     EEPROM.get(addr, sensorKnownWeight);
     addr += sizeof(sensorKnownWeight);
@@ -229,6 +226,15 @@ void carregarComEEPROM()
         Serial.println(fatorEscalaConhecido[i]);
         addr += sizeof(fatorEscalaConhecido[i]);
     }
+
+    if (sensorId >= 0 && sensorId < 4)
+    {
+        scale_factor = fatorEscalaConhecido[sensorId];
+    }
+    Serial.print("Scale Factor carregado do fatorEscalaConhecido[");
+    Serial.print(sensorId);
+    Serial.print("]: ");
+    Serial.println(scale_factor);
 
     sta_ssid = carregarString(addr, MAX_STR_LEN);
     sta_password = carregarString(addr, MAX_STR_LEN);

@@ -444,7 +444,7 @@ void setup()
   // Create asynchronous SerialPort reading task
   xTaskCreate(taskSerialPortReader, "SerialPortReader", 4096, NULL, 2, &hPortTask);
   Serial.println("Loading EEPROM data...");
-  //carregarComEEPROM();
+  carregarComEEPROM();
   Serial.print("pesoAtual = ");
   Serial.println(pesoAtual, 2);
   Serial.print("ttotal = ");
