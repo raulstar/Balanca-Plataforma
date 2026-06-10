@@ -13,6 +13,7 @@ private:
     float offset;
     float sensorKnownWeight;
     int sensorId;
+    float sensorScaleFactor;
     //static const float defaultKnownWeight[4];
     //static const float defaultScaleFactor[4];
 

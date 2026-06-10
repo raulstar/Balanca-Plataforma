@@ -1,11 +1,18 @@
 #include "HX711_Module.hpp"
+#include "EEPROM_Module.hpp"
 
-const float HX711::defaultKnownWeight[4] = {84000.0f, 84000.0f, 84000.0f, 84000.0f};
-const float HX711::defaultScaleFactor[4] = {-6259.31f,-5201.24f, -5420.0f, -5400.0f};
+//const float HX711::defaultKnownWeight[4] = {84000.0f, 84000.0f, 84000.0f, 84000.0f};
+//const float HX711::defaultScaleFactor[4] = {-6259.31f,-5201.24f, -5420.0f, -5400.0f};
 
 int sensorIndex[4] = {0, 1, 2, 3};
 float novoFator[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 float scale_factor = 0.0f;
+extern int indexCalib;
+
+static bool fatorEscalaValido(float fator)
+{
+    return !isnan(fator) && !isinf(fator) && fabs(fator) > 0.0001f;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CONSTRUTOR HX711
@@ -28,14 +35,15 @@ HX711::HX711(int sensorSlot)
     }
 
     offset = 0.0f;
-    sensorKnownWeight = defaultKnownWeight[mappedIndex];
+    sensorKnownWeight = pesoConhecido[mappedIndex];
     sensorId = mappedIndex;
+    sensorScaleFactor = fatorEscalaValido(fatorEscalaConhecido[mappedIndex]) ? fatorEscalaConhecido[mappedIndex] : 1.0f;
 
     //////////////////////////////////////////////////////////////////////////
     // FATOR PADRÃO
     //////////////////////////////////////////////////////////////////////////
 
-    ::scale_factor = defaultScaleFactor[mappedIndex];
+    ::scale_factor = sensorScaleFactor;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -55,6 +63,9 @@ void HX711::tare(float leituraAtual, int sensorSlot)
 
     sensorId = mappedIndex;
     offset = leituraAtual;
+    sensorKnownWeight = pesoConhecido[mappedIndex];
+    sensorScaleFactor = fatorEscalaValido(fatorEscalaConhecido[mappedIndex]) ? fatorEscalaConhecido[mappedIndex] : 1.0f;
+    ::scale_factor = sensorScaleFactor;
 
     Serial.print("OFFSET (Sensor ");
     Serial.print(mappedIndex + 1);
@@ -62,8 +73,8 @@ void HX711::tare(float leituraAtual, int sensorSlot)
     Serial.println(offset);
     Serial.print("Known weight:");
     Serial.println(sensorKnownWeight);
-    Serial.print("Scale factor padrao:");
-    Serial.println(::scale_factor, 8);
+    Serial.print("Scale factor EEPROM:");
+    Serial.println(sensorScaleFactor, 8);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -72,7 +83,12 @@ void HX711::tare(float leituraAtual, int sensorSlot)
 
 float HX711::get_units(float leituraAtual)
 {
-    return (leituraAtual - offset) * scale_factor;
+    if (!fatorEscalaValido(sensorScaleFactor))
+    {
+        sensorScaleFactor = fatorEscalaValido(fatorEscalaConhecido[sensorId]) ? fatorEscalaConhecido[sensorId] : 1.0f;
+    }
+
+    return (leituraAtual - offset) * sensorScaleFactor;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -117,13 +133,22 @@ void HX711::calibra(float leituraAtual, float known_weight)
     // CALIBRAÇÃO
     //////////////////////////////////////////////////////////////////////////
 
-    ::scale_factor = known_weight / leituraLiquida;
+    sensorScaleFactor = known_weight / leituraLiquida;
+    ::scale_factor = sensorScaleFactor;
     Serial.print("Scale factor calculado:");
     Serial.println(::scale_factor, 8);
 
-    // Atualiza o fator para o sensor específico no índice mapeado
-    if (sensorId >= 0 && sensorId < 4) {
-        novoFator[sensorId] = ::scale_factor;
+    int calibIndex = indexCalib - 1;
+    if (calibIndex < 0 || calibIndex >= 4) {
+        calibIndex = sensorId;
+    }
+
+    // Atualiza os dados para o sensor específico selecionado em indexCalib (1 a 4)
+    if (calibIndex >= 0 && calibIndex < 4) {
+        novoFator[calibIndex] = sensorScaleFactor;
+        fatorEscalaConhecido[calibIndex] = sensorScaleFactor;
+        pesoConhecido[calibIndex] = known_weight;
+        sensorKnownWeight = known_weight;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -138,12 +163,13 @@ void HX711::calibra(float leituraAtual, float known_weight)
 
 void HX711::setScale(float scale)
 {
-    ::scale_factor = scale;
+    sensorScaleFactor = fatorEscalaValido(scale) ? scale : 1.0f;
+    ::scale_factor = sensorScaleFactor;
 }
 
 float HX711::getScale()
 {
-    return ::scale_factor;
+    return sensorScaleFactor;
 }
 
 /////////////////////////////////////////////////////////////////////////////

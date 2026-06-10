@@ -70,6 +70,11 @@ float last_pesoAtual = -999999.0;
 float last_ttara = -999999.0;
 float last_ttotal = -999999.0;
 
+static bool valorPesoValido(float valor)
+{
+    return !isnan(valor) && !isinf(valor);
+}
+
 int last_contadorRegistro = 0;
 int last_contEixo = 0;
 
@@ -190,6 +195,23 @@ void updateDisplay()
             }
         }
         // Serial.println(tpeso1 + " | " + tpeso2 + " | " + tpeso3 + " | " + tpeso4);
+    }
+
+    if (!valorPesoValido(pesoAtual))
+    {
+        pesoAtual = 0.0f;
+    }
+
+    if (!valorPesoValido(ttotal))
+    {
+        ttotal = 0.0f;
+        last_ttotal = -999999.0f;
+    }
+
+    if (!valorPesoValido(ttara))
+    {
+        ttara = 0.0f;
+        last_ttara = -999999.0f;
     }
 
     // Peso Atual
@@ -501,6 +523,18 @@ void handle_bzero()
     zero = true;
     pesoAtual = 0.0;
 
+    if (!valorPesoValido(ttotal))
+    {
+        ttotal = 0.0f;
+        last_ttotal = -999999.0f;
+    }
+
+    if (!valorPesoValido(ttara))
+    {
+        ttara = 0.0f;
+        last_ttara = -999999.0f;
+    }
+
     setNextionText("tPeso", String(pesoAtual, 1));
 }
 
@@ -510,6 +544,16 @@ void handle_bzero()
 void handle_bsom()
 {
     Serial.println("Evento [bsom]");
+
+    if (!valorPesoValido(pesoAtual))
+    {
+        pesoAtual = 0.0f;
+    }
+
+    if (!valorPesoValido(ttotal))
+    {
+        ttotal = 0.0f;
+    }
 
     ttotal += pesoAtual;
     peixo = (int)pesoAtual;

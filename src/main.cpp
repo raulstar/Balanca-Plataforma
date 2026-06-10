@@ -185,7 +185,11 @@ void taskSerialPortReader(void *pvParameters)
               Serial.print(" | " + sensores[i].prefixo + " KG: ");
               Serial.print(sensores[i].sensor->getKg(), 3);
               // Update sum with absolute value
-              sumAbs += fabs(sensores[i].sensor->getKg());
+              float sensorKg = sensores[i].sensor->getKg();
+              if (!isnan(sensorKg) && !isinf(sensorKg))
+              {
+                sumAbs += fabs(sensorKg);
+              }
               Serial.print(" | Peso Atual: ");
               Serial.println(sumAbs, 3);
               Serial.println();
@@ -476,7 +480,11 @@ void loop()
       if (sensores[i].sensor->isReady())
       {
         // Use absolute value to ignore sign of individual sensor readings
-        currentPeso += fabs(sensores[i].sensor->getKg());
+        float sensorKg = sensores[i].sensor->getKg();
+        if (!isnan(sensorKg) && !isinf(sensorKg))
+        {
+          currentPeso += fabs(sensorKg);
+        }
       }
     }
     xSemaphoreGive(xSensorMutex);

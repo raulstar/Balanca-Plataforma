@@ -13,6 +13,11 @@ static const int MAX_STR_LEN = 32;
 static const int TABLE_ROWS = 20;
 static const int TABLE_COLS = 11;
 
+static bool valorFloatValido(float valor)
+{
+    return !isnan(valor) && !isinf(valor);
+}
+
 static int tamanhoEEPROMUsado()
 {
     return (sizeof(pesoAtual) + sizeof(ttotal) + sizeof(contEixo) +
@@ -183,9 +188,17 @@ void carregarComEEPROM()
     int addr = 0;
     EEPROM.get(addr, pesoAtual);
     addr += sizeof(pesoAtual);
+    if (!valorFloatValido(pesoAtual))
+    {
+        pesoAtual = 0.0f;
+    }
 
     EEPROM.get(addr, ttotal);
     addr += sizeof(ttotal);
+    if (!valorFloatValido(ttotal))
+    {
+        ttotal = 0.0f;
+    }
 
     EEPROM.get(addr, contEixo);
     addr += sizeof(contEixo);
