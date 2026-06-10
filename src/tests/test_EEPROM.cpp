@@ -16,6 +16,11 @@ String tabela[20][11];
 static const float expectedPesoConhecido[4] = {11111.1f, 22222.2f, 33333.3f, 44444.4f};
 static const float expectedFatorEscalaConhecido[4] = {-1111.1f, -2222.2f, -3333.3f, -4444.4f};
 
+static String expectedTabelaValue(int row, int col)
+{
+    return "R" + String(row) + "C" + String(col);
+}
+
 static bool floatEquals(float a, float b, float epsilon = 0.01f)
 {
     return fabs(a - b) <= epsilon;
@@ -57,6 +62,31 @@ static bool validateFloatArray(const char *label, const float values[4], const f
     return ok;
 }
 
+static bool validateTabela()
+{
+    bool ok = true;
+    for (int row = 0; row < 20; ++row)
+    {
+        for (int col = 0; col < 11; ++col)
+        {
+            String expected = expectedTabelaValue(row, col);
+            if (tabela[row][col] != expected)
+            {
+                Serial.print("FAIL tabela[");
+                Serial.print(row);
+                Serial.print("][");
+                Serial.print(col);
+                Serial.print("] esperado=");
+                Serial.print(expected);
+                Serial.print(" obtido=");
+                Serial.println(tabela[row][col]);
+                ok = false;
+            }
+        }
+    }
+    return ok;
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -82,7 +112,7 @@ void setup()
     {
         for (int col = 0; col < 11; ++col)
         {
-            tabela[row][col] = "R" + String(row) + "C" + String(col);
+            tabela[row][col] = expectedTabelaValue(row, col);
         }
     }
 
@@ -138,11 +168,14 @@ void setup()
 
     bool pesoConhecidoOk = validateFloatArray("pesoConhecido", pesoConhecido, expectedPesoConhecido);
     bool fatorEscalaConhecidoOk = validateFloatArray("fatorEscalaConhecido", fatorEscalaConhecido, expectedFatorEscalaConhecido);
+    bool tabelaOk = validateTabela();
 
     Serial.print("Teste pesoConhecido: ");
     Serial.println(pesoConhecidoOk ? "PASS" : "FAIL");
     Serial.print("Teste fatorEscalaConhecido: ");
     Serial.println(fatorEscalaConhecidoOk ? "PASS" : "FAIL");
+    Serial.print("Teste tabela: ");
+    Serial.println(tabelaOk ? "PASS" : "FAIL");
 
     Serial.println("Tabela sample:");
     for (int row = 0; row < 3; ++row)
