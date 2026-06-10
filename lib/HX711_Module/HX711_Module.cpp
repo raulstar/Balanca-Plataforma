@@ -7,7 +7,6 @@
 int sensorIndex[4] = {0, 1, 2, 3};
 float novoFator[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 float scale_factor = 0.0f;
-extern int indexCalib;
 
 static bool fatorEscalaValido(float fator)
 {
@@ -138,12 +137,10 @@ void HX711::calibra(float leituraAtual, float known_weight)
     Serial.print("Scale factor calculado:");
     Serial.println(::scale_factor, 8);
 
-    int calibIndex = indexCalib - 1;
-    if (calibIndex < 0 || calibIndex >= 4) {
-        calibIndex = sensorId;
-    }
+    int calibIndex = sensorId;
 
-    // Atualiza os dados para o sensor específico selecionado em indexCalib (1 a 4)
+    // Atualiza os dados para o sensor específico calibrado.
+    // O índice corresponde ao sensor 1, 2, 3 ou 4 como 0, 1, 2 ou 3.
     if (calibIndex >= 0 && calibIndex < 4) {
         novoFator[calibIndex] = sensorScaleFactor;
         fatorEscalaConhecido[calibIndex] = sensorScaleFactor;

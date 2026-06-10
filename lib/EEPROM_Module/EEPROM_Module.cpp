@@ -244,10 +244,10 @@ void carregarComEEPROM()
     {
         scale_factor = fatorEscalaConhecido[sensorId];
     }
-    Serial.print("Scale Factor carregado do fatorEscalaConhecido[");
-    Serial.print(sensorId);
-    Serial.print("]: ");
-    Serial.println(scale_factor);
+    // Serial.print("Scale Factor carregado do fatorEscalaConhecido[");
+    // Serial.print(sensorId);
+    // Serial.print("]: ");
+    // Serial.println(scale_factor);
 
     sta_ssid = carregarString(addr, MAX_STR_LEN);
     sta_password = carregarString(addr, MAX_STR_LEN);
