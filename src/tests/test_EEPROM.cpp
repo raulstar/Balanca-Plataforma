@@ -3,6 +3,7 @@
 
 float pesoAtual = 0.0f;
 float ttotal = 0.0f;
+int contEixo = 1;
 String sta_ssid = "";
 String sta_password = "";
 String ap_ssid = "";

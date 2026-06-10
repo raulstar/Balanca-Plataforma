@@ -15,7 +15,8 @@ static const int TABLE_COLS = 11;
 
 static int tamanhoEEPROMUsado()
 {
-    return (sizeof(pesoAtual) + sizeof(ttotal) + sizeof(g_wifiConnected) + sizeof(g_apMode) +
+    return (sizeof(pesoAtual) + sizeof(ttotal) + sizeof(contEixo) +
+            sizeof(g_wifiConnected) + sizeof(g_apMode) +
             sizeof(offset) + sizeof(scale_factor) + sizeof(sensorKnownWeight) + sizeof(sensorId) +
             sizeof(pesoConhecido) + sizeof(fatorEscalaConhecido) +
             (5 * MAX_STR_LEN) + (TABLE_ROWS * TABLE_COLS * MAX_STR_LEN));
@@ -45,7 +46,21 @@ static String carregarString(int &addr, int maxLen)
 
 void salvarComEEPROM()
 {
-    EEPROM.begin(tamanhoEEPROMUsado());
+    const int eepromUsada = tamanhoEEPROMUsado();
+    if (eepromUsada > EEPROM_SIZE)
+    {
+        Serial.print("ERRO: tamanho usado pela EEPROM excede EEPROM_SIZE. Usado: ");
+        Serial.print(eepromUsada);
+        Serial.print(" Limite: ");
+        Serial.println(EEPROM_SIZE);
+        return;
+    }
+
+    if (!EEPROM.begin(EEPROM_SIZE))
+    {
+        Serial.println("ERRO: EEPROM.begin() falhou. Verifique a particao NVS.");
+        return;
+    }
 
     int addr = 0;
     EEPROM.put(addr, pesoAtual);
@@ -151,7 +166,21 @@ void salvarComEEPROM()
 
 void carregarComEEPROM()
 {
-    EEPROM.begin(tamanhoEEPROMUsado());
+    const int eepromUsada = tamanhoEEPROMUsado();
+    if (eepromUsada > EEPROM_SIZE)
+    {
+        Serial.print("ERRO: tamanho usado pela EEPROM excede EEPROM_SIZE. Usado: ");
+        Serial.print(eepromUsada);
+        Serial.print(" Limite: ");
+        Serial.println(EEPROM_SIZE);
+        return;
+    }
+
+    if (!EEPROM.begin(EEPROM_SIZE))
+    {
+        Serial.println("ERRO: EEPROM.begin() falhou. Verifique a particao NVS.");
+        return;
+    }
 
     int addr = 0;
     EEPROM.get(addr, pesoAtual);
