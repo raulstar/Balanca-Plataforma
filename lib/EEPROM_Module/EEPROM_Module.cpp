@@ -167,6 +167,37 @@ void salvarComEEPROM()
     }
 }
 
+void salvarFatorEEPROM(String scale_factor, int endereco)
+{
+    int indice = endereco - 1;
+
+    if (indice < 0 || indice >= 4)
+    {
+        Serial.print("ERRO: endereco/indexCalib invalido para salvar fator EEPROM: ");
+        Serial.println(endereco);
+        return;
+    }
+
+    float fator = scale_factor.toFloat();
+    if (!valorFloatValido(fator))
+    {
+        Serial.print("ERRO: fator de escala invalido para salvar EEPROM: ");
+        Serial.println(scale_factor);
+        return;
+    }
+
+    fatorEscalaConhecido[indice] = fator;
+    sensorId = indice;
+    ::scale_factor = fator;
+
+    Serial.print("Salvando fator EEPROM do indexCalib ");
+    Serial.print(endereco);
+    Serial.print(": ");
+    Serial.println(fator, 8);
+
+    salvarComEEPROM();
+}
+
 void carregarComEEPROM()
 {
     const int eepromUsada = tamanhoEEPROMUsado();

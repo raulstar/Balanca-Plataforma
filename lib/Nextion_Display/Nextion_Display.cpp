@@ -392,6 +392,7 @@ void processNextionCommands()
                     if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
                     {
                         _sensores[0].sensor->calibra(pesoCalibracao1);
+                        salvarFatorEEPROM(String(scale_factor, 8), indexCalib);
                         xSemaphoreGive(xSensorMutex);
                         Serial.println("Sensor 1 calibrado");
                     }
@@ -403,6 +404,7 @@ void processNextionCommands()
                     if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
                     {
                         _sensores[1].sensor->calibra(pesoCalibracao1);
+                        salvarFatorEEPROM(String(scale_factor, 8), indexCalib);
                         xSemaphoreGive(xSensorMutex);
                         Serial.println("Sensor 2 calibrado");
                     }
@@ -414,6 +416,7 @@ void processNextionCommands()
                     if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
                     {
                         _sensores[2].sensor->calibra(pesoCalibracao1);
+                        salvarFatorEEPROM(String(scale_factor, 8), indexCalib);
                         xSemaphoreGive(xSensorMutex);
                         Serial.println("Sensor 3 calibrado");
                     }
@@ -425,6 +428,7 @@ void processNextionCommands()
                     if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
                     {
                         _sensores[3].sensor->calibra(pesoCalibracao1);
+                        salvarFatorEEPROM(String(scale_factor, 8), indexCalib);
                         xSemaphoreGive(xSensorMutex);
                         Serial.println("Sensor 4 calibrado");
                     }
