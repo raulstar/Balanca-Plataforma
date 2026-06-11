@@ -561,23 +561,23 @@ void handle_bsom()
     switch (contEixo)
     {
     case 0:
-        eixo1 = peixo;
+        //eixo1 = peixo;
         peixo1 = peixo;
         break;
     case 1:
-        eixo2 = peixo;
+        //eixo2 = peixo;
         peixo2 = peixo;
         break;
     case 2:
-        eixo3 = peixo;
+        //eixo3 = peixo;
         peixo3 = peixo;
         break;
     case 3:
-        eixo4 = peixo;
+        //eixo4 = peixo;
         peixo4 = peixo;
         break;
     case 4:
-        eixo5 = peixo;
+        //eixo5 = peixo;
         peixo5 = peixo;
         break;
     default:
