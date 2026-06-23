@@ -27,6 +27,7 @@ extern String sta_ssid;      // SSID for station mode
 extern String sta_password; // Password for station mode
 extern String ap_ssid;      // SSID for Access Point mode
 extern String ap_password; // Password for Access Point mode
+extern String dnsAddress;   // DNS/mDNS address for WebServer access
 
 extern bool g_apMode;            // true → AP mode, false → station mode
 extern bool g_wifiConnected;    // connection status flag

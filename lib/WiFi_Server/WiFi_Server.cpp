@@ -16,6 +16,7 @@ String sta_password = "72989400";
 // Credentials for AP mode – can be changed via setAPMode if needed
 String ap_ssid = "Balanca_AP";
 String ap_password = "12345678";
+String dnsAddress = "http://balanca.local";
 
 // Global flag indicating AP mode (default false – station mode)
 bool g_apMode = false;
@@ -23,6 +24,24 @@ bool g_apMode = false;
 // Global flag indicating connection status (true when STA is connected).
 // In AP mode this flag is always true because the ESP creates its own AP.
 bool g_wifiConnected = false;
+
+static String getMDNSHostFromAddress()
+{
+    String host = dnsAddress;
+    host.replace("http://", "");
+    host.replace("https://", "");
+
+    int slashIndex = host.indexOf('/');
+    if (slashIndex >= 0) {
+        host = host.substring(0, slashIndex);
+    }
+
+    if (host.endsWith(".local")) {
+        host = host.substring(0, host.length() - 6);
+    }
+
+    return host;
+}
 
 void setAPMode(bool enable) {
     g_apMode = enable;
@@ -87,8 +106,10 @@ void initWiFi()
             Serial.println("Falha ao iniciar AP.");
         }
         // MDNS can also be started for AP if desired
-        if (MDNS.begin("balanca-ap")) {
+        String mdnsHost = getMDNSHostFromAddress();
+        if (MDNS.begin(mdnsHost.c_str())) {
             MDNS.addService("http", "tcp", 80);
+            Serial.println("MDNS iniciado: " + dnsAddress);
         }
         // In AP mode we consider ourselves always "connected"
         g_wifiConnected = true;
@@ -104,8 +125,9 @@ void initWiFi()
         if (WiFi.status() == WL_CONNECTED) {
             Serial.println("\nWiFi Conectado!");
             Serial.println("IP: " + WiFi.localIP().toString());
-            if (MDNS.begin("balanca")) {
-                Serial.println("MDNS iniciado: http://balanca.local");
+            String mdnsHost = getMDNSHostFromAddress();
+            if (MDNS.begin(mdnsHost.c_str())) {
+                Serial.println("MDNS iniciado: " + dnsAddress);
                 MDNS.addService("http", "tcp", 80);
             } else {
                 Serial.println("Erro ao iniciar MDNS");
@@ -153,8 +175,10 @@ void monitorWiFi()
     }
     if (WiFi.status() == WL_CONNECTED) {
         Serial.println("Reconnection successful.");
-        if (MDNS.begin("balanca")) {
+        String mdnsHost = getMDNSHostFromAddress();
+        if (MDNS.begin(mdnsHost.c_str())) {
             MDNS.addService("http", "tcp", 80);
+            Serial.println("MDNS reiniciado: " + dnsAddress);
         }
         g_wifiConnected = true;
     } else {

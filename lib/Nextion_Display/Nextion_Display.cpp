@@ -1,6 +1,7 @@
 #include "Nextion_Display.hpp"
 #include "../WiFi_Server/WiFi_Server.hpp"
 #include "../EEPROM_Module/EEPROM_Module.hpp"
+#include <WiFi.h>
 
 // ======================================================
 // SERIAL NEXTION
@@ -83,6 +84,7 @@ String last_sta_ssid = "";
 String last_sta_password = "";
 String last_ap_ssid = "";
 String last_ap_password = "";
+String last_webServerAddress = "";
 bool last_g_wifiConnected = false;
 bool last_g_apMode = false;
 bool wifi_initialized = false;
@@ -297,10 +299,19 @@ void updateDisplay()
     }
 
     // WiFi Status - AP Password
-    if (ap_password != last_ap_password)
+    // if (ap_password != last_ap_password)
+    // {
+    //     setNextionText("page3.gpasspword", ap_password);
+    //     last_ap_password = ap_password;
+    // }
+
+    // WiFi Status - WebServer address
+    String webServerAddress = g_apMode ? "http://" + WiFi.softAPIP().toString() : "http://" + WiFi.localIP().toString();
+    if (webServerAddress != last_webServerAddress)
     {
-        setNextionText("page6.gpasspword", ap_password);
-        last_ap_password = ap_password;
+        setNextionText("page3.gapssid", WiFi.softAPIP().toString() );
+        setNextionText("page3.gappassword", dnsAddress);
+        last_webServerAddress = webServerAddress;
     }
 
     // WiFi Status - Connection Status
