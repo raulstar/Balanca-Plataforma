@@ -29,23 +29,54 @@ static int tamanhoEEPROMUsado()
 
 static void salvarString(int &addr, const String &value, int maxLen)
 {
-    char buffer[maxLen];
-    memset(buffer, 0, maxLen);
-    value.toCharArray(buffer, maxLen);
+    char buffer[MAX_STR_LEN];
+    memset(buffer, 0, sizeof(buffer));
+    value.toCharArray(buffer, min(maxLen, MAX_STR_LEN));
     for (int i = 0; i < maxLen; ++i)
     {
         EEPROM.write(addr++, buffer[i]);
     }
 }
 
-static String carregarString(int &addr, int maxLen)
+static bool stringEEPROMValida(const char *buffer, int maxLen)
+{
+    bool possuiConteudo = false;
+
+    for (int i = 0; i < maxLen; ++i)
+    {
+        uint8_t c = static_cast<uint8_t>(buffer[i]);
+
+        if (c == '\0')
+        {
+            break;
+        }
+
+        if (c == 0xFF || c < 32 || c > 126)
+        {
+            return false;
+        }
+
+        possuiConteudo = true;
+    }
+
+    return possuiConteudo;
+}
+
+static String carregarString(int &addr, int maxLen, const String &valorPadrao)
 {
     char buffer[MAX_STR_LEN + 1];
+    memset(buffer, 0, sizeof(buffer));
     for (int i = 0; i < maxLen; ++i)
     {
         buffer[i] = EEPROM.read(addr++);
     }
     buffer[maxLen] = '\0';
+
+    if (!stringEEPROMValida(buffer, maxLen))
+    {
+        return valorPadrao;
+    }
+
     return String(buffer);
 }
 
@@ -286,17 +317,17 @@ void carregarComEEPROM()
     // Serial.print("]: ");
     // Serial.println(scale_factor);
 
-    sta_ssid = carregarString(addr, MAX_STR_LEN);
-    sta_password = carregarString(addr, MAX_STR_LEN);
-    ap_ssid = carregarString(addr, MAX_STR_LEN);
-    ap_password = carregarString(addr, MAX_STR_LEN);
-    tplaca = carregarString(addr, MAX_STR_LEN);
+    sta_ssid = carregarString(addr, MAX_STR_LEN, sta_ssid);
+    sta_password = carregarString(addr, MAX_STR_LEN, sta_password);
+    ap_ssid = carregarString(addr, MAX_STR_LEN, ap_ssid);
+    ap_password = carregarString(addr, MAX_STR_LEN, ap_password);
+    tplaca = carregarString(addr, MAX_STR_LEN, tplaca);
 
     for (int row = 0; row < TABLE_ROWS; ++row)
     {
         for (int col = 0; col < TABLE_COLS; ++col)
         {
-            tabela[row][col] = carregarString(addr, MAX_STR_LEN);
+            tabela[row][col] = carregarString(addr, MAX_STR_LEN, tabela[row][col]);
         }
     }
 }
