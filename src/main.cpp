@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <WiFi.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
@@ -420,15 +421,33 @@ void setup()
   setSensores(sensores, numSensores);
   if (useAP)
   {
+    IPAddress webServerIP = WiFi.softAPIP();
     Serial.print("AP ativo – SSID: ");
     Serial.println("Balanca_AP");
     Serial.print("IP: ");
     Serial.println(WiFi.softAPIP());
+    Serial.println("WebServer em modo Access Point");
+    Serial.print("SSID: ");
+    Serial.println(ap_ssid);
+    Serial.print("Senha: ");
+    Serial.println(ap_password);
+    Serial.print("IP: ");
+    Serial.println(webServerIP);
+    Serial.print("Endereco WebServer: http://");
+    Serial.println(webServerIP);
   }
   else
   {
-    Serial.print("Conectado, IP: ");
-    Serial.println(WiFi.localIP());
+    IPAddress webServerIP = WiFi.localIP();
+    Serial.println("WebServer em modo Station");
+    Serial.print("SSID: ");
+    Serial.println(sta_ssid);
+    Serial.print("Senha: ");
+    Serial.println(sta_password);
+    Serial.print("IP: ");
+    Serial.println(webServerIP);
+    Serial.print("Endereco WebServer: http://");
+    Serial.println(webServerIP);
   }
 
   // Create mutex for sensor array protection
@@ -481,6 +500,12 @@ void setup()
   Serial.println(g_wifiConnected ? "true" : "false");
   Serial.print("g_apMode = ");
   Serial.println(g_apMode ? "true" : "false");
+  Serial.print("AP ativo – SSID: ");
+  Serial.println(ap_ssid);
+  Serial.print("IP: ");
+  Serial.println(WiFi.softAPIP());
+  Serial.print("Endereco WebServer: http://");
+  Serial.println(WiFi.softAPIP());
 }
 
 /////////////////////////////////////////////////////////////////////////////
