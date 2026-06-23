@@ -26,6 +26,9 @@ uint32_t displayUpdateInterval = 500;
 HardwareSerial SerialPort(2);
 SoftwareSerial impressoraSerial(4, 5);
 float pesoCalibracao1 = 84000.0f;
+// "div" conflita com a função div() de stdlib.h; o macro mantém o uso compatível no firmware.
+#define div divPeso
+int div = 5;
 extern volatile bool imprimir;
 bool useAP = true; // altere para false para usar modo estação
 
@@ -199,7 +202,14 @@ void taskSerialPortReader(void *pvParameters)
               }
             }
           }
-          pesoAtual = currentPeso;
+          if (div > 1)
+          {
+            pesoAtual = round(currentPeso / div) * div;
+          }
+          else
+          {
+            pesoAtual = currentPeso;
+          }
           Serial.print("Peso Atual: ");
           Serial.println(pesoAtual, 3);
           Serial.println();

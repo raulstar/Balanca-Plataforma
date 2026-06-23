@@ -68,6 +68,8 @@ void salvarComEEPROM()
     }
 
     int addr = 0;
+    // Mantem pesoAtual como float por compatibilidade, mas persiste apenas valor inteiro.
+    pesoAtual = roundf(pesoAtual);
     EEPROM.put(addr, pesoAtual);
     Serial.print("Salvando pesoAtual no endereço: ");
     Serial.print(addr);
@@ -222,6 +224,10 @@ void carregarComEEPROM()
     if (!valorFloatValido(pesoAtual))
     {
         pesoAtual = 0.0f;
+    }
+    else
+    {
+        pesoAtual = roundf(pesoAtual);
     }
 
     EEPROM.get(addr, ttotal);
