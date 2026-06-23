@@ -174,8 +174,6 @@ void taskSerialPortReader(void *pvParameters)
         // Process completed line under mutex protection
         if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE)
         {
-          // Compute sum of absolute sensor values for immediate display
-          float sumAbs = 0.0f;
           for (int i = 0; i < numSensores; i++)
           {
             if (sensores[i].sensor->processaString(bufferSerial))
@@ -184,19 +182,27 @@ void taskSerialPortReader(void *pvParameters)
               Serial.print(sensores[i].sensor->getRaw(), 3);
               Serial.print(" | " + sensores[i].prefixo + " KG: ");
               Serial.print(sensores[i].sensor->getKg(), 3);
-              // Update sum with absolute value
-              float sensorKg = sensores[i].sensor->getKg();
-              if (!isnan(sensorKg) && !isinf(sensorKg))
-              {
-                sumAbs += fabs(sensorKg);
-              }
-              Serial.print(" | Peso Atual: ");
-              Serial.println(sumAbs, 3);
               Serial.println();
             }
           }
-          // Update global pesoAtual with the computed sum
-          pesoAtual = sumAbs;
+
+          float currentPeso = 0.0f;
+          for (int i = 0; i < numSensores; i++)
+          {
+            if (sensores[i].sensor->isReady())
+            {
+              // Use absolute value to ignore sign of individual sensor readings
+              float sensorKg = sensores[i].sensor->getKg();
+              if (!isnan(sensorKg) && !isinf(sensorKg))
+              {
+                currentPeso += fabs(sensorKg);
+              }
+            }
+          }
+          pesoAtual = currentPeso;
+          Serial.print("Peso Atual: ");
+          Serial.println(pesoAtual, 3);
+          Serial.println();
           xSemaphoreGive(xSensorMutex);
         }
         bufferSerial = "";
@@ -471,26 +477,6 @@ void setup()
 // LOOP
 void loop()
 {
-  float currentPeso = 0.0f;
-  // Protect read access to sensor objects
-  if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE)
-  {
-    for (int i = 0; i < numSensores; i++)
-    {
-      if (sensores[i].sensor->isReady())
-      {
-        // Use absolute value to ignore sign of individual sensor readings
-        float sensorKg = sensores[i].sensor->getKg();
-        if (!isnan(sensorKg) && !isinf(sensorKg))
-        {
-          currentPeso += fabs(sensorKg);
-        }
-      }
-    }
-    xSemaphoreGive(xSensorMutex);
-    pesoAtual = currentPeso;
-  }
-
   if (calibrando1)
   {
     Serial.print("calibrando1 ");
