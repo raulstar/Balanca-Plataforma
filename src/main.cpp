@@ -500,6 +500,8 @@ void setup()
   Serial.println(g_wifiConnected ? "true" : "false");
   Serial.print("g_apMode = ");
   Serial.println(g_apMode ? "true" : "false");
+  Serial.print("dnsAddress = ");
+  Serial.println(dnsAddress);
   Serial.print("AP ativo – SSID: ");
   Serial.println(ap_ssid);
   Serial.print("IP: ");
