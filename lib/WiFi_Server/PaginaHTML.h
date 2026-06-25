@@ -1,3 +1,5 @@
+#pragma once
+#include <Arduino.h>
 
 const char pagina_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
@@ -6,7 +8,6 @@ const char pagina_html[] PROGMEM = R"rawliteral(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESP32 - Balança Revlo</title>
-
     <style>
         * {
             margin: 0;
@@ -27,219 +28,286 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             display: flex;
             justify-content: space-between;
             padding: 18px 24px;
+            border-bottom: 1px solid #1f2937;
         }
 
         .logo {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             color: #ff3333;
+            letter-spacing: 1px;
         }
 
         .logo-sub {
             font-size: 10px;
             color: #888;
+            text-transform: uppercase;
         }
 
-        .main-content {
-            flex: 1;
+        .container {
+            padding: 20px;
+            max-width: 650px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Painel Lado a Lado para Exibição dos Pesos */
+        .weight-grid {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 10px;
-            gap: 12px;
+            gap: 16px;
+            margin-bottom: 20px;
         }
 
-        .panel {
-            background: #131729;
-            border-radius: 10px;
-            padding: 18px;
-            display: flex;
-            align-items: center;
-            gap: 12px; /* 🔥 espaçamento entre botão e conteúdo */
-        }
-
-        .panel-content {
+        .weight-box {
             flex: 1;
-            text-align: right;
-        }
-
-        .panel-label {
-            font-size: 12px;
-            color: #555;
-            margin-bottom: 4px;
-        }
-
-        .panel-value {
-            font-size: 42px;
-            font-weight: bold;
-            color: #4488ff;
-        }
-
-        .panel-value.green {
-            color: #00e676;
-        }
-
-        .panel-unit {
-            font-size: 16px;
-            color: #555;
-            margin-left: 6px;
-        }
-
-        /* 🔥 BOTÕES COM MESMO TAMANHO */
-        .panel button {
-            flex: 1;
-            max-width: 140px;
-            height: 60px;
-        }
-
-        button {
-            border: none;
+            background: #111827;
+            padding: 16px;
             border-radius: 8px;
+            border: 1px solid #1f2937;
+            text-align: center;
+        }
+
+        .weight-label {
+            font-size: 11px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            display: block;
+            letter-spacing: 0.5px;
+        }
+
+        .weight-value {
+            font-size: 28px;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* Containers de Alinhamento Horizontal para os Botões Superiores */
+        .btn-row {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .btn {
+            flex: 1;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 6px;
             font-weight: bold;
             cursor: pointer;
-            letter-spacing: 1px;
+            font-size: 16px;
+            text-transform: uppercase;
+            transition: background 0.2s, opacity 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        .btn-zero {
-            background: #1e2340;
-            color: white;
+        .btn:hover {
+            opacity: 0.9;
         }
 
         .btn-somar {
-            background: #ff3333;
-            color: white;
+            background-color: #e11d48; /* Ajustado para um vermelho similar ao da imagem */
         }
 
-        .bottom-row {
+        .btn-zerar {
+            background-color: #4b5563;
+        }
+
+        .btn-calibrar {
+            background-color: #3b82f6;
+        }
+
+        /* NOVO: Container Inferior Horizontal (Estilo da Imagem) */
+        .action-bar {
             display: flex;
-            gap: 10px;
-            padding: 10px;
+            align-items: center;
+            background: #111827;
+            border: 1px solid #1f2937;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 15px;
+            gap: 16px;
+            justify-content: space-between;
         }
 
-        .btn-bottom {
-            flex: 1;
-            background: #131729;
-            color: #aaa;
-            padding: 15px;
+        .btn-acao-lateral {
+            background-color: #e11d48;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 15px;
+            text-transform: uppercase;
+            transition: background 0.2s;
+            min-width: 120px;
         }
 
-        #status {
+        .btn-acao-lateral:hover {
+            background-color: #be123c;
+        }
+
+        .info-group {
+            flex: 0 0 auto;
             text-align: center;
-            font-size: 12px;
-            color: #555;
-            padding: 6px;
-            min-height: 18px;
+        }
+
+        .info-group .reg-label {
+            color: #9ca3af;
+            font-size: 11px;
+            display: block;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .info-group .reg-value {
+            font-size: 26px;
+            font-weight: bold;
+            color: #10b981;
+            font-family: monospace;
+        }
+
+        .input-group {
+            flex: 1;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            outline: none;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .input-group input:focus {
+            border-color: #e11d48;
+        }
+
+        .status-bar {
+            text-align: center;
+            color: #888;
+            margin-top: 20px;
+            min-height: 20px;
+            font-size: 14px;
+            font-style: italic;
         }
     </style>
 </head>
-
 <body>
-
-<header class="header">
-    <div>
-        <div class="logo">REVLO</div>
-        <div class="logo-sub">Sistema de Pesagem</div>
-    </div>
-</header>
-
-<main class="main-content">
-
-    <!-- 🔵 PESO ATUAL -->
-    <div class="panel">
-        <button class="btn-zero" onclick="zerar()">ZERO</button>
-
-        <div class="panel-content">
-            <div class="panel-label">Peso Atual</div>
-            <span class="panel-value" id="peso">0.00</span>
-            <span class="panel-unit">KG</span>
+    <div class="header">
+        <div>
+            <div class="logo">REVLO</div>
+            <div class="logo-sub">Sistema de Balança Rodoviária</div>
         </div>
     </div>
 
-    <!-- 🔵 PESO ACUMULADO -->
-    <div class="panel">
-        <button class="btn-somar" onclick="somar()">SOMAR</button>
-
-        <div class="panel-content">
-            <div class="panel-label">Peso Total</div>
-            <span class="panel-value green" id="pesoAcumulado">0</span>
-            <span class="panel-unit">KG</span>
+    <div class="container">
+        <div class="weight-grid">
+            <div class="weight-box">
+                <span class="weight-label">Peso Atual</span>
+                <div class="weight-value" id="peso" style="color: #ff3333;">--</div>
+            </div>
+            <div class="weight-box">
+                <span class="weight-label">Peso Acumulado</span>
+                <div class="weight-value" id="pesoAcumulado" style="color: #3b82f6;">--</div>
+            </div>
         </div>
+
+        <div class="btn-row">
+            <button onclick="zerar()" class="btn btn-zerar">Zerar</button>
+            <button onclick="somar()" class="btn btn-somar">Somar</button>
+        </div>
+
+        <div class="action-bar">
+            <button onclick="salvar()" class="btn-acao-lateral">Salvar</button>
+            
+            <div class="info-group">
+                <span class="reg-label">Registro</span>
+                <span id="contadorRegistro" class="reg-value">0</span>
+            </div>
+            
+            <div class="input-group">
+                <input type="text" id="placaInput" placeholder="PLACA DO VEÍCULO" maxlength="7" autocomplete="off">
+            </div>
+            
+            <button onclick="limpar()" class="btn-acao-lateral">Limpar</button>
+        </div>
+
+        <div id="status" class="status-bar"></div>
     </div>
 
-</main>
+    <script>
+        setInterval(buscarDados, 500);
 
-<div id="status"></div>
+        function setStatus(msg) {
+            document.getElementById('status').innerText = msg;
+        }
 
-<div class="bottom-row">
-    <button class="btn-bottom" onclick="calibrar()">Configurações</button>
-    <button class="btn-bottom">Ajuda</button>
-    <button class="btn-bottom">Histórico</button>
-</div>
+        function buscarDados() {
+            fetch('/dados')
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById('peso').innerText = Number.isFinite(Number(d.pesoAtual)) ? Math.max(0, Number(d.pesoAtual)).toFixed(2) + " kg" : '--';
+                    document.getElementById('pesoAcumulado').innerText = Number.isFinite(Number(d.peixo)) ? Number(d.peixo).toFixed(2) + " kg" : '--';
+                    document.getElementById('contadorRegistro').innerText = d.contadorRegistro !== undefined ? d.contadorRegistro : '0';
+                    
+                    if (d.tplaca !== undefined && document.activeElement !== document.getElementById('placaInput')) {
+                        document.getElementById('placaInput').value = d.tplaca;
+                    }
+                })
+                .catch(() => setStatus('Erro de comunicação com o ESP32...'));
+        }
 
-<script>
-    function setStatus(msg) {
-        document.getElementById('status').innerText = msg;
-    }
+        function somar() {
+            setStatus('Executando comando [Somar]...');
+            fetch('/somar')
+                .then(r => r.text())
+                .then(msg => { setStatus(msg); setTimeout(() => setStatus(''), 2000); });
+        }
 
-    function buscarDados() {
-        fetch('/dados')
-            .then(r => r.json())
-            .then(d => {
-                const pesoAtual = Number(d.pesoAtual);
-                const peso = Number.isFinite(pesoAtual)
-                    ? Math.max(0, pesoAtual).toFixed(2)
-                    : '--';
-                const peixo = Number(d.peixo);
-                const pesoAcumulado = Number.isFinite(peixo)
-                    ? peixo
-                    : '--';
+        function salvar() {
+            const placa = document.getElementById('placaInput').value.toUpperCase();
+            setStatus('Salvando registro...');
+            fetch(`/salvar?placa=${encodeURIComponent(placa)}`)
+                .then(r => r.text())
+                .then(msg => { setStatus(msg); setTimeout(() => setStatus(''), 2000); });
+        }
 
-                document.getElementById('peso').innerText = peso;
-                document.getElementById('pesoAcumulado').innerText = pesoAcumulado;
-            })
-            .catch(() => setStatus('Erro na conexão...'));
-    }
+        function zerar() {
+            setStatus('Executando Zero...');
+            fetch('/zero')
+                .then(r => r.text())
+                .then(msg => { setStatus(msg); setTimeout(() => setStatus(''), 2000); });
+        }
 
-    function calibrar() {
-        setStatus("Iniciando calibração...");
+        function calibrar() {
+            setStatus('Acessando modo de calibração...');
+            fetch('/calibrar')
+                .then(r => r.text())
+                .then(msg => setStatus(msg));
+        }
 
-        fetch('/calibrar')
-            .then(r => r.text())
-            .then(msg => setStatus(msg))
-            .catch(() => setStatus("Erro ao calibrar"));
-    }
-
-    function zerar() {
-        setStatus('Zerando...');
-
-        fetch('/zero')
-            .then(r => r.text())
-            .then(msg => {
-                setStatus(msg);
-                setTimeout(() => setStatus(''), 2000);
-            })
-            .catch(() => setStatus('Erro ao zerar'));
-    }
-
-    function somar() {
-        setStatus('Somando...');
-
-        fetch('/somar')
-            .then(r => r.text())
-            .then(msg => {
-                setStatus(msg);
-                buscarDados();
-                setTimeout(() => setStatus(''), 2000);
-            })
-            .catch(() => setStatus('Erro ao somar'));
-    }
-
-    buscarDados();
-    setInterval(buscarDados, 200);
-</script>
-
+        function limpar() {
+            setStatus('Limpando dados ativos...');
+            fetch('/limpar')
+                .then(r => r.text())
+                .then(msg => { 
+                    setStatus(msg); 
+                    document.getElementById('placaInput').value = '';
+                    setTimeout(() => setStatus(''), 2000); 
+                });
+        }
+    </script>
 </body>
 </html>
 )rawliteral";
-
-
