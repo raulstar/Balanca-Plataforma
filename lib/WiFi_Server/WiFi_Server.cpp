@@ -6,6 +6,7 @@ extern void tareAllSensors();
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include "PaginaHTML.h"
+#include "Nextion_Display.hpp"
 
 WebServer server(80);
 
@@ -195,6 +196,8 @@ void initWebServer()
     server.on("/status", handleStatus);
     server.on("/cmd", handleCmd);
     server.on("/peso", handlePeso);
+    server.on("/dados", handleDados);
+    server.on("/zero", handleZero);
 
     server.begin();
 }
@@ -217,8 +220,10 @@ void handleZero()
 // For now we provide a minimal JSON payload with the current total weight.
 void handleDados()
 {
-    // Assuming pesoAtual is a global variable representing the current weight.
-    extern float pesoAtual; // declared elsewhere (e.g., in main.cpp)
-    String json = "{\"peso\":" + String(pesoAtual, 2) + "}";
+    float pesoAtualSeguro = (!isnan(pesoAtual) && !isinf(pesoAtual)) ? pesoAtual : 0.0f;
+
+    String json = "{\"pesoAtual\":" + String(pesoAtualSeguro, 2) +
+                  ",\"peixo\":" + String(peixo) +
+                  ",\"pesoAcumulado\":" + String(peixo) + "}";
     server.send(200, "application/json", json);
 }

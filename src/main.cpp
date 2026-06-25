@@ -111,6 +111,12 @@ void handleCalibrar() // CALIBRAÇÃO WEB
   server.send(200, "text/plain", "Modo calibração iniciado");
 }
 
+void handleSomar() // SOMAR WEB
+{
+  handle_bsom();
+  server.send(200, "text/plain", "Peso somado");
+}
+
 void taskProcessarImpressao(void *pvParameters)
 {
   for (;;)
@@ -474,6 +480,7 @@ void setup()
   server.on("/zero", handleZero);
   server.on("/dados", handleDados);
   server.on("/calibrar", handleCalibrar);
+  server.on("/somar", handleSomar);
   Serial.println("\n=== SISTEMA BALANCA ===");
 
   Serial.println("Comandos:");

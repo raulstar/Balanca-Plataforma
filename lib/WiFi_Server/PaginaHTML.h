@@ -150,18 +150,18 @@ const char pagina_html[] PROGMEM = R"rawliteral(
 
         <div class="panel-content">
             <div class="panel-label">Peso Atual</div>
-            <span class="panel-value" id="peso">--</span>
+            <span class="panel-value" id="peso">0.00</span>
             <span class="panel-unit">KG</span>
         </div>
     </div>
 
     <!-- 🔵 PESO ACUMULADO -->
     <div class="panel">
-        <button class="btn-somar">SOMAR</button>
+        <button class="btn-somar" onclick="somar()">SOMAR</button>
 
         <div class="panel-content">
             <div class="panel-label">Peso Total</div>
-            <span class="panel-value green" id="pesoAcumulado">0.000</span>
+            <span class="panel-value green" id="pesoAcumulado">0</span>
             <span class="panel-unit">KG</span>
         </div>
     </div>
@@ -185,11 +185,17 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         fetch('/dados')
             .then(r => r.json())
             .then(d => {
-                const peso = d.pesoAtual !== null
-                    ? Math.max(0, d.pesoAtual).toFixed(2)
+                const pesoAtual = Number(d.pesoAtual);
+                const peso = Number.isFinite(pesoAtual)
+                    ? Math.max(0, pesoAtual).toFixed(2)
+                    : '--';
+                const peixo = Number(d.peixo);
+                const pesoAcumulado = Number.isFinite(peixo)
+                    ? peixo
                     : '--';
 
                 document.getElementById('peso').innerText = peso;
+                document.getElementById('pesoAcumulado').innerText = pesoAcumulado;
             })
             .catch(() => setStatus('Erro na conexão...'));
     }
@@ -215,10 +221,25 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             .catch(() => setStatus('Erro ao zerar'));
     }
 
+    function somar() {
+        setStatus('Somando...');
+
+        fetch('/somar')
+            .then(r => r.text())
+            .then(msg => {
+                setStatus(msg);
+                buscarDados();
+                setTimeout(() => setStatus(''), 2000);
+            })
+            .catch(() => setStatus('Erro ao somar'));
+    }
+
+    buscarDados();
     setInterval(buscarDados, 200);
 </script>
 
 </body>
 </html>
 )rawliteral";
+
 
