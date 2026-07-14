@@ -491,6 +491,9 @@ void setup()
   xTaskCreate(taskSerialPortReader, "SerialPortReader", 4096, NULL, 2, &hPortTask);
   Serial.println("Loading EEPROM data...");
   carregarComEEPROM();
+  // Ao iniciar o programa, o peso atual deve começar zerado,
+  // mesmo que exista um valor anterior salvo na EEPROM.
+  pesoAtual = 0.0f;
   Serial.print("pesoAtual = ");
   Serial.println(pesoAtual, 2);
   Serial.print("ttotal = ");
