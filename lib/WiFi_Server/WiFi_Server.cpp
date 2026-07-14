@@ -224,6 +224,11 @@ void handleDados()
 
     String json = "{\"pesoAtual\":" + String(pesoAtualSeguro, 2) +
                   ",\"peixo\":" + String(peixo) +
-                  ",\"pesoAcumulado\":" + String(peixo) + "}";
+                  ",\"pesoAcumulado\":" + String(peixo) +
+                  ",\"tbateria\":\"" + tbateria + "\"" +
+                  ",\"last_thora\":\"" + last_thora + "\"" +
+                  ",\"last_tdata\":\"" + last_tdata + "\"" +
+                  ",\"tpeso1\":\"" + tpeso1 + "\"" +
+                  ",\"tpeso2\":\"" + tpeso2 + "\"}";
     server.send(200, "application/json", json);
 }

@@ -27,6 +27,7 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         .header {
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
             padding: 18px 24px;
             border-bottom: 1px solid #1f2937;
         }
@@ -42,6 +43,39 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             font-size: 10px;
             color: #888;
             text-transform: uppercase;
+        }
+
+        .top-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            text-align: right;
+            color: #d1d5db;
+            font-size: 12px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .top-info span {
+            color: #3b82f6;
+            font-weight: bold;
+        }
+
+        .header-center-info {
+            display: flex;
+            gap: 18px;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            color: #d1d5db;
+            font-size: 13px;
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+        }
+
+        .header-center-info span {
+            color: #10b981;
+            font-size: 18px;
+            font-weight: bold;
         }
 
         .container {
@@ -209,6 +243,15 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             <div class="logo">REVLO</div>
             <div class="logo-sub">Sistema de Balança Rodoviária</div>
         </div>
+        <div class="header-center-info">
+            <div>Peso 1: <span id="tpeso1">--</span></div>
+            <div>Peso 2: <span id="tpeso2">--</span></div>
+        </div>
+        <div class="top-info">
+            <div>Bateria: <span id="tbateria">--</span></div>
+            <div>Hora: <span id="last_thora">--</span></div>
+            <div>Data: <span id="last_tdata">--</span></div>
+        </div>
     </div>
 
     <div class="container">
@@ -260,6 +303,11 @@ const char pagina_html[] PROGMEM = R"rawliteral(
                     document.getElementById('peso').innerText = Number.isFinite(Number(d.pesoAtual)) ? Math.max(0, Number(d.pesoAtual)).toFixed(2) + " kg" : '--';
                     document.getElementById('pesoAcumulado').innerText = Number.isFinite(Number(d.peixo)) ? Number(d.peixo).toFixed(2) + " kg" : '--';
                     document.getElementById('contadorRegistro').innerText = d.contadorRegistro !== undefined ? d.contadorRegistro : '0';
+                    document.getElementById('tbateria').innerText = d.tbateria || '--';
+                    document.getElementById('last_thora').innerText = d.last_thora || '--';
+                    document.getElementById('last_tdata').innerText = d.last_tdata || '--';
+                    document.getElementById('tpeso1').innerText = d.tpeso1 ? d.tpeso1 + " kg" : '--';
+                    document.getElementById('tpeso2').innerText = d.tpeso2 ? d.tpeso2 + " kg" : '--';
                     
                     if (d.tplaca !== undefined && document.activeElement !== document.getElementById('placaInput')) {
                         document.getElementById('placaInput').value = d.tplaca;
