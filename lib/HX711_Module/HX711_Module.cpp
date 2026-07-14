@@ -196,7 +196,15 @@ bool SensorBalanca::processaString(String s)
 {
     if (s.startsWith(prefixo))
     {
-        valorLido = atof(s.c_str() + prefixo.length());
+        float rawValue = atof(s.c_str() + prefixo.length());
+
+        // Se o valor recebido raw for igual a zero, deve ser ignorado.
+        if (rawValue == 0.0f)
+        {
+            return false;
+        }
+
+        valorLido = rawValue;
 
         // Apenas marca como pronto se o valor é válido.
         // Não descartamos o valor lido aqui para permitir a tara de valores brutos.
