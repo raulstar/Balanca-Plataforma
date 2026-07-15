@@ -1,5 +1,7 @@
 #pragma once
-#include <WebServer.h>
+#include <Arduino.h>
+
+class WebServer;
 
 extern WebServer server;
 

@@ -1,7 +1,11 @@
 #include "WiFi_Server.hpp"
 
-// Forward declaration of the tare function defined in main.cpp.
-extern void tareAllSensors();
+// Implementação padrão fraca para permitir compilar testes isolados que não
+// linkam src/main.cpp. No firmware principal, a implementação forte em main.cpp
+// sobrescreve esta função.
+void __attribute__((weak)) tareAllSensors()
+{
+}
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
@@ -187,6 +191,24 @@ void monitorWiFi()
     }
 }
 
+void handleSalvar()
+{
+    if (server.hasArg("placa"))
+    {
+        tplaca = server.arg("placa");
+        tplaca.toUpperCase();
+        placaVeiculo = tplaca;
+    }
+    handle_bsalvar();
+    server.send(200, "text/plain", "Registro salvo");
+}
+
+void handleLimpar()
+{
+    handle_blimpar();
+    server.send(200, "text/plain", "Dados limpos");
+}
+
 void initWebServer()
 {
 
@@ -198,6 +220,8 @@ void initWebServer()
     server.on("/peso", handlePeso);
     server.on("/dados", handleDados);
     server.on("/zero", handleZero);
+    server.on("/salvar", handleSalvar);
+    server.on("/limpar", handleLimpar);
 
     server.begin();
 }
@@ -221,10 +245,12 @@ void handleZero()
 void handleDados()
 {
     float pesoAtualSeguro = (!isnan(pesoAtual) && !isinf(pesoAtual)) ? pesoAtual : 0.0f;
+    float ttotalSeguro = (!isnan(ttotal) && !isinf(ttotal)) ? ttotal : 0.0f;
 
     String json = "{\"pesoAtual\":" + String(pesoAtualSeguro, 2) +
                   ",\"peixo\":" + String(peixo) +
-                  ",\"pesoAcumulado\":" + String(peixo) +
+                  ",\"pesoAcumulado\":" + String(ttotalSeguro, 2) +
+                  ",\"ttotal\":" + String(ttotalSeguro, 2) +
                   ",\"tbateria\":\"" + tbateria + "\"" +
                   ",\"last_thora\":\"" + last_thora + "\"" +
                   ",\"last_tdata\":\"" + last_tdata + "\"" +

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WebServer.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
@@ -31,7 +32,7 @@ float pesoCalibracao1 = 84000.0f;
 #define div divPeso
 int div = 5;
 extern volatile bool imprimir;
-bool useAP = true; // altere para false para usar modo estação
+bool useAP = false; // altere para false para usar modo estação
 
 // Mutex to protect sensor array access
 // Defined in Nextion_Display.cpp so it is available to both firmware and unit tests.

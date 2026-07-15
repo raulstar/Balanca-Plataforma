@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WebServer.h>
 #include "WiFi_Server.hpp"
 #include "../lib/WiFi_Server/PaginaHTML.h"
 
