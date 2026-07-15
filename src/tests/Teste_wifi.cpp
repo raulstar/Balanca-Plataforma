@@ -19,7 +19,7 @@ void setup() {
     //   true  – modo Access Point (AP) – permite conexão direta ao
     //            controlador e acesso à página HTML.
     // ---------------------------------------------------------------
-    bool useAP = true; // altere para false para usar modo estação
+    bool useAP = false; // altere para false para usar modo estação
     setAPMode(useAP);
 
     // Inicializa Wi‑Fi (modo escolhido acima) e o servidor web.

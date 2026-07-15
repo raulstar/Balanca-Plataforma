@@ -11,8 +11,8 @@ extern void tareAllSensors();
 WebServer server(80);
 
 // Default credentials for station mode (client)
-String sta_ssid = "raulstar";
-String sta_password = "72989400";
+String sta_ssid = "Revlo_Claro";
+String sta_password = "Revlo@2025";
 
 // Credentials for AP mode – can be changed via setAPMode if needed
 String ap_ssid = "Balanca_AP";
@@ -24,7 +24,7 @@ bool g_apMode = false;
 
 // Global flag indicating connection status (true when STA is connected).
 // In AP mode this flag is always true because the ESP creates its own AP.
-bool g_wifiConnected = false;
+bool g_wifiConnected = true;
 
 static String getMDNSHostFromAddress()
 {
