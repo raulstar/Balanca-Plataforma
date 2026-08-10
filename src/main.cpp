@@ -13,6 +13,7 @@
 #include <SoftwareSerial.h>
 #include "config.hpp"
 #include "EEPROM_Module.hpp"
+#include "BasicOTA.hpp"
 
 #define M0 19
 #define M1 21
@@ -27,6 +28,8 @@
 uint32_t displayUpdateInterval = 500;
 HardwareSerial SerialPort(2);
 SoftwareSerial impressoraSerial(4, 5);
+
+BasicOTA OTA;
 float pesoCalibracao1 = 84000.0f;
 // "div" conflita com a função div() de stdlib.h; o macro mantém o uso compatível no firmware.
 #define div divPeso
@@ -492,6 +495,7 @@ void setup()
   xTaskCreate(taskSerialPortReader, "SerialPortReader", 4096, NULL, 2, &hPortTask);
   Serial.println("Loading EEPROM data...");
   carregarComEEPROM();
+  OTA.begin(); // Setup settings
   // Ao iniciar o programa, o peso atual deve começar zerado,
   // mesmo que exista um valor anterior salvo na EEPROM.
   pesoAtual = 0.0f;
@@ -542,6 +546,8 @@ void loop()
     salvarComEEPROM();
     salvarRegistro = false;
   }
+
+   OTA.handle(); 
   //////////////////////////////////////////////////////////////////////////
   // LEITURA SENSOR
   //////////////////////////////////////////////////////////////////////////
