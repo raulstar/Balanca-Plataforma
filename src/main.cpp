@@ -219,10 +219,10 @@ void taskSerialPortReader(void *pvParameters)
           }
           else
           {
-            pesoAtual = currentPeso;
+            pesoAtual = roundf(currentPeso * 100.0f) / 100.0f;
           }
           Serial.print("Peso Atual: ");
-          Serial.println(pesoAtual, 3);
+          Serial.println(pesoAtual, 2);
           Serial.println();
           xSemaphoreGive(xSensorMutex);
         }

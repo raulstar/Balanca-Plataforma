@@ -76,6 +76,11 @@ static bool valorPesoValido(float valor)
     return !isnan(valor) && !isinf(valor);
 }
 
+static float arredondarPeso2Casas(float valor)
+{
+    return roundf(valor * 100.0f) / 100.0f;
+}
+
 int last_contadorRegistro = 0;
 int last_contEixo = 0;
 
@@ -203,37 +208,40 @@ void updateDisplay()
     {
         pesoAtual = 0.0f;
     }
+    pesoAtual = arredondarPeso2Casas(pesoAtual);
 
     if (!valorPesoValido(ttotal))
     {
         ttotal = 0.0f;
         last_ttotal = -999999.0f;
     }
+    ttotal = arredondarPeso2Casas(ttotal);
 
     if (!valorPesoValido(ttara))
     {
         ttara = 0.0f;
         last_ttara = -999999.0f;
     }
+    ttara = arredondarPeso2Casas(ttara);
 
     // Peso Atual
     // Atualiza independentemente se houve mudança ou não, pois a tara pode ter zerado
     // mas o valor absoluto (0.0) ainda pode ser considerado igual ao anterior.
-    setNextionText("tPeso", String(pesoAtual, 1) + " kg");
+    setNextionText("tPeso", String(pesoAtual, 2) + " kg");
     last_pesoAtual = pesoAtual;
     // Serial.println(pesoAtual, 1);
 
     // Total
     if (ttotal != last_ttotal)
     {
-        setNextionText("ttotal", String(ttotal, 1) + " kg");
+        setNextionText("ttotal", String(ttotal, 2) + " kg");
         last_ttotal = ttotal;
     }
 
     // Tara
     if (ttara != last_ttara)
     {
-        setNextionText("ttara", String(ttara, 1) + " kg");
+        setNextionText("ttara", String(ttara, 2) + " kg");
         last_ttara = ttara;
     }
 
@@ -550,7 +558,7 @@ void handle_bzero()
         last_ttara = -999999.0f;
     }
 
-    setNextionText("tPeso", String(pesoAtual, 1));
+    setNextionText("tPeso", String(pesoAtual, 2));
 }
 
 // ======================================================
@@ -570,7 +578,8 @@ void handle_bsom()
         ttotal = 0.0f;
     }
 
-    ttotal += pesoAtual;
+    pesoAtual = arredondarPeso2Casas(pesoAtual);
+    ttotal = arredondarPeso2Casas(ttotal + pesoAtual);
     peixo = (int)pesoAtual;
 
     switch (contEixo)
@@ -603,7 +612,7 @@ void handle_bsom()
     contEixo++;
     eixo++;
 
-    setNextionText("ttotal", String(ttotal, 1));
+    setNextionText("ttotal", String(ttotal, 2));
 }
 
 // ======================================================
@@ -658,7 +667,8 @@ void handle_bsalvar()
     tabela[contadorRegistro][7] = String((float)eixo3, 1);
     tabela[contadorRegistro][8] = String((float)eixo4, 1);
     tabela[contadorRegistro][9] = String((float)eixo5, 1);
-    tabela[contadorRegistro][10] = String(ttotal, 1);
+    ttotal = arredondarPeso2Casas(ttotal);
+    tabela[contadorRegistro][10] = String(ttotal, 2);
     Serial.print("//////////////////////////////////////");
     Serial.println("contadorRegistro");
     Serial.print(": ");
