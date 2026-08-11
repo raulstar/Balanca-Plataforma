@@ -253,6 +253,131 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         .btn-bottom-blue {
             background-color: #2563eb;
         }
+
+        @media (max-width: 768px) {
+            .header {
+                align-items: center;
+                flex-direction: column;
+                gap: 14px;
+                padding: 16px;
+                text-align: center;
+            }
+
+            .header-center-info {
+                flex: none;
+                flex-wrap: wrap;
+                gap: 10px 16px;
+                width: 100%;
+            }
+
+            .top-info {
+                align-items: center;
+                text-align: center;
+                width: 100%;
+            }
+
+            .container {
+                max-width: 100%;
+                padding: 14px;
+            }
+
+            .weight-grid {
+                flex-direction: column;
+                gap: 12px;
+                margin-bottom: 14px;
+            }
+
+            .weight-box {
+                padding: 14px 10px;
+            }
+
+            .weight-value {
+                font-size: clamp(32px, 12vw, 48px);
+                letter-spacing: -1px;
+            }
+
+            .btn-row,
+            .bottom-btn-row {
+                gap: 10px;
+            }
+
+            .btn {
+                min-height: 52px;
+                padding: 14px 10px;
+                font-size: 14px;
+            }
+
+            .action-bar {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+                padding: 12px;
+            }
+
+            .info-group,
+            .input-group {
+                grid-column: 1 / -1;
+            }
+
+            .input-group {
+                order: 2;
+            }
+
+            .info-group {
+                order: 1;
+            }
+
+            .action-bar .btn-acao-lateral:first-child {
+                order: 3;
+            }
+
+            .action-bar .btn-acao-lateral:last-child {
+                order: 4;
+            }
+
+            .btn-acao-lateral {
+                min-width: 0;
+                width: 100%;
+                padding: 14px 10px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .logo {
+                font-size: 22px;
+            }
+
+            .logo-sub,
+            .weight-label,
+            .info-group .reg-label {
+                font-size: 10px;
+            }
+
+            .header-center-info,
+            .top-info,
+            .status-bar {
+                font-size: 12px;
+            }
+
+            .header-center-info span {
+                font-size: 16px;
+            }
+
+            .weight-value {
+                font-size: clamp(28px, 11vw, 42px);
+            }
+
+            .bottom-btn-row {
+                flex-direction: column;
+            }
+
+            .input-group input {
+                padding: 12px;
+                font-size: 14px;
+                letter-spacing: 1px;
+            }
+        }
     </style>
 </head>
 <body>
