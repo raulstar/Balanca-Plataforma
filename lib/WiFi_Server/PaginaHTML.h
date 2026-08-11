@@ -57,7 +57,9 @@ const char pagina_html[] PROGMEM = R"rawliteral(
 
         .top-info span {
             color: #3b82f6;
-            font-weight: bold;
+            font-weight: 900;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #39ff14;
         }
 
         .header-center-info {
@@ -75,7 +77,9 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         .header-center-info span {
             color: #10b981;
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 900;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #39ff14;
         }
 
         .container {
@@ -111,9 +115,13 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         }
 
         .weight-value {
-            font-size: 28px;
-            font-weight: bold;
-            font-family: 'Courier New', Courier, monospace;
+            font-size: clamp(38px, 7vw, 64px);
+            font-weight: 900;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #39ff14 !important;
+            line-height: 1;
+            letter-spacing: -2px;
+            white-space: nowrap;
         }
 
         /* Containers de Alinhamento Horizontal para os Botões Superiores */
@@ -199,9 +207,9 @@ const char pagina_html[] PROGMEM = R"rawliteral(
 
         .info-group .reg-value {
             font-size: 26px;
-            font-weight: bold;
-            color: #10b981;
-            font-family: monospace;
+            font-weight: 900;
+            color: #39ff14;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
         .input-group {
@@ -258,11 +266,11 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         <div class="weight-grid">
             <div class="weight-box">
                 <span class="weight-label">Peso Atual</span>
-                <div class="weight-value" id="peso" style="color: #ff3333;">0.00 kg</div>
+                <div class="weight-value" id="peso">0.00 kg</div>
             </div>
             <div class="weight-box">
                 <span class="weight-label">Peso Acumulado</span>
-                <div class="weight-value" id="pesoAcumulado" style="color: #3b82f6;">0.00 kg</div>
+                <div class="weight-value" id="pesoAcumulado">0.00 kg</div>
             </div>
         </div>
 
