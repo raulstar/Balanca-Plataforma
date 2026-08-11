@@ -243,6 +243,16 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             font-size: 14px;
             font-style: italic;
         }
+
+        .bottom-btn-row {
+            display: flex;
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .btn-bottom-blue {
+            background-color: #2563eb;
+        }
     </style>
 </head>
 <body>
@@ -290,8 +300,14 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             <div class="input-group">
                 <input type="text" id="placaInput" placeholder="PLACA DO VEÍCULO" maxlength="7" autocomplete="off">
             </div>
-            
+             
             <button onclick="limpar()" class="btn-acao-lateral">Limpar</button>
+        </div>
+
+        <div class="bottom-btn-row">
+            <button onclick="calibrar()" class="btn btn-bottom-blue">Configuração</button>
+            <button onclick="setStatus('Imprimir')" class="btn btn-bottom-blue">Imprimir</button>
+            <button onclick="setStatus('Histórico')" class="btn btn-bottom-blue">Histórico</button>
         </div>
 
         <div id="status" class="status-bar"></div>
