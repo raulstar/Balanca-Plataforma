@@ -251,6 +251,7 @@ void handleDados()
                   ",\"peixo\":" + String(peixo) +
                   ",\"pesoAcumulado\":" + String(ttotalSeguro, 2) +
                   ",\"ttotal\":" + String(ttotalSeguro, 2) +
+                  ",\"contadorRegistro\":" + String(contadorRegistro) +
                   ",\"tbateria\":\"" + tbateria + "\"" +
                   ",\"last_thora\":\"" + last_thora + "\"" +
                   ",\"last_tdata\":\"" + last_tdata + "\"" +
