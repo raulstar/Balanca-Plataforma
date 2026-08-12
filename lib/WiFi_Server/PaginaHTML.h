@@ -533,7 +533,7 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         <div class="bottom-btn-row">
             <button onclick="calibrar()" class="btn btn-bottom-blue">Configuração</button>
             <button onclick="setStatus('Imprimir')" class="btn btn-bottom-blue">Imprimir</button>
-            <button onclick="setStatus('Histórico')" class="btn btn-bottom-blue">Histórico</button>
+            <button onclick="baixarPlanilha()" class="btn btn-bottom-blue" style="background-color: #10b981;">Baixar Planilha</button>
         </div>
 
         <div class="history-panel">
@@ -564,6 +564,9 @@ const char pagina_html[] PROGMEM = R"rawliteral(
     </div>
 
     <script>
+        // Variável global para armazenar o histórico e exportar depois
+        let dadosHistoricoGlobal = [];
+
         setInterval(buscarDados, 500);
 
         function setStatus(msg) {
@@ -589,6 +592,7 @@ const char pagina_html[] PROGMEM = R"rawliteral(
 
                     // Construção dinâmica da tabela de histórico
                     if (d.historico && Array.isArray(d.historico)) {
+                        dadosHistoricoGlobal = d.historico; // Salva para a planilha
                         const tbody = document.getElementById('tabela-historico');
                         let linhasHTML = '';
                         
@@ -608,6 +612,43 @@ const char pagina_html[] PROGMEM = R"rawliteral(
                     }
                 })
                 .catch(() => setStatus('Erro de comunicação com o ESP32...'));
+        }
+
+        function baixarPlanilha() {
+            if (dadosHistoricoGlobal.length === 0) {
+                setStatus('Nenhum registro para baixar.');
+                setTimeout(() => setStatus(''), 2000);
+                return;
+            }
+
+            setStatus('Gerando planilha...');
+
+            // Cabeçalho da planilha (Usando ponto e vírgula para abrir certinho no Excel em Português)
+            let csvContent = "N;Placa;Data e Hora;Peso Total(kg);Tara(kg)\n";
+
+            // Preenche as linhas
+            dadosHistoricoGlobal.forEach(reg => {
+                // Substitui eventuais pontos por vírgulas nos números para o padrão brasileiro
+                let totalStr = String(reg.total).replace('.', ',');
+                let taraStr = String(reg.tara).replace('.', ',');
+                
+                csvContent += `${reg.n};${reg.placa};${reg.data};${totalStr};${taraStr}\n`;
+            });
+
+            // Cria o arquivo virtual (Blob) usando codificação UTF-8
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            // Cria um link invisível e clica nele para forçar o download
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "Historico_Balanca.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            setTimeout(() => setStatus('Planilha baixada!'), 1000);
+            setTimeout(() => setStatus(''), 3000);
         }
 
         function somar() {
