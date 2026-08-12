@@ -254,6 +254,93 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             background-color: #2563eb;
         }
 
+        .history-panel {
+            background: #090d18;
+            border: 1px solid #1f2937;
+            border-radius: 8px;
+            margin-top: 20px;
+            padding: 18px 20px 20px;
+            overflow: hidden;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .history-logo {
+            color: #ff1f5b;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .history-id {
+            color: #7b8494;
+            font-size: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            text-transform: uppercase;
+        }
+
+        .history-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+
+        .history-table {
+            width: 100%;
+            min-width: 610px;
+            border-collapse: separate;
+            border-spacing: 0 5px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .history-table th {
+            color: #687286;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: left;
+            padding: 0 12px 6px;
+            font-weight: 900;
+        }
+
+        .history-table td {
+            background: #151b2c;
+            color: #e5e7eb;
+            padding: 10px 12px;
+            border-top: 1px solid #253047;
+            border-bottom: 1px solid #253047;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .history-table td:first-child {
+            border-left: 1px solid #253047;
+            border-radius: 4px 0 0 4px;
+            color: #ff1f5b;
+        }
+
+        .history-table td:last-child {
+            border-right: 1px solid #253047;
+            border-radius: 0 4px 4px 0;
+            color: #727b8d;
+        }
+
+        .history-table .history-date {
+            color: #727b8d;
+        }
+
+        .history-table .history-weight {
+            color: #00ff66;
+            font-weight: 900;
+        }
+
         @media (max-width: 768px) {
             .header {
                 align-items: center;
@@ -341,6 +428,14 @@ const char pagina_html[] PROGMEM = R"rawliteral(
                 padding: 14px 10px;
                 font-size: 14px;
             }
+
+            .history-panel {
+                padding: 16px 12px;
+            }
+
+            .history-logo {
+                font-size: 24px;
+            }
         }
 
         @media (max-width: 420px) {
@@ -376,6 +471,12 @@ const char pagina_html[] PROGMEM = R"rawliteral(
                 padding: 12px;
                 font-size: 14px;
                 letter-spacing: 1px;
+            }
+
+            .history-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 6px;
             }
         }
     </style>
@@ -433,6 +534,64 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             <button onclick="calibrar()" class="btn btn-bottom-blue">Configuração</button>
             <button onclick="setStatus('Imprimir')" class="btn btn-bottom-blue">Imprimir</button>
             <button onclick="setStatus('Histórico')" class="btn btn-bottom-blue">Histórico</button>
+        </div>
+
+        <div class="history-panel">
+            <div class="history-header">
+                <div class="history-logo">REVLO</div>
+                <div class="history-id">ID: TERM-04-A</div>
+            </div>
+
+            <div class="history-table-wrap">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Nº</th>
+                            <th>Placa</th>
+                            <th>Data</th>
+                            <th>Peso</th>
+                            <th>Tara</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>01</td>
+                            <td>ABC-1234</td>
+                            <td class="history-date">13/05/2026</td>
+                            <td class="history-weight">44.20 kg</td>
+                            <td>12.10 kg</td>
+                        </tr>
+                        <tr>
+                            <td>02</td>
+                            <td>XYZ-9876</td>
+                            <td class="history-date">13/05/2026</td>
+                            <td class="history-weight">38.50 kg</td>
+                            <td>10.00 kg</td>
+                        </tr>
+                        <tr>
+                            <td>03</td>
+                            <td>KOL-4421</td>
+                            <td class="history-date">13/05/2026</td>
+                            <td class="history-weight">125.00 kg</td>
+                            <td>25.00 kg</td>
+                        </tr>
+                        <tr>
+                            <td>04</td>
+                            <td>BRA-2E19</td>
+                            <td class="history-date">13/05/2026</td>
+                            <td class="history-weight">62.15 kg</td>
+                            <td>15.00 kg</td>
+                        </tr>
+                        <tr>
+                            <td>05</td>
+                            <td>JHG-5522</td>
+                            <td class="history-date">13/05/2026</td>
+                            <td class="history-weight">12.80 kg</td>
+                            <td>2.00 kg</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div id="status" class="status-bar"></div>
