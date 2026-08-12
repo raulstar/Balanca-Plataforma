@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+extern int contadorRegistro;
 extern float pesoAtual;
 extern float ttotal;
 extern int contEixo;

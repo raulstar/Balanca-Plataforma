@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "EEPROM_Module.hpp"
 
+int contadorRegistro = 0;
 float pesoAtual = 0.0f;
 float ttotal = 0.0f;
 int contEixo = 1;
@@ -93,8 +94,10 @@ void setup()
     delay(1000);
     Serial.println("=== EEPROM MODULE TEST ===");
 
+    contadorRegistro = 7;
     pesoAtual = 123.45f;
     ttotal = 678.90f;
+    contEixo = 3;
     sta_ssid = "TesteSSID";
     sta_password = "Senha1234";
     ap_ssid = "AP_Teste";
@@ -121,8 +124,10 @@ void setup()
     Serial.println("Save complete.");
 
     // Clear values to verify reload.
+    contadorRegistro = 0;
     pesoAtual = 0.0f;
     ttotal = 0.0f;
+    contEixo = 0;
     sta_ssid = "";
     sta_password = "";
     ap_ssid = "";
@@ -146,10 +151,14 @@ void setup()
     carregarComEEPROM();
     Serial.println("Load complete.");
 
+    Serial.print("contadorRegistro = ");
+    Serial.println(contadorRegistro);
     Serial.print("pesoAtual = ");
     Serial.println(pesoAtual, 2);
     Serial.print("ttotal = ");
     Serial.println(ttotal, 2);
+    Serial.print("contEixo = ");
+    Serial.println(contEixo);
     Serial.print("sta_ssid = ");
     Serial.println(sta_ssid);
     Serial.print("sta_password = ");
@@ -166,10 +175,16 @@ void setup()
     printFloatArray("pesoConhecido", pesoConhecido);
     printFloatArray("fatorEscalaConhecido", fatorEscalaConhecido);
 
+    bool contadorRegistroOk = contadorRegistro == 7;
+    bool contEixoOk = contEixo == 3;
     bool pesoConhecidoOk = validateFloatArray("pesoConhecido", pesoConhecido, expectedPesoConhecido);
     bool fatorEscalaConhecidoOk = validateFloatArray("fatorEscalaConhecido", fatorEscalaConhecido, expectedFatorEscalaConhecido);
     bool tabelaOk = validateTabela();
 
+    Serial.print("Teste contadorRegistro: ");
+    Serial.println(contadorRegistroOk ? "PASS" : "FAIL");
+    Serial.print("Teste contEixo: ");
+    Serial.println(contEixoOk ? "PASS" : "FAIL");
     Serial.print("Teste pesoConhecido: ");
     Serial.println(pesoConhecidoOk ? "PASS" : "FAIL");
     Serial.print("Teste fatorEscalaConhecido: ");

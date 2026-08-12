@@ -20,7 +20,7 @@ static bool valorFloatValido(float valor)
 
 static int tamanhoEEPROMUsado()
 {
-    return (sizeof(pesoAtual) + sizeof(ttotal) + sizeof(contEixo) +
+    return (sizeof(contadorRegistro) + sizeof(pesoAtual) + sizeof(ttotal) + sizeof(contEixo) +
             sizeof(g_wifiConnected) + sizeof(g_apMode) +
             sizeof(offset) + sizeof(float) + sizeof(sensorKnownWeight) + sizeof(sensorId) +
             sizeof(pesoConhecido) + sizeof(fatorEscalaConhecido) +
@@ -99,6 +99,13 @@ void salvarComEEPROM()
     }
 
     int addr = 0;
+    EEPROM.put(addr, contadorRegistro);
+    Serial.print("Salvando contadorRegistro no endereço: ");
+    Serial.print(addr);
+    Serial.print(" Valor: ");
+    Serial.println(contadorRegistro);
+    addr += sizeof(contadorRegistro);
+
     // Mantem pesoAtual como float por compatibilidade, mas persiste apenas valor inteiro.
     pesoAtual = roundf(pesoAtual);
     EEPROM.put(addr, pesoAtual);
@@ -250,6 +257,9 @@ void carregarComEEPROM()
     }
 
     int addr = 0;
+    EEPROM.get(addr, contadorRegistro);
+    addr += sizeof(contadorRegistro);
+
     EEPROM.get(addr, pesoAtual);
     addr += sizeof(pesoAtual);
     if (!valorFloatValido(pesoAtual))
