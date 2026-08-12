@@ -8,8 +8,9 @@ int sensorId = 0;
 float pesoConhecido[4] = {78000.0f, 79000.0f, 80000.0f, 81000.0f};
 float fatorEscalaConhecido[4] = {-5801.10f, -5410.0f, -5420.0f, -5400.0f};
 
-static const int EEPROM_SIZE = 8192;
+static const int EEPROM_SIZE = 4096;
 static const int MAX_STR_LEN = 32;
+static const int MAX_TABLE_STR_LEN = 12;
 static const int TABLE_ROWS = 20;
 static const int TABLE_COLS = 11;
 
@@ -24,18 +25,20 @@ static int tamanhoEEPROMUsado()
             sizeof(g_wifiConnected) + sizeof(g_apMode) +
             sizeof(offset) + sizeof(float) + sizeof(sensorKnownWeight) + sizeof(sensorId) +
             sizeof(pesoConhecido) + sizeof(fatorEscalaConhecido) +
-            (5 * MAX_STR_LEN) + (TABLE_ROWS * TABLE_COLS * MAX_STR_LEN));
+            (5 * MAX_STR_LEN) + (TABLE_ROWS * TABLE_COLS * MAX_TABLE_STR_LEN));
 }
 
 static void salvarString(int &addr, const String &value, int maxLen)
 {
-    char buffer[MAX_STR_LEN];
-    memset(buffer, 0, sizeof(buffer));
-    value.toCharArray(buffer, min(maxLen, MAX_STR_LEN));
+    char* buffer = (char*)malloc(maxLen + 1);
+    if (!buffer) return;
+    memset(buffer, 0, maxLen + 1);
+    value.toCharArray(buffer, maxLen + 1);
     for (int i = 0; i < maxLen; ++i)
     {
         EEPROM.write(addr++, buffer[i]);
     }
+    free(buffer);
 }
 
 static bool stringEEPROMValida(const char *buffer, int maxLen)
@@ -64,8 +67,9 @@ static bool stringEEPROMValida(const char *buffer, int maxLen)
 
 static String carregarString(int &addr, int maxLen, const String &valorPadrao)
 {
-    char buffer[MAX_STR_LEN + 1];
-    memset(buffer, 0, sizeof(buffer));
+    char* buffer = (char*)malloc(maxLen + 1);
+    if (!buffer) return valorPadrao;
+    memset(buffer, 0, maxLen + 1);
     for (int i = 0; i < maxLen; ++i)
     {
         buffer[i] = EEPROM.read(addr++);
@@ -74,10 +78,13 @@ static String carregarString(int &addr, int maxLen, const String &valorPadrao)
 
     if (!stringEEPROMValida(buffer, maxLen))
     {
+        free(buffer);
         return valorPadrao;
     }
 
-    return String(buffer);
+    String res(buffer);
+    free(buffer);
+    return res;
 }
 
 void salvarComEEPROM()
@@ -197,7 +204,7 @@ void salvarComEEPROM()
     {
         for (int col = 0; col < TABLE_COLS; ++col)
         {
-            salvarString(addr, tabela[row][col], MAX_STR_LEN);
+            salvarString(addr, tabela[row][col], MAX_TABLE_STR_LEN);
         }
     }
     Serial.println("EEPROM salva.");
@@ -337,7 +344,7 @@ void carregarComEEPROM()
     {
         for (int col = 0; col < TABLE_COLS; ++col)
         {
-            tabela[row][col] = carregarString(addr, MAX_STR_LEN, tabela[row][col]);
+            tabela[row][col] = carregarString(addr, MAX_TABLE_STR_LEN, tabela[row][col]);
         }
     }
 }

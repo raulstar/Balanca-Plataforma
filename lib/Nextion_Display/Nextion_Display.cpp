@@ -622,6 +622,29 @@ void handle_bsalvar()
 {
     Serial.println("Evento [bsalvar]");
 
+    const int maxRegistrosTabela = 20;
+    const int maxRegistrosTela = 7;
+
+    if (contadorRegistro < 0)
+    {
+        contadorRegistro = 0;
+    }
+
+    if (contadorRegistro >= maxRegistrosTabela)
+    {
+        for (int i = 1; i < maxRegistrosTabela; i++)
+        {
+            for (int j = 0; j < 11; j++)
+            {
+                tabela[i - 1][j] = tabela[i][j];
+            }
+        }
+        contadorRegistro = maxRegistrosTabela - 1;
+    }
+
+    const int indiceRegistro = contadorRegistro;
+    const int indiceTela = indiceRegistro % maxRegistrosTela;
+
     String objTN[7] =
         {
             "page1.tn0", "page1.tn1", "page1.tn2", "page1.tn3", "page1.tn4", "page1.tn5", "page1.tn6"};
@@ -649,77 +672,69 @@ void handle_bsalvar()
         {
             "page1.ttara0", "page1.ttara1", "page1.ttara2", "page1.ttara3", "page1.ttara4", "page1.ttara5", "page1.ttara6"};
 
-    // for (int i = 6; i > 0; i--)
-    // {
-    //     for (int j = 0; j < 11; j++)
-    //     {
-    //         tabela[i][j] = tabela[i - 1][j];
-    //     }
-    // }
-
-    tabela[contadorRegistro][0] = String(contadorRegistro);
-    tabela[contadorRegistro][1] = tplaca;
-    tabela[contadorRegistro][2] = tdata;
-    tabela[contadorRegistro][3] = thora;
-    tabela[contadorRegistro][4] = contEixo;
-    tabela[contadorRegistro][5] = String((float)eixo1, 1);
-    tabela[contadorRegistro][6] = String((float)eixo2, 1);
-    tabela[contadorRegistro][7] = String((float)eixo3, 1);
-    tabela[contadorRegistro][8] = String((float)eixo4, 1);
-    tabela[contadorRegistro][9] = String((float)eixo5, 1);
+    tabela[indiceRegistro][0] = String(indiceRegistro);
+    tabela[indiceRegistro][1] = tplaca;
+    tabela[indiceRegistro][2] = tdata;
+    tabela[indiceRegistro][3] = thora;
+    tabela[indiceRegistro][4] = String(contEixo);
+    tabela[indiceRegistro][5] = String((float)eixo1, 1);
+    tabela[indiceRegistro][6] = String((float)eixo2, 1);
+    tabela[indiceRegistro][7] = String((float)eixo3, 1);
+    tabela[indiceRegistro][8] = String((float)eixo4, 1);
+    tabela[indiceRegistro][9] = String((float)eixo5, 1);
     ttotal = arredondarPeso2Casas(ttotal);
-    tabela[contadorRegistro][10] = String(ttotal, 2);
+    tabela[indiceRegistro][10] = String(ttotal, 2);
     Serial.print("//////////////////////////////////////");
     Serial.println("contadorRegistro");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][0]);
+    Serial.println(tabela[indiceRegistro][0]);
     Serial.print("tplaca");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][1]);
+    Serial.println(tabela[indiceRegistro][1]);
     Serial.print("tdata");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][2]);
+    Serial.println(tabela[indiceRegistro][2]);
     Serial.print("thora");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][3]);
+    Serial.println(tabela[indiceRegistro][3]);
     Serial.print("contaeixo");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][4]);
+    Serial.println(tabela[indiceRegistro][4]);
     Serial.print("eixo1");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][5]);
+    Serial.println(tabela[indiceRegistro][5]);
     Serial.print("eixo2");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][6]);
+    Serial.println(tabela[indiceRegistro][6]);
     Serial.print("eixo3");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][7]);
+    Serial.println(tabela[indiceRegistro][7]);
     Serial.print("eixo4");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][8]);
+    Serial.println(tabela[indiceRegistro][8]);
     Serial.print("eixo5");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][9]);
+    Serial.println(tabela[indiceRegistro][9]);
     Serial.print("ttotal");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][10]);
+    Serial.println(tabela[indiceRegistro][10]);
     Serial.print("ttara");
     Serial.print(": ");
-    Serial.println(tabela[contadorRegistro][11]);
+    Serial.println(ttara, 2);
 
-    setNextionText(objTN[contadorRegistro], tabela[contadorRegistro][0]);
+    setNextionText(objTN[indiceTela], tabela[indiceRegistro][0]);
 
-    setNextionText(objPLACA[contadorRegistro], tabela[contadorRegistro][1]);
+    setNextionText(objPLACA[indiceTela], tabela[indiceRegistro][1]);
 
-    setNextionText(objDATA[contadorRegistro], tabela[contadorRegistro][2]);
+    setNextionText(objDATA[indiceTela], tabela[indiceRegistro][2]);
 
-    setNextionText(objHORA[contadorRegistro], tabela[contadorRegistro][3]);
+    setNextionText(objHORA[indiceTela], tabela[indiceRegistro][3]);
 
-    setNextionText(objEIXO[contadorRegistro], tabela[contadorRegistro][4]);
+    setNextionText(objEIXO[indiceTela], tabela[indiceRegistro][4]);
 
-    setNextionText(objTOTAL[contadorRegistro], tabela[contadorRegistro][9]);
+    setNextionText(objTOTAL[indiceTela], tabela[indiceRegistro][10]);
 
-    setNextionText(objTARA[contadorRegistro], tabela[contadorRegistro][10]);
+    setNextionText(objTARA[indiceTela], String(ttara, 2));
 
     contadorRegistro++;
     salvarComEEPROM();
