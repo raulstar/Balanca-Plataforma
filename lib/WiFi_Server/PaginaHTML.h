@@ -150,7 +150,7 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         }
 
         .btn-somar {
-            background-color: #e11d48; /* Ajustado para um vermelho similar ao da imagem */
+            background-color: #e11d48;
         }
 
         .btn-zerar {
@@ -161,7 +161,7 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             background-color: #3b82f6;
         }
 
-        /* NOVO: Container Inferior Horizontal (Estilo da Imagem) */
+        /* Container Inferior Horizontal */
         .action-bar {
             display: flex;
             align-items: center;
@@ -553,42 +553,8 @@ const char pagina_html[] PROGMEM = R"rawliteral(
                             <th>Tara</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>01</td>
-                            <td>ABC-1234</td>
-                            <td class="history-date">13/05/2026</td>
-                            <td class="history-weight">44.20 kg</td>
-                            <td>12.10 kg</td>
-                        </tr>
-                        <tr>
-                            <td>02</td>
-                            <td>XYZ-9876</td>
-                            <td class="history-date">13/05/2026</td>
-                            <td class="history-weight">38.50 kg</td>
-                            <td>10.00 kg</td>
-                        </tr>
-                        <tr>
-                            <td>03</td>
-                            <td>KOL-4421</td>
-                            <td class="history-date">13/05/2026</td>
-                            <td class="history-weight">125.00 kg</td>
-                            <td>25.00 kg</td>
-                        </tr>
-                        <tr>
-                            <td>04</td>
-                            <td>BRA-2E19</td>
-                            <td class="history-date">13/05/2026</td>
-                            <td class="history-weight">62.15 kg</td>
-                            <td>15.00 kg</td>
-                        </tr>
-                        <tr>
-                            <td>05</td>
-                            <td>JHG-5522</td>
-                            <td class="history-date">13/05/2026</td>
-                            <td class="history-weight">12.80 kg</td>
-                            <td>2.00 kg</td>
-                        </tr>
+                    <tbody id="tabela-historico">
+                        <!-- As linhas do histórico serão inseridas aqui dinamicamente pelo JavaScript -->
                     </tbody>
                 </table>
             </div>
@@ -619,6 +585,26 @@ const char pagina_html[] PROGMEM = R"rawliteral(
                     
                     if (d.tplaca !== undefined && document.activeElement !== document.getElementById('placaInput')) {
                         document.getElementById('placaInput').value = d.tplaca;
+                    }
+
+                    // Construção dinâmica da tabela de histórico
+                    if (d.historico && Array.isArray(d.historico)) {
+                        const tbody = document.getElementById('tabela-historico');
+                        let linhasHTML = '';
+                        
+                        d.historico.forEach(reg => {
+                            linhasHTML += `
+                                <tr>
+                                    <td>${reg.n}</td>
+                                    <td>${reg.placa}</td>
+                                    <td class="history-date">${reg.data}</td>
+                                    <td class="history-weight">${reg.total} kg</td>
+                                    <td>${reg.tara} kg</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        tbody.innerHTML = linhasHTML;
                     }
                 })
                 .catch(() => setStatus('Erro de comunicação com o ESP32...'));

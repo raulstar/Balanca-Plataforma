@@ -12,6 +12,10 @@ void __attribute__((weak)) tareAllSensors()
 #include "PaginaHTML.h"
 #include "Nextion_Display.hpp"
 
+// Importação de variáveis globais do Nextion_Display.cpp
+extern String tabela[20][11];
+extern float ttara;
+
 WebServer server(80);
 
 // Default credentials for station mode (client)
@@ -256,6 +260,28 @@ void handleDados()
                   ",\"last_thora\":\"" + last_thora + "\"" +
                   ",\"last_tdata\":\"" + last_tdata + "\"" +
                   ",\"tpeso1\":\"" + tpeso1 + "\"" +
-                  ",\"tpeso2\":\"" + tpeso2 + "\"}";
+                  ",\"tpeso2\":\"" + tpeso2 + "\"";
+
+    // Adiciona o nó 'historico' ao JSON extraindo os dados da matriz 'tabela'
+    json += ",\"historico\":[";
+    
+    // Limita a leitura ao número máximo de registros suportados (20)
+    int numRegistros = (contadorRegistro < 20) ? contadorRegistro : 20;
+
+    for (int i = 0; i < numRegistros; i++)
+    {
+        if (i > 0) json += ","; // Separa os objetos com vírgula
+        json += "{";
+        json += "\"n\":\"" + tabela[i][0] + "\",";
+        json += "\"placa\":\"" + tabela[i][1] + "\",";
+        json += "\"data\":\"" + tabela[i][2] + " " + tabela[i][3] + "\","; // Junta data e hora
+        json += "\"total\":\"" + tabela[i][10] + "\","; // O ttotal está gravado no índice 10
+        json += "\"tara\":\"" + String(ttara, 2) + "\"";  // A tara é global 
+        json += "}";
+    }
+    
+    json += "]";
+    json += "}";
+
     server.send(200, "application/json", json);
 }
