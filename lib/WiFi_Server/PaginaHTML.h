@@ -263,28 +263,6 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             overflow: hidden;
         }
 
-        .history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-        }
-
-        .history-logo {
-            color: #ff1f5b;
-            font-size: 28px;
-            font-weight: 900;
-            letter-spacing: -1px;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        .history-id {
-            color: #7b8494;
-            font-size: 10px;
-            font-family: 'Courier New', Courier, monospace;
-            text-transform: uppercase;
-        }
-
         .history-table-wrap {
             width: 100%;
             overflow-x: auto;
@@ -432,10 +410,6 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             .history-panel {
                 padding: 16px 12px;
             }
-
-            .history-logo {
-                font-size: 24px;
-            }
         }
 
         @media (max-width: 420px) {
@@ -471,12 +445,6 @@ const char pagina_html[] PROGMEM = R"rawliteral(
                 padding: 12px;
                 font-size: 14px;
                 letter-spacing: 1px;
-            }
-
-            .history-header {
-                align-items: flex-start;
-                flex-direction: column;
-                gap: 6px;
             }
         }
     </style>
@@ -537,11 +505,6 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         </div>
 
         <div class="history-panel">
-            <div class="history-header">
-                <div class="history-logo">REVLO</div>
-                <div class="history-id">ID: TERM-04-A</div>
-            </div>
-
             <div class="history-table-wrap">
                 <table class="history-table">
                     <thead>
