@@ -51,12 +51,12 @@ void loop()
     if (millis() - tDisplay > 500)
     {
         // Simula alteração de peso
-        pesoAtual += 1.5;
+        //pesoAtual += 1.5;
 
         tplaca = placaVeiculo;
-        thora = "14:30";
-        tdata = "15/05/2026";
-        ttara = ttotal;
+        //thora = "14:30";
+        //tdata = "15/05/2026";
+        //ttara = ttotal;
 
         updateDisplay();
         tDisplay = millis();

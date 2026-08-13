@@ -460,9 +460,9 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             <div>Peso 2: <span id="tpeso2">--</span></div>
         </div>
         <div class="top-info">
-            <div>Bateria: <span id="tbateria">--</span></div>
-            <div>Hora: <span id="last_thora">--</span></div>
-            <div>Data: <span id="last_tdata">--</span></div>
+            <div>Bateria: <span id="tbateria">{{TBATERIA}}</span></div>
+            <div>Hora: <span id="last_thora">{{THORA}}</span></div>
+            <div>Data: <span id="last_tdata">{{TDATA}}</span></div>
         </div>
     </div>
 
@@ -544,8 +544,8 @@ const char pagina_html[] PROGMEM = R"rawliteral(
                     document.getElementById('pesoAcumulado').innerText = Number.isFinite(Number(d.pesoAcumulado)) ? Number(d.pesoAcumulado).toFixed(2) + " kg" : '0.00 kg';
                     document.getElementById('contadorRegistro').innerText = d.contadorRegistro !== undefined ? d.contadorRegistro : '0';
                     document.getElementById('tbateria').innerText = d.tbateria || '--';
-                    document.getElementById('last_thora').innerText = d.last_thora || '--';
-                    document.getElementById('last_tdata').innerText = d.last_tdata || '--';
+                    document.getElementById('last_thora').innerText = d.thora || d.last_thora || '--';
+                    document.getElementById('last_tdata').innerText = d.tdata || d.last_tdata || '--';
                     document.getElementById('tpeso1').innerText = d.tpeso1 ? d.tpeso1 + " kg" : '--';
                     document.getElementById('tpeso2').innerText = d.tpeso2 ? d.tpeso2 + " kg" : '--';
                     

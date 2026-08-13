@@ -57,8 +57,8 @@ void taskUpdateDisplay(void *pvParameters)
   for (;;)
   {
     tplaca = placaVeiculo;
-    thora = "14:30";
-    tdata = "15/05/2026";
+    //thora = "14:30";
+    //tdata = "15/05/2026";
     ttara = ttotal;
     updateDisplay();
     vTaskDelayUntil(&xLastWakeTime, xFrequency);

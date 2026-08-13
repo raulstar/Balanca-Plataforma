@@ -505,12 +505,17 @@ void processNextionCommands()
                     Serial.print("hora recebida: ");
                     Serial.println(thora);
                 }
-                else if (command.startsWith("tdata:"))
+                else if (command.indexOf("tdata:") >= 0)
                 {
                     Serial.println("Evento [tdata]");
 
-                    String valorStr = command.substring(6);
+                    int pos = command.indexOf("tdata:");
+                    String valorStr = command.substring(pos + 6);
                     valorStr.trim();
+                    
+                    // Limpeza de caracteres indesejados ou lixo de serial
+                    valorStr.replace("\xFF", "");
+                    
                     tdata = valorStr;
 
                     Serial.print("data recebida: ");

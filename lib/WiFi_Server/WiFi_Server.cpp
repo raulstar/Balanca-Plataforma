@@ -15,6 +15,11 @@ void __attribute__((weak)) tareAllSensors()
 // Importação de variáveis globais do Nextion_Display.cpp
 extern String tabela[20][11];
 extern float ttara;
+extern String thora;
+extern String tdata;
+extern String tbateria;
+extern String last_thora;
+extern String last_tdata;
 
 WebServer server(80);
 
@@ -62,7 +67,11 @@ bool ledState = false;
 
 void handleRoot()
 {
-    server.send_P(200, "text/html", pagina_html);
+    String html = FPSTR(pagina_html);
+    html.replace("{{THORA}}", thora.length() > 0 ? thora : "--");
+    html.replace("{{TDATA}}", tdata.length() > 0 ? tdata : "--");
+    html.replace("{{TBATERIA}}", tbateria.length() > 0 ? tbateria : "--");
+    server.send(200, "text/html", html);
 }
 
 void handleStatus()
@@ -257,6 +266,8 @@ void handleDados()
                   ",\"ttotal\":" + String(ttotalSeguro, 2) +
                   ",\"contadorRegistro\":" + String(contadorRegistro) +
                   ",\"tbateria\":\"" + tbateria + "\"" +
+                  ",\"thora\":\"" + thora + "\"" +
+                  ",\"tdata\":\"" + tdata + "\"" +
                   ",\"last_thora\":\"" + last_thora + "\"" +
                   ",\"last_tdata\":\"" + last_tdata + "\"" +
                   ",\"tpeso1\":\"" + tpeso1 + "\"" +
