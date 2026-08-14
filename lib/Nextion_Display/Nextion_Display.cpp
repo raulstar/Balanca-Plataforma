@@ -496,18 +496,18 @@ void processNextionCommands()
                 }
                 else if (command.startsWith("thora:"))
                 {
-                    Serial.println("Evento [thora]");
+                   // Serial.println("Evento [thora]");
 
                     String valorStr = command.substring(6);
                     valorStr.trim();
                     thora = valorStr;
 
-                    Serial.print("hora recebida: ");
-                    Serial.println(thora);
+                    //Serial.print("hora recebida: ");
+                    //Serial.println(thora);
                 }
                 else if (command.indexOf("tdata:") >= 0)
                 {
-                    Serial.println("Evento [tdata]");
+                    //Serial.println("Evento [tdata]");
 
                     int pos = command.indexOf("tdata:");
                     String valorStr = command.substring(pos + 6);
@@ -518,8 +518,8 @@ void processNextionCommands()
                     
                     tdata = valorStr;
 
-                    Serial.print("data recebida: ");
-                    Serial.println(tdata);
+                    //Serial.print("data recebida: ");
+                    //Serial.println(tdata);
                 }
                 else
                 {

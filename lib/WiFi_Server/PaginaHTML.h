@@ -154,11 +154,11 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         }
 
         .btn-zerar {
-            background-color: #4b5563;
+            background-color: #e11d48;
         }
 
         .btn-calibrar {
-            background-color: #3b82f6;
+            background-color: #101829;
         }
 
         /* Container Inferior Horizontal */
@@ -251,7 +251,7 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         }
 
         .btn-bottom-blue {
-            background-color: #2563eb;
+            background-color: #293462;
         }
 
         .history-panel {
@@ -501,7 +501,7 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         <div class="bottom-btn-row">
             <button onclick="calibrar()" class="btn btn-bottom-blue">Configuração</button>
             <button onclick="setStatus('Imprimir')" class="btn btn-bottom-blue">Imprimir</button>
-            <button onclick="baixarPlanilha()" class="btn btn-bottom-blue" style="background-color: #10b981;">Baixar Planilha</button>
+            <button onclick="baixarPlanilha()" class="btn btn-bottom-blue" style="background-color: #293462;">Baixar Planilha</button>
         </div>
 
         <div class="history-panel">
