@@ -206,6 +206,24 @@ void setup()
 
 void loop()
 {
-    delay(1000);
+    // Check for serial command to clear EEPROM
+    if (Serial.available() > 0)
+    {
+        String command = Serial.readStringUntil('\n');
+        command.trim(); // Remove any whitespace including newline/carriage return
+        if (command == "c")
+        {
+            Serial.println("Received CLEAR_EEPROM command. Clearing EEPROM...");
+            limparEEPROM();
+            Serial.println("EEPROM clear command completed.");
+        }
+        else
+        {
+            // Echo unknown commands for feedback
+            Serial.print("Unknown command: ");
+            Serial.println(command);
+        }
+    }
+    delay(100); // Short delay to allow serial processing
 }
 

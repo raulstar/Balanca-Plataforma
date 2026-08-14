@@ -27,3 +27,4 @@ extern float fatorEscalaConhecido[4];
 void salvarComEEPROM();
 void carregarComEEPROM();
 void salvarFatorEEPROM(String scale_factor, int endereco);
+void limparEEPROM();

@@ -348,3 +348,23 @@ void carregarComEEPROM()
         }
     }
 }
+
+void limparEEPROM()
+{
+    if (!EEPROM.begin(EEPROM_SIZE))
+    {
+        Serial.println("ERRO: EEPROM.begin() falhou na limpeza. Verifique a particao NVS.");
+        return;
+    }
+    // Clear all bytes to 0xFF (erased state)
+    for (int i = 0; i < EEPROM_SIZE; ++i)
+    {
+        EEPROM.write(i, 0xFF);
+    }
+    if (!EEPROM.commit())
+    {
+        Serial.println("ERRO: EEPROM.commit() falhou após a limpeza.");
+        return;
+    }
+    Serial.println("EEPROM limpa com sucesso (todos os bytes setados para 0xFF).");
+}
