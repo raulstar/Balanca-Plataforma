@@ -614,6 +614,37 @@ void handle_bsom()
         break;
     }
 
+    // ------------------------------------------------------
+    // Exibe o pesoAtual na coluna de pesagem da linha corrente,
+    // deslocando a cada chamada: a -> b -> c -> d
+    // ------------------------------------------------------
+    static const char *objPESOCOL[7][4] = {
+        {"page1.teixo0a", "page1.teixo0b", "page1.teixo0c", "page1.teixo0d"},
+        {"page1.teixo1a", "page1.teixo1b", "page1.teixo1c", "page1.teixo1d"},
+        {"page1.teixo2a", "page1.teixo2b", "page1.teixoc2", "page1.teixo2d"},
+        {"page1.teixo3a", "page1.teixo3b", "page1.teixo3c", "page1.teixo3d"},
+        {"page1.teixo4a", "page1.teixo4b", "page1.teixo4c", "page1.teixo4d"},
+        {"page1.teixo5a", "page1.teixo5b", "page1.teixo5c", "page1.teixo5d"},
+        {"page1.teixo6a", "page1.teixo6b", "page1.teixo6c", "page1.teixo6d"}};
+
+    static int colunaPeso = 0; // 0=a, 1=b, 2=c, 3=d
+
+    const int maxRegistrosTela = 7;
+    int linhaTela = contadorRegistro % maxRegistrosTela;
+    if (linhaTela < 0)
+    {
+        linhaTela = 0;
+    }
+
+    // Escreve somente na coluna atual; as anteriores permanecem intactas
+    setNextionText(objPESOCOL[linhaTela][colunaPeso], String(pesoAtual, 2));
+
+    colunaPeso++;
+    if (colunaPeso > 3)
+    {
+        colunaPeso = 0; // volta para a coluna "a" apos a 4a pesagem
+    }
+
     contEixo++;
     eixo++;
 
