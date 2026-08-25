@@ -470,11 +470,11 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         <div class="weight-grid">
             <div class="weight-box">
                 <span class="weight-label">Peso Atual</span>
-                <div class="weight-value" id="peso">0.00 kg</div>
+                <div class="weight-value" id="peso">0 kg</div>
             </div>
             <div class="weight-box">
                 <span class="weight-label">Peso Acumulado</span>
-                <div class="weight-value" id="pesoAcumulado">0.00 kg</div>
+                <div class="weight-value" id="pesoAcumulado">0 kg</div>
             </div>
         </div>
 
@@ -540,8 +540,8 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             fetch('/dados')
                 .then(r => r.json())
                 .then(d => {
-                    document.getElementById('peso').innerText = Number.isFinite(Number(d.pesoAtual)) ? Math.max(0, Number(d.pesoAtual)).toFixed(2) + " kg" : '0.00 kg';
-                    document.getElementById('pesoAcumulado').innerText = Number.isFinite(Number(d.pesoAcumulado)) ? Number(d.pesoAcumulado).toFixed(2) + " kg" : '0.00 kg';
+                    document.getElementById('peso').innerText = Number.isFinite(Number(d.pesoAtual)) ? Math.round(Math.max(0, Number(d.pesoAtual))) + " kg" : '0 kg';
+                    document.getElementById('pesoAcumulado').innerText = Number.isFinite(Number(d.pesoAcumulado)) ? Math.round(Number(d.pesoAcumulado)) + " kg" : '0 kg';
                     document.getElementById('contadorRegistro').innerText = d.contadorRegistro !== undefined ? d.contadorRegistro : '0';
                     document.getElementById('tbateria').innerText = d.tbateria || '--';
                     document.getElementById('last_thora').innerText = d.thora || d.last_thora || '--';

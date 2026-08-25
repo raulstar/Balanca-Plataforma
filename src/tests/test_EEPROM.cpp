@@ -94,7 +94,7 @@ void setup()
     delay(1000);
     Serial.println("=== EEPROM MODULE TEST ===");
 
-    contadorRegistro = 7;
+    contadorRegistro = 1;
     pesoAtual = 123.45f;
     ttotal = 678.90f;
     contEixo = 3;
