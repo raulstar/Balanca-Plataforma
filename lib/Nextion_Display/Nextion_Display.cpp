@@ -623,6 +623,9 @@ void handle_bsom()
 // ======================================================
 // EVENTO BSALVAR
 // ======================================================
+// ======================================================
+// EVENTO BSALVAR
+// ======================================================
 void handle_bsalvar()
 {
     Serial.println("Evento [bsalvar]");
@@ -651,101 +654,71 @@ void handle_bsalvar()
     const int indiceTela = indiceRegistro % maxRegistrosTela;
 
     String objTN[7] =
-        {
-            "page1.tn0", "page1.tn1", "page1.tn2", "page1.tn3", "page1.tn4", "page1.tn5", "page1.tn6"};
+        {"page1.tn0", "page1.tn1", "page1.tn2", "page1.tn3", "page1.tn4", "page1.tn5", "page1.tn6"};
 
     String objPLACA[7] =
-        {
-            "page1.tplaca0", "page1.tplaca1", "page1.tplaca2", "page1.tplaca3", "page1.tplaca4", "page1.tplaca5", "page1.tplaca6"};
+        {"page1.tplaca0", "page1.tplaca1", "page1.tplaca2", "page1.tplaca3", "page1.tplaca4", "page1.tplaca5", "page1.tplaca6"};
 
     String objDATA[7] =
-        {
-            "page1.tdata0", "page1.tdata1", "page1.tdata2", "page1.tdata3", "page1.tdata4", "page1.tdata5", "page1.tdata6"};
+        {"page1.tdata0", "page1.tdata1", "page1.tdata2", "page1.tdata3", "page1.tdata4", "page1.tdata5", "page1.tdata6"};
 
     String objHORA[7] =
-        {
-            "page1.thora0", "page1.thora1", "page1.thora2", "page1.thora3", "page1.thora4", "page1.thora5", "page1.thora6"};
-    String objEIXO[7] =
-        {
-            "page1.contEixo0", "page1.contEixo1", "page1.contEixo2", "page1.contEixo3", "page1.contEixo4", "page1.contEixo5", "page1.contEixo6"};
+        {"page1.thora0", "page1.thora1", "page1.thora2", "page1.thora3", "page1.thora4", "page1.thora5", "page1.thora6"};
 
-    String objTOTAL[7] =
-        {
-            "page1.ttotal0", "page1.ttotal1", "page1.ttotal2", "page1.ttotal3", "page1.ttotal4", "page1.ttotal5", "page1.ttotal6"};
+    String objEIXO[7] =
+        {"page1.contEixo0", "page1.contEixo1", "page1.contEixo2", "page1.contEixo3", "page1.contEixo4", "page1.contEixo5", "page1.contEixo6"};
+
+    // Matriz atualizada para os objetos da coluna PESO
+    String objPESO[7] =
+        {"page1.teix0a", "page1.teixo1a", "page1.teixo2a", "page1.teixo3a", "page1.teixo4a", "page1.teixo5a", "page1.teixo6a"};
 
     String objTARA[7] =
-        {
-            "page1.ttara0", "page1.ttara1", "page1.ttara2", "page1.ttara3", "page1.ttara4", "page1.ttara5", "page1.ttara6"};
+        {"page1.ttara0", "page1.ttara1", "page1.ttara2", "page1.ttara3", "page1.ttara4", "page1.ttara5", "page1.ttara6"};
 
-    tabela[indiceRegistro][0] = String(indiceRegistro);
+    // Formatação do número da linha com zero à esquerda (01, 02, etc.)
+    int numeroLinha = indiceRegistro + 1;
+    tabela[indiceRegistro][0] = (numeroLinha < 10) ? "0" + String(numeroLinha) : String(numeroLinha);
+
     tabela[indiceRegistro][1] = tplaca;
     tabela[indiceRegistro][2] = tdata;
     tabela[indiceRegistro][3] = thora;
     tabela[indiceRegistro][4] = String(contEixo);
-    tabela[indiceRegistro][5] = String(eixo1);
-    tabela[indiceRegistro][6] = String(eixo2);
-    tabela[indiceRegistro][7] = String(eixo3);
-    tabela[indiceRegistro][8] = String(eixo4);
-    tabela[indiceRegistro][9] = String(eixo5);
-    ttotal = arredondarPeso2Casas(ttotal);
-    tabela[indiceRegistro][10] = String((int)ttotal);
-    Serial.print("//////////////////////////////////////");
-    Serial.println("contadorRegistro");
-    Serial.print(": ");
-    Serial.println(tabela[indiceRegistro][0]);
-    Serial.print("tplaca");
-    Serial.print(": ");
-    Serial.println(tabela[indiceRegistro][1]);
-    Serial.print("tdata");
-    Serial.print(": ");
-    Serial.println(tabela[indiceRegistro][2]);
-    Serial.print("thora");
-    Serial.print(": ");
-    Serial.println(tabela[indiceRegistro][3]);
-    Serial.print("contaeixo");
-    Serial.print(": ");
-    Serial.println(tabela[indiceRegistro][4]);
-    Serial.print("eixo1");
-    Serial.print(": ");
-    Serial.println(tabela[indiceRegistro][5]);
-    Serial.print("eixo2");
-    Serial.print(": ");
-    Serial.println(tabela[indiceRegistro][6]);
-    Serial.print("eixo3");
-    Serial.print(": ");
-    Serial.println(tabela[indiceRegistro][7]);
-    Serial.print("eixo4");
-    Serial.print(": ");
-    Serial.println(tabela[indiceRegistro][8]);
-    Serial.print("eixo5");
-    Serial.print(": ");
-    Serial.println(tabela[indiceRegistro][9]);
-    Serial.print("ttotal");
-    Serial.print(": ");
-    Serial.println(tabela[indiceRegistro][10]);
-    Serial.print("ttara");
-    Serial.print(": ");
-    Serial.println(ttara, 2);
+    tabela[indiceRegistro][5] = String(peixo1);
+    tabela[indiceRegistro][6] = String(peixo2);
+    tabela[indiceRegistro][7] = String(peixo3);
+    tabela[indiceRegistro][8] = String(peixo4);
+    tabela[indiceRegistro][9] = String(peixo5);
+    
+    // Associa o pesoAtual atual (capturado durante o pesagem) com 2 casas e " kg"
+    tabela[indiceRegistro][10] = String(pesoAtual, 2);
+    
+    // Formata a Tara com 2 casas e " kg"
+    String taraFormatada = String(ttara, 2);
 
+    // Impressões de Log
+    Serial.print("//////////////////////////////////////\n");
+    Serial.print("contadorRegistro: "); Serial.println(tabela[indiceRegistro][0]);
+    Serial.print("tplaca: "); Serial.println(tabela[indiceRegistro][1]);
+    Serial.print("tdata: "); Serial.println(tabela[indiceRegistro][2]);
+    Serial.print("peso (tabela[10]): "); Serial.println(tabela[indiceRegistro][10]);
+
+    // Atualização dos componentes no display
     setNextionText(objTN[indiceTela], tabela[indiceRegistro][0]);
-
     setNextionText(objPLACA[indiceTela], tabela[indiceRegistro][1]);
-
     setNextionText(objDATA[indiceTela], tabela[indiceRegistro][2]);
-
     setNextionText(objHORA[indiceTela], tabela[indiceRegistro][3]);
-
     setNextionText(objEIXO[indiceTela], tabela[indiceRegistro][4]);
-
-    setNextionText(objTOTAL[indiceTela], tabela[indiceRegistro][10]);
-
-    setNextionText(objTARA[indiceTela], String((int)ttara));
+    
+    // Envia o pesoAtual formatado para os componentes teix0a, teixo1a...
+    setNextionText(objPESO[indiceTela], tabela[indiceRegistro][10]);
+    
+    // Envia a tara formatada
+    setNextionText(objTARA[indiceTela], taraFormatada);
 
     contadorRegistro++;
     salvarComEEPROM();
     delay(2);
 }
-
 // ======================================================
 // EVENTO BLIMPAR
 // ======================================================
