@@ -682,13 +682,13 @@ void handle_bsalvar()
     tabela[indiceRegistro][2] = tdata;
     tabela[indiceRegistro][3] = thora;
     tabela[indiceRegistro][4] = String(contEixo);
-    tabela[indiceRegistro][5] = String((float)eixo1, 1);
-    tabela[indiceRegistro][6] = String((float)eixo2, 1);
-    tabela[indiceRegistro][7] = String((float)eixo3, 1);
-    tabela[indiceRegistro][8] = String((float)eixo4, 1);
-    tabela[indiceRegistro][9] = String((float)eixo5, 1);
+    tabela[indiceRegistro][5] = String(eixo1);
+    tabela[indiceRegistro][6] = String(eixo2);
+    tabela[indiceRegistro][7] = String(eixo3);
+    tabela[indiceRegistro][8] = String(eixo4);
+    tabela[indiceRegistro][9] = String(eixo5);
     ttotal = arredondarPeso2Casas(ttotal);
-    tabela[indiceRegistro][10] = String(ttotal, 2);
+    tabela[indiceRegistro][10] = String((int)ttotal);
     Serial.print("//////////////////////////////////////");
     Serial.println("contadorRegistro");
     Serial.print(": ");
@@ -739,7 +739,7 @@ void handle_bsalvar()
 
     setNextionText(objTOTAL[indiceTela], tabela[indiceRegistro][10]);
 
-    setNextionText(objTARA[indiceTela], String(ttara, 2));
+    setNextionText(objTARA[indiceTela], String((int)ttara));
 
     contadorRegistro++;
     salvarComEEPROM();
