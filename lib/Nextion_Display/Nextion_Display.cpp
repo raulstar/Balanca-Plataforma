@@ -81,6 +81,17 @@ static float arredondarPeso2Casas(float valor)
     return roundf(valor * 100.0f) / 100.0f;
 }
 
+// Formata um float para exibicao no display: apenas a parte inteira,
+// sem ponto decimal (ex.: 10.62 -> "11", -0.4 -> "0")
+static String pesoInteiro(float valor)
+{
+    if (!valorPesoValido(valor))
+    {
+        valor = 0.0f;
+    }
+    return String((long)roundf(valor));
+}
+
 int last_contadorRegistro = 0;
 int last_contEixo = 0;
 
@@ -179,7 +190,7 @@ void updateDisplay()
     {
         for (int i = 0; i < _numSensores; i++)
         {
-            String sensorVal = String(_sensores[i].sensor->getKg(), 1);
+            String sensorVal = pesoInteiro(_sensores[i].sensor->getKg());
             String objName = "tPeso" + String(i + 1);
 
             // Sempre envia o texto atualizado para o display
@@ -227,21 +238,21 @@ void updateDisplay()
     // Peso Atual
     // Atualiza independentemente se houve mudança ou não, pois a tara pode ter zerado
     // mas o valor absoluto (0.0) ainda pode ser considerado igual ao anterior.
-    setNextionText("tPeso", String(pesoAtual, 2) + " kg");
+    setNextionText("tPeso", pesoInteiro(pesoAtual) + " kg");
     last_pesoAtual = pesoAtual;
     // Serial.println(pesoAtual, 1);
 
     // Total
     if (ttotal != last_ttotal)
     {
-        setNextionText("ttotal", String(ttotal, 2) + " kg");
+        setNextionText("ttotal", pesoInteiro(ttotal) + " kg");
         last_ttotal = ttotal;
     }
 
     // Tara
     if (ttara != last_ttara)
     {
-        setNextionText("ttara", String(ttara, 2) + " kg");
+        setNextionText("ttara", pesoInteiro(ttara) + " kg");
         last_ttara = ttara;
     }
 
@@ -563,7 +574,7 @@ void handle_bzero()
         last_ttara = -999999.0f;
     }
 
-    setNextionText("tPeso", String(pesoAtual, 2));
+    setNextionText("tPeso", pesoInteiro(pesoAtual));
 }
 
 // ======================================================
@@ -637,7 +648,7 @@ void handle_bsom()
     }
 
     // Escreve somente na coluna atual; as anteriores permanecem intactas
-    setNextionText(objPESOCOL[linhaTela][colunaPeso], String(pesoAtual, 2));
+    setNextionText(objPESOCOL[linhaTela][colunaPeso], pesoInteiro(pesoAtual));
 
     colunaPeso++;
     if (colunaPeso > 3)
@@ -648,7 +659,7 @@ void handle_bsom()
     contEixo++;
     eixo++;
 
-    setNextionText("ttotal", String(ttotal, 2));
+    setNextionText("ttotal", pesoInteiro(ttotal));
 }
 
 // ======================================================
@@ -721,10 +732,10 @@ void handle_bsalvar()
     tabela[indiceRegistro][9] = String(peixo5);
     
     // Associa o pesoAtual atual (capturado durante o pesagem) com 2 casas e " kg"
-    tabela[indiceRegistro][10] = String(pesoAtual, 2);
+    tabela[indiceRegistro][10] = pesoInteiro(pesoAtual);
     
     // Formata a Tara com 2 casas e " kg"
-    String taraFormatada = String(ttara, 2);
+    String taraFormatada = pesoInteiro(ttara);
 
     // Impressões de Log
     Serial.print("//////////////////////////////////////\n");
