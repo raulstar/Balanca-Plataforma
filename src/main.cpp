@@ -495,6 +495,8 @@ void setup()
   xTaskCreate(taskSerialPortReader, "SerialPortReader", 4096, NULL, 2, &hPortTask);
   Serial.println("Loading EEPROM data...");
   carregarComEEPROM();
+  // Reenvia os registros restaurados da EEPROM para a tela Nextion
+  restaurarTabelaNoDisplay();
   //OTA.begin(); // Setup settings
   // Ao iniciar o programa, o peso atual deve começar zerado,
   // mesmo que exista um valor anterior salvo na EEPROM.

@@ -405,6 +405,16 @@ void processNextionCommands()
                     handle_blimpar();
                     Serial.println("Evento [blimpar]");
                 }
+                else if (command.indexOf("bmais") >= 0)
+                {
+                    handle_bmais();
+                    Serial.println("Evento [bmais]");
+                }
+                else if (command.indexOf("bmenos") >= 0)
+                {
+                    handle_bmenos();
+                    Serial.println("Evento [bmenos]");
+                }
                 else if (command.indexOf("bcalib") >= 0)
                 {
                     handle_bcalib(command);
@@ -680,16 +690,11 @@ void handle_bsalvar()
         contadorRegistro = 0;
     }
 
+    // Buffer circular: apos preencher as 20 linhas, o proximo registro
+    // volta para a linha 1 (indice 0) e sobrescreve, reiniciando a numeracao.
     if (contadorRegistro >= maxRegistrosTabela)
     {
-        for (int i = 1; i < maxRegistrosTabela; i++)
-        {
-            for (int j = 0; j < 11; j++)
-            {
-                tabela[i - 1][j] = tabela[i][j];
-            }
-        }
-        contadorRegistro = maxRegistrosTabela - 1;
+        contadorRegistro = 0;
     }
 
     const int indiceRegistro = contadorRegistro;
@@ -761,6 +766,171 @@ void handle_bsalvar()
     salvarComEEPROM();
     delay(2);
 }
+// ======================================================
+// RESTAURA A TABELA DA EEPROM NO DISPLAY (chamada no boot)
+// ======================================================
+int paginaTabela = 0;
+
+// Conta quantos registros existem gravados na tabela
+static int totalRegistrosTabela()
+{
+    const int maxRegistrosTabela = 20;
+    int total = 0;
+
+    for (int i = 0; i < maxRegistrosTabela; i++)
+    {
+        if (tabela[i][0].length() > 0)
+        {
+            total = i + 1;
+        }
+    }
+
+    return total;
+}
+
+// Pinta na tela as 7 linhas correspondentes a pagina informada
+static void exibirPaginaTabela(int pagina)
+{
+    const int maxRegistrosTabela = 20;
+    const int maxRegistrosTela = 7;
+
+    String objTN[7] =
+        {"page1.tn0", "page1.tn1", "page1.tn2", "page1.tn3", "page1.tn4", "page1.tn5", "page1.tn6"};
+
+    String objPLACA[7] =
+        {"page1.tplaca0", "page1.tplaca1", "page1.tplaca2", "page1.tplaca3", "page1.tplaca4", "page1.tplaca5", "page1.tplaca6"};
+
+    String objDATA[7] =
+        {"page1.tdata0", "page1.tdata1", "page1.tdata2", "page1.tdata3", "page1.tdata4", "page1.tdata5", "page1.tdata6"};
+
+    String objHORA[7] =
+        {"page1.thora0", "page1.thora1", "page1.thora2", "page1.thora3", "page1.thora4", "page1.thora5", "page1.thora6"};
+
+    String objEIXO[7] =
+        {"page1.contEixo0", "page1.contEixo1", "page1.contEixo2", "page1.contEixo3", "page1.contEixo4", "page1.contEixo5", "page1.contEixo6"};
+
+    String objPESO[7] =
+        {"page1.teix0a", "page1.teixo1a", "page1.teixo2a", "page1.teixo3a", "page1.teixo4a", "page1.teixo5a", "page1.teixo6a"};
+
+    String objTARA[7] =
+        {"page1.ttara0", "page1.ttara1", "page1.ttara2", "page1.ttara3", "page1.ttara4", "page1.ttara5", "page1.ttara6"};
+
+    // Colunas de eixo a/b/c/d (mesma matriz usada em handle_bsom)
+    const char *objPESOCOL[7][4] = {
+        {"page1.teixo0a", "page1.teixo0b", "page1.teixo0c", "page1.teixo0d"},
+        {"page1.teixo1a", "page1.teixo1b", "page1.teixo1c", "page1.teixo1d"},
+        {"page1.teixo2a", "page1.teixo2b", "page1.teixoc2", "page1.teixo2d"},
+        {"page1.teixo3a", "page1.teixo3b", "page1.teixo3c", "page1.teixo3d"},
+        {"page1.teixo4a", "page1.teixo4b", "page1.teixo4c", "page1.teixo4d"},
+        {"page1.teixo5a", "page1.teixo5b", "page1.teixo5c", "page1.teixo5d"},
+        {"page1.teixo6a", "page1.teixo6b", "page1.teixo6c", "page1.teixo6d"}};
+
+    const int totalPaginas = (maxRegistrosTabela + maxRegistrosTela - 1) / maxRegistrosTela;
+
+    if (pagina < 0)
+    {
+        pagina = 0;
+    }
+    if (pagina >= totalPaginas)
+    {
+        pagina = totalPaginas - 1;
+    }
+
+    paginaTabela = pagina;
+
+    const int primeiroRegistro = pagina * maxRegistrosTela;
+
+    Serial.print("Exibindo pagina da tabela: ");
+    Serial.println(pagina);
+
+    for (int linha = 0; linha < maxRegistrosTela; linha++)
+    {
+        const int indiceRegistro = primeiroRegistro + linha;
+
+        if (indiceRegistro < maxRegistrosTabela && tabela[indiceRegistro][0].length() > 0)
+        {
+            setNextionText(objTN[linha], tabela[indiceRegistro][0]);
+            setNextionText(objPLACA[linha], tabela[indiceRegistro][1]);
+            setNextionText(objDATA[linha], tabela[indiceRegistro][2]);
+            setNextionText(objHORA[linha], tabela[indiceRegistro][3]);
+            setNextionText(objEIXO[linha], tabela[indiceRegistro][4]);
+
+            // Pesos por eixo: colunas 5..8 da tabela -> colunas a/b/c/d da tela
+            for (int c = 0; c < 4; c++)
+            {
+                setNextionText(objPESOCOL[linha][c], tabela[indiceRegistro][5 + c]);
+            }
+
+            // Coluna de peso total do registro
+            setNextionText(objPESO[linha], tabela[indiceRegistro][10]);
+        }
+        else
+        {
+            setNextionText(objTN[linha], "");
+            setNextionText(objPLACA[linha], "");
+            setNextionText(objDATA[linha], "");
+            setNextionText(objHORA[linha], "");
+            setNextionText(objEIXO[linha], "");
+            setNextionText(objTARA[linha], "");
+
+            for (int c = 0; c < 4; c++)
+            {
+                setNextionText(objPESOCOL[linha][c], "");
+            }
+        }
+
+        delay(2);
+    }
+}
+
+// ======================================================
+// RESTAURA A TABELA DA EEPROM NO DISPLAY (chamada no boot)
+// ======================================================
+void restaurarTabelaNoDisplay()
+{
+    Serial.println("Restaurando tabela da EEPROM no display");
+
+    exibirPaginaTabela(0);
+
+    last_contadorRegistro = contadorRegistro;
+}
+
+// ======================================================
+// EVENTO BMAIS (rola a tabela para cima)
+// ======================================================
+void handle_bmais()
+{
+    Serial.println("Evento [bmais]");
+
+    const int maxRegistrosTela = 7;
+    const int totalRegistros = totalRegistrosTabela();
+    const int ultimaPagina = (totalRegistros > 0) ? ((totalRegistros - 1) / maxRegistrosTela) : 0;
+
+    if (paginaTabela >= ultimaPagina)
+    {
+        Serial.println("Ja esta na ultima pagina da tabela");
+        return;
+    }
+
+    exibirPaginaTabela(paginaTabela + 1);
+}
+
+// ======================================================
+// EVENTO BMENOS (rola a tabela para baixo)
+// ======================================================
+void handle_bmenos()
+{
+    Serial.println("Evento [bmenos]");
+
+    if (paginaTabela <= 0)
+    {
+        Serial.println("Ja esta na primeira pagina da tabela");
+        return;
+    }
+
+    exibirPaginaTabela(paginaTabela - 1);
+}
+
 // ======================================================
 // EVENTO BLIMPAR
 // ======================================================

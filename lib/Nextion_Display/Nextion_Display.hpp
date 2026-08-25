@@ -86,6 +86,7 @@ extern String tabela[20][11];
 extern int linhaAtual;
 extern int contadorRegistro;
 extern int contEixo;
+extern int paginaTabela;
 extern int eixo;
 extern int peixo;
 
@@ -109,6 +110,12 @@ void handle_bzero();
 void handle_bsalvar();
 
 void handle_blimpar();
+
+void restaurarTabelaNoDisplay();
+
+void handle_bmais();
+
+void handle_bmenos();
 
 void handle_bgeneric(String cmd);
 
