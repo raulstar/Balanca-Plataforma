@@ -500,7 +500,7 @@ const char pagina_html[] PROGMEM = R"rawliteral(
 
         <div class="bottom-btn-row">
             <button onclick="calibrar()" class="btn btn-bottom-blue">Configuração</button>
-            <button onclick="setStatus('Imprimir')" class="btn btn-bottom-blue">Imprimir</button>
+            <button onclick="imprimirRegistro()" class="btn btn-bottom-blue">Imprimir</button>
             <button onclick="baixarPlanilha()" class="btn btn-bottom-blue" style="background-color: #293462;">Baixar Planilha</button>
         </div>
 
@@ -544,8 +544,8 @@ const char pagina_html[] PROGMEM = R"rawliteral(
                     document.getElementById('pesoAcumulado').innerText = Number.isFinite(Number(d.pesoAcumulado)) ? Math.round(Number(d.pesoAcumulado)) + " kg" : '0 kg';
                     document.getElementById('contadorRegistro').innerText = d.contadorRegistro !== undefined ? d.contadorRegistro : '0';
                     document.getElementById('tbateria').innerText = d.tbateria || '--';
-                    document.getElementById('last_thora').innerText = d.thora || d.last_thora || '--';
-                    document.getElementById('last_tdata').innerText = d.tdata || d.last_tdata || '--';
+                    document.getElementById('last_thora').innerText = d.last_thora || '--';
+                    document.getElementById('last_tdata').innerText = d.last_tdata || '--';
                     document.getElementById('tpeso1').innerText = d.tpeso1 ? d.tpeso1 + " kg" : '--';
                     document.getElementById('tpeso2').innerText = d.tpeso2 ? d.tpeso2 + " kg" : '--';
                     
@@ -632,6 +632,13 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         function zerar() {
             setStatus('Executando Zero...');
             fetch('/zero')
+                .then(r => r.text())
+                .then(msg => { setStatus(msg); setTimeout(() => setStatus(''), 2000); });
+        }
+
+        function imprimirRegistro() {
+            setStatus('Imprimindo...');
+            fetch('/imprimir')
                 .then(r => r.text())
                 .then(msg => { setStatus(msg); setTimeout(() => setStatus(''), 2000); });
         }

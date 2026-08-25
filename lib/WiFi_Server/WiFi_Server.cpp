@@ -20,6 +20,7 @@ extern String tdata;
 extern String tbateria;
 extern String last_thora;
 extern String last_tdata;
+extern volatile bool imprimir;
 
 WebServer server(80);
 
@@ -68,8 +69,8 @@ bool ledState = false;
 void handleRoot()
 {
     String html = FPSTR(pagina_html);
-    html.replace("{{THORA}}", thora.length() > 0 ? thora : "--");
-    html.replace("{{TDATA}}", tdata.length() > 0 ? tdata : "--");
+    html.replace("{{THORA}}", last_thora.length() > 0 ? last_thora : "--");
+    html.replace("{{TDATA}}", last_tdata.length() > 0 ? last_tdata : "--");
     html.replace("{{TBATERIA}}", tbateria.length() > 0 ? tbateria : "--");
     server.send(200, "text/html", html);
 }
@@ -235,6 +236,7 @@ void initWebServer()
     server.on("/zero", handleZero);
     server.on("/salvar", handleSalvar);
     server.on("/limpar", handleLimpar);
+    server.on("/imprimir", handleImprimir);
 
     server.begin();
 }
@@ -242,6 +244,16 @@ void initWebServer()
 void handleWeb()
 {
     server.handleClient();
+}
+
+// Handler for "/imprimir" endpoint - sinaliza o inicio da impressao.
+// A flag global 'imprimir' e monitorada pelo firmware, do mesmo modo
+// que o comando "imprimi" recebido do display Nextion.
+void handleImprimir()
+{
+    imprimir = true;
+    Serial.println("Evento [imprimir] via web");
+    server.send(200, "text/plain", "Impressao solicitada");
 }
 
 // Handler for "/zero" endpoint – performs tare (zero) of all sensors.

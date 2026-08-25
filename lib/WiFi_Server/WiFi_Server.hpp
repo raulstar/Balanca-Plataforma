@@ -10,6 +10,7 @@ void initWebServer();
 void handleWeb();
 // New request handlers for zeroing and data retrieval
 void handleZero();
+void handleImprimir();
 void handleDados();
 
 // ---------------------------------------------------------------------------
