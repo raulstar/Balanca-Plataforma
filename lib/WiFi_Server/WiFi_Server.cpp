@@ -276,12 +276,22 @@ void handleDados()
     // Adiciona o nó 'historico' ao JSON extraindo os dados da matriz 'tabela'
     json += ",\"historico\":[";
     
-    // Limita a leitura ao número máximo de registros suportados (20)
-    int numRegistros = (contadorRegistro < 20) ? contadorRegistro : 20;
+    // Percorre as 20 posicoes da tabela. Como a gravacao e circular,
+    // contadorRegistro e apenas o proximo indice de escrita e nao serve
+    // como quantidade: publica toda linha que tenha conteudo gravado.
+    const int maxRegistros = 20;
+    bool primeiroRegistro = true;
 
-    for (int i = 0; i < numRegistros; i++)
+    for (int i = 0; i < maxRegistros; i++)
     {
-        if (i > 0) json += ","; // Separa os objetos com vírgula
+        if (tabela[i][0].length() == 0)
+        {
+            continue; // linha ainda nao utilizada
+        }
+
+        if (!primeiroRegistro) json += ","; // Separa os objetos com vírgula
+        primeiroRegistro = false;
+
         json += "{";
         json += "\"n\":\"" + tabela[i][0] + "\",";
         json += "\"placa\":\"" + tabela[i][1] + "\",";
