@@ -235,6 +235,21 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             border-color: #e11d48;
         }
 
+        .page-footer {
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            line-height: 1.6;
+            margin-top: 24px;
+            padding-top: 14px;
+            border-top: 1px solid #1f2937;
+        }
+
+        .page-footer strong {
+            color: #9ca3af;
+            font-weight: 600;
+        }
+
         .status-bar {
             text-align: center;
             color: #888;
@@ -456,8 +471,8 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             <div class="logo-sub">Sistema de Balança Rodoviária</div>
         </div>
         <div class="header-center-info">
-            <div>Peso 1: <span id="tpeso1">--</span></div>
-            <div>Peso 2: <span id="tpeso2">--</span></div>
+            <div>Plataforma 1: <span id="tpeso1">--</span></div>
+            <div>Plataforma 2: <span id="tpeso2">--</span></div>
         </div>
         <div class="top-info">
             <div>Bateria: <span id="tbateria">{{TBATERIA}}</span></div>
@@ -499,7 +514,7 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         </div>
 
         <div class="bottom-btn-row">
-            <button onclick="calibrar()" class="btn btn-bottom-blue">Configuração</button>
+            <button onclick="configuracao()" class="btn btn-bottom-blue">Configuração</button>
             <button onclick="imprimirRegistro()" class="btn btn-bottom-blue">Imprimir</button>
             <button onclick="baixarPlanilha()" class="btn btn-bottom-blue" style="background-color: #293462;">Baixar Planilha</button>
         </div>
@@ -524,6 +539,11 @@ const char pagina_html[] PROGMEM = R"rawliteral(
         </div>
 
         <div id="status" class="status-bar"></div>
+
+        <footer class="page-footer">
+            <div>Desenvolvido por <strong>Eng. Raul</strong> &middot; 2026</div>
+            <div><strong>Revlo do Brasil Com&eacute;rcio e Loca&ccedil;&atilde;o de Equipamentos LTDA</strong></div>
+        </footer>
     </div>
 
     <script>
@@ -641,6 +661,10 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             fetch('/imprimir')
                 .then(r => r.text())
                 .then(msg => { setStatus(msg); setTimeout(() => setStatus(''), 2000); });
+        }
+
+        function configuracao() {
+            alert('Função ainda não implementada, use o controlador da balança para configurações');
         }
 
         function calibrar() {
