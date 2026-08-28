@@ -226,7 +226,7 @@ void handleLimpar()
 void initWebServer()
 {
 
-    pinMode(2, OUTPUT);
+    //pinMode(2, OUTPUT);
 
     server.on("/", handleRoot);
     server.on("/status", handleStatus);

@@ -408,6 +408,7 @@ void taskProcessarSerial(void *pvParameters)
 // SETUP
 void setup()
 {
+  delay(250);
   pinMode(OK, INPUT);
   pinMode(M1, OUTPUT);
   pinMode(M0, OUTPUT);
