@@ -158,6 +158,19 @@ void initNextion()
 }
 
 // ======================================================
+// TEXTO DO PESO DE UM SENSOR
+// Acrescenta " kg" apenas quando há leitura válida.
+// ======================================================
+static String textoPesoSensor(const String &valor)
+{
+    if (valor == "DES")
+    {
+        return valor;
+    }
+    return valor + " kg";
+}
+
+// ======================================================
 // ATUALIZA DISPLAY
 // ======================================================
 void updateDisplay()
@@ -190,7 +203,14 @@ void updateDisplay()
     {
         for (int i = 0; i < _numSensores; i++)
         {
-            String sensorVal = pesoInteiro(_sensores[i].sensor->getKg());
+            // Só mostra o peso se o transmissor estiver respondendo dentro
+            // da janela de conexão; caso contrário exibe "DES".
+            bool conectado = (_sensores[i].sensor != nullptr) && _sensores[i].sensor->conectado();
+
+            String sensorVal = conectado
+                                   ? pesoInteiro(_sensores[i].sensor->getKg())
+                                   : String("DES");
+
             String objName = "tPeso" + String(i + 1);
 
             // Sempre envia o texto atualizado para o display
@@ -271,28 +291,29 @@ void updateDisplay()
     }
 
     // Sensor display fallback values
+    // "DES" (desconectado) é enviado puro, sem a unidade.
     if (tpeso1 != last_tpeso1)
     {
-        setNextionText("tpeso1", tpeso1 + " kg");
-        setNextionText("page4.tpeso1", tpeso1 + " kg");
+        setNextionText("tpeso1", textoPesoSensor(tpeso1));
+        setNextionText("page4.tpeso1", textoPesoSensor(tpeso1));
         last_tpeso1 = tpeso1;
     }
     if (tpeso2 != last_tpeso2)
     {
-        setNextionText("tpeso2", tpeso2 + " kg");
-        setNextionText("page4.tpeso2", tpeso2 + " kg");
+        setNextionText("tpeso2", textoPesoSensor(tpeso2));
+        setNextionText("page4.tpeso2", textoPesoSensor(tpeso2));
         last_tpeso2 = tpeso2;
     }
     if (tpeso3 != last_tpeso3)
     {
-        setNextionText("tpeso3", tpeso3 + " kg");
-        setNextionText("page4.tpeso3", tpeso3 + " kg");
+        setNextionText("tpeso3", textoPesoSensor(tpeso3));
+        setNextionText("page4.tpeso3", textoPesoSensor(tpeso3));
         last_tpeso3 = tpeso3;
     }
     if (tpeso4 != last_tpeso4)
     {
-        setNextionText("tpeso4", tpeso4 + " kg");
-        setNextionText("page4.tpeso4", tpeso4 + " kg");
+        setNextionText("tpeso4", textoPesoSensor(tpeso4));
+        setNextionText("page4.tpeso4", textoPesoSensor(tpeso4));
         last_tpeso4 = tpeso4;
     }
 

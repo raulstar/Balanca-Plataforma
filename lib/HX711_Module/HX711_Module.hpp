@@ -82,6 +82,19 @@ private:
 
     bool ready = false;
 
+    //////////////////////////////////////////////////////////////////////////
+    // MONITORAMENTO DE CONEXAO
+    //////////////////////////////////////////////////////////////////////////
+
+    // Marca o instante do ultimo pacote valido recebido deste transmissor.
+    // Zero significa que nenhum pacote chegou desde o boot.
+    uint32_t ultimoPacoteMs = 0;
+
+    // Janela de tempo (ms) usada para decidir conectado/desconectado.
+    // Base: no log, S2 chega em todo ciclo e S1 a cada ~5-6 ciclos.
+    // 2000 ms cobre com folga (~3x) o maior intervalo observado do S1.
+    uint32_t janelaConexaoMs = 2000;
+
 public:
 
     //////////////////////////////////////////////////////////////////////////
@@ -103,6 +116,17 @@ public:
     //////////////////////////////////////////////////////////////////////////
 
     bool isReady();
+
+    // Retorna 1 (true) se o transmissor enviou algum dado valido dentro da
+    // janela de tempo, 0 (false) se ficou mudo por mais que a janela.
+    bool conectado();
+
+    // Tempo (ms) desde o ultimo pacote valido. Retorna 0xFFFFFFFF se nunca
+    // recebeu nada.
+    uint32_t tempoDesdeUltimoPacote();
+
+    void setJanelaConexao(uint32_t ms);
+    uint32_t getJanelaConexao();
 
     //////////////////////////////////////////////////////////////////////////
     // DADOS

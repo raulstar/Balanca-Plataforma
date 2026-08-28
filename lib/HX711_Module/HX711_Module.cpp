@@ -206,6 +206,11 @@ bool SensorBalanca::processaString(String s)
 
         valorLido = rawValue;
 
+        // Pacote valido deste transmissor: renova a janela de conexao.
+        // (0 e reservado para "nunca recebeu")
+        uint32_t agora = millis();
+        ultimoPacoteMs = (agora == 0) ? 1 : agora;
+
         // Apenas marca como pronto se o valor é válido.
         // Não descartamos o valor lido aqui para permitir a tara de valores brutos.
         if (fabs(valorLido) < 0.0001f)
@@ -231,6 +236,39 @@ bool SensorBalanca::processaString(String s)
 bool SensorBalanca::isReady()
 {
     return ready;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// MONITORAMENTO DE CONEXAO
+/////////////////////////////////////////////////////////////////////////////
+
+uint32_t SensorBalanca::tempoDesdeUltimoPacote()
+{
+    if (ultimoPacoteMs == 0)
+    {
+        return 0xFFFFFFFFul;
+    }
+
+    // Subtracao sem sinal: correta mesmo no overflow do millis() (~49 dias).
+    return millis() - ultimoPacoteMs;
+}
+
+bool SensorBalanca::conectado()
+{
+    return tempoDesdeUltimoPacote() <= janelaConexaoMs;
+}
+
+void SensorBalanca::setJanelaConexao(uint32_t ms)
+{
+    if (ms > 0)
+    {
+        janelaConexaoMs = ms;
+    }
+}
+
+uint32_t SensorBalanca::getJanelaConexao()
+{
+    return janelaConexaoMs;
 }
 
 bool SensorBalanca::leitura()
