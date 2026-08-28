@@ -51,8 +51,10 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             gap: 4px;
             text-align: right;
             color: #d1d5db;
-            font-size: 12px;
-            font-family: 'Courier New', Courier, monospace;
+            /* Mesma fonte e tamanho do rotulo "Peso Atual" (.weight-label) */
+            font-size: 11px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            letter-spacing: 0.5px;
         }
 
         .top-info span {
@@ -69,8 +71,10 @@ const char pagina_html[] PROGMEM = R"rawliteral(
             align-items: center;
             flex: 1;
             color: #d1d5db;
-            font-size: 13px;
-            font-family: 'Courier New', Courier, monospace;
+            /* Mesma fonte e tamanho do rotulo "Peso Atual" (.weight-label) */
+            font-size: 11px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            letter-spacing: 0.5px;
             text-align: center;
         }
 
@@ -438,10 +442,13 @@ const char pagina_html[] PROGMEM = R"rawliteral(
                 font-size: 10px;
             }
 
-            .header-center-info,
-            .top-info,
             .status-bar {
                 font-size: 12px;
+            }
+
+            .header-center-info,
+            .top-info {
+                font-size: 10px; /* acompanha .weight-label no mobile */
             }
 
             .header-center-info span {
