@@ -496,6 +496,13 @@ void setup()
   xTaskCreate(taskSerialPortReader, "SerialPortReader", 4096, NULL, 2, &hPortTask);
   Serial.println("Loading EEPROM data...");
   carregarComEEPROM();
+  // Os sensores foram construidos/tarados antes do carregamento da EEPROM e
+  // por isso ainda guardam o fator de escala padrao. Aplica agora o fator
+  // efetivamente salvo em cada sensor.
+  sensor1.setScale(fatorEscalaConhecido[0]);
+  sensor2.setScale(fatorEscalaConhecido[1]);
+  sensor3.setScale(fatorEscalaConhecido[2]);
+  sensor4.setScale(fatorEscalaConhecido[3]);
   // Reenvia os registros restaurados da EEPROM para a tela Nextion
   restaurarTabelaNoDisplay();
   //OTA.begin(); // Setup settings
