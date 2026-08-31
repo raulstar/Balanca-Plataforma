@@ -65,6 +65,9 @@ void taskUpdateDisplay(void *pvParameters)
   }
 }
 
+// Definido em HX711_Module.cpp. Declarado aqui para nao alterar o cabecalho.
+extern bool sensorTarado[4];
+
 SensorBalanca sensor1(SerialPort, "S1", 0);
 SensorBalanca sensor2(SerialPort, "S2", 1);
 SensorBalanca sensor3(SerialPort, "S3", 2);
@@ -196,6 +199,12 @@ void taskSerialPortReader(void *pvParameters)
               Serial.print(sensores[i].sensor->getRaw(), 3);
               Serial.print(" | " + sensores[i].prefixo + " KG: ");
               Serial.print(sensores[i].sensor->getKg(), 3);
+              // O valor bruto carrega o offset mecanico da plataforma: sem
+              // tara o peso exibido nao tem significado.
+              if (i < 4 && !sensorTarado[i])
+              {
+                Serial.print(" [SEM TARA]");
+              }
               Serial.println();
             }
           }
@@ -477,10 +486,8 @@ void setup()
   xTaskCreate(taskProcessarImpressao, "ProcessarImpressao", 4096, NULL, 1, NULL);
   // Create asynchronous web handling task (priority 1)
   xTaskCreate(taskHandleWeb, "HandleWeb", 4096, NULL, 1, NULL);
-  sensor1.tare();
-  sensor2.tare();
-  sensor3.tare();
-  sensor4.tare();
+  // Nao ha o que tarar aqui: nenhum pacote chegou ainda. A tara de partida
+  // acontece na primeira leitura valida de cada sensor.
 
   server.on("/zero", handleZero);
   server.on("/dados", handleDados);
@@ -503,6 +510,9 @@ void setup()
   sensor2.setScale(fatorEscalaConhecido[1]);
   sensor3.setScale(fatorEscalaConhecido[2]);
   sensor4.setScale(fatorEscalaConhecido[3]);
+  // A tara nao e persistida: apos cada reinicio e obrigatorio zerar com a
+  // plataforma vazia antes de pesar ou calibrar.
+  Serial.println("ATENCAO: mantenha a plataforma vazia. A tara de partida sera feita na primeira leitura de cada sensor.");
   // Reenvia os registros restaurados da EEPROM para a tela Nextion
   restaurarTabelaNoDisplay();
   //OTA.begin(); // Setup settings

@@ -8,9 +8,46 @@ int sensorIndex[4] = {0, 1, 2, 3};
 float novoFator[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 float scale_factor = 0.0f;
 
+// Indica se cada sensor ja recebeu uma tara valida desde o boot.
+// O transmissor envia counts brutos, com o offset mecanico da plataforma
+// embutido, entao sem tara o peso indicado nao tem significado.
+// Vive apenas em RAM: e sempre falso apos reiniciar.
+bool sensorTarado[4] = {false, false, false, false};
+
+// A tara de partida nao pode ser feita no setup(): nenhum pacote chegou
+// ainda. Fica pendente ate a primeira leitura valida de cada sensor.
+static bool autoTaraPendente[4] = {true, true, true, true};
+
+// AJUSTE conforme a capacidade nominal da plataforma. Leituras acima disso
+// nao sao peso: sao pacote corrompido na transmissao.
+static const float CAPACIDADE_MAX_KG = 5000.0f;
+
+// Variacao maxima entre dois pacotes consecutivos do mesmo sensor.
+static const float SALTO_MAX_KG = 500.0f;
+
+// Apos esta quantidade de rejeicoes seguidas por salto, o proximo valor e
+// aceito. Evita que o sensor trave caso a referencia fique defasada.
+static const uint8_t REJEICOES_ATE_RESSINCRONIZAR = 3;
+
+// Buffer de 3 amostras por sensor para a mediana.
+static float amostras[4][3];
+static uint8_t amostrasCount[4] = {0, 0, 0, 0};
+static uint8_t rejeicoesSeguidas[4] = {0, 0, 0, 0};
+
 static bool fatorEscalaValido(float fator)
 {
     return !isnan(fator) && !isinf(fator) && fabs(fator) > 0.0001f;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// FILTRO: MEDIANA DE 3
+/////////////////////////////////////////////////////////////////////////////
+// Descarta o pico isolado e mantem o peso atualizado a cada pacote: o atraso
+// e de apenas uma amostra, ao contrario de mediana longa ou media movel.
+
+static float medianaDe3(float a, float b, float c)
+{
+    return max(min(a, b), min(max(a, b), c));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -222,7 +259,84 @@ bool SensorBalanca::processaString(String s)
             ready = true;
         }
 
-        pesoGramas = balanca.get_units(valorLido);
+        // Tara automatica de partida: o valor bruto do transmissor inclui o
+        // offset mecanico da plataforma, entao o primeiro pacote valido apos
+        // o boot define o zero. Exige a plataforma vazia na energizacao.
+        if (ready && sensorIndex >= 0 && sensorIndex < 4 && autoTaraPendente[sensorIndex])
+        {
+            autoTaraPendente[sensorIndex] = false;
+            balanca.tare(valorLido, sensorIndex);
+            sensorTarado[sensorIndex] = true;
+
+            Serial.print("Tara automatica do sensor ");
+            Serial.print(sensorIndex + 1);
+            Serial.print(": ");
+            Serial.println(valorLido, 3);
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // VALIDACAO DO PACOTE
+        //////////////////////////////////////////////////////////////////////
+        // So e possivel avaliar o valor em kg depois que existe uma tara de
+        // referencia. Antes disso o pacote passa direto.
+
+        if (ready && sensorIndex >= 0 && sensorIndex < 4 && sensorTarado[sensorIndex])
+        {
+            float kgCandidato = balanca.get_units(rawValue) / 1000.0f;
+
+            // Teto absoluto: acima da capacidade nao e peso, e corrupcao.
+            if (isnan(kgCandidato) || isinf(kgCandidato) ||
+                fabs(kgCandidato) > CAPACIDADE_MAX_KG)
+            {
+                Serial.print("REJEITADO (capacidade) sensor ");
+                Serial.print(sensorIndex + 1);
+                Serial.print(" RAW: ");
+                Serial.println(rawValue, 3);
+                return false;
+            }
+
+            // Coerencia entre pacotes: pega perda de digito na transmissao.
+            if (amostrasCount[sensorIndex] > 0 &&
+                fabs(kgCandidato - pesoKg) > SALTO_MAX_KG &&
+                rejeicoesSeguidas[sensorIndex] < REJEICOES_ATE_RESSINCRONIZAR)
+            {
+                rejeicoesSeguidas[sensorIndex]++;
+                Serial.print("REJEITADO (salto) sensor ");
+                Serial.print(sensorIndex + 1);
+                Serial.print(" RAW: ");
+                Serial.println(rawValue, 3);
+                return false;
+            }
+
+            rejeicoesSeguidas[sensorIndex] = 0;
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // FILTRO
+        //////////////////////////////////////////////////////////////////////
+
+        float rawFiltrado = rawValue;
+
+        if (sensorIndex >= 0 && sensorIndex < 4)
+        {
+            amostras[sensorIndex][2] = amostras[sensorIndex][1];
+            amostras[sensorIndex][1] = amostras[sensorIndex][0];
+            amostras[sensorIndex][0] = rawValue;
+
+            if (amostrasCount[sensorIndex] < 3)
+            {
+                amostrasCount[sensorIndex]++;
+            }
+
+            if (amostrasCount[sensorIndex] == 3)
+            {
+                rawFiltrado = medianaDe3(amostras[sensorIndex][0],
+                                         amostras[sensorIndex][1],
+                                         amostras[sensorIndex][2]);
+            }
+        }
+
+        pesoGramas = balanca.get_units(rawFiltrado);
         pesoKg = pesoGramas / 1000.0f;
         return true;
     }
@@ -317,6 +431,25 @@ bool SensorBalanca::tare()
     // Zeragem forçada: ignora verificação de ready
     balanca.tare(valorLido, sensorIndex);
 
+    // Só conta como tara valida se havia uma leitura real do transmissor.
+    // A tara chamada no boot, antes de qualquer pacote chegar, zera o offset
+    // mas nao pode marcar o sensor como tarado.
+    if (sensorIndex >= 0 && sensorIndex < 4)
+    {
+        sensorTarado[sensorIndex] = ready;
+
+        // Descarta amostras anteriores ao novo zero.
+        amostrasCount[sensorIndex] = 0;
+        rejeicoesSeguidas[sensorIndex] = 0;
+    }
+
+    if (!ready)
+    {
+        Serial.print("AVISO: Sensor ");
+        Serial.print(sensorIndex + 1);
+        Serial.println(" tarado sem leitura valida. Refaca a tara com o transmissor conectado.");
+    }
+
     // Forçar recalculamento imediato após definir novo offset
     pesoGramas = balanca.get_units(valorLido);
     pesoKg = pesoGramas / 1000.0f;
@@ -340,6 +473,16 @@ bool SensorBalanca::calibra(float pesoConhecido)
         Serial.print("ERRO: Sensor ");
         Serial.print(sensorIndex + 1);
         Serial.println(" nao pronto para calibracao");
+        return false;
+    }
+
+    // Sem tara o valor bruto inclui o peso da estrutura, o que entraria
+    // direto no fator de escala.
+    if (sensorIndex >= 0 && sensorIndex < 4 && !sensorTarado[sensorIndex])
+    {
+        Serial.print("ERRO: Sensor ");
+        Serial.print(sensorIndex + 1);
+        Serial.println(" precisa ser tarado antes de calibrar");
         return false;
     }
 
