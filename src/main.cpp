@@ -65,9 +65,6 @@ void taskUpdateDisplay(void *pvParameters)
   }
 }
 
-// Definido em HX711_Module.cpp. Declarado aqui para nao alterar o cabecalho.
-extern bool sensorTarado[4];
-
 SensorBalanca sensor1(SerialPort, "S1", 0);
 SensorBalanca sensor2(SerialPort, "S2", 1);
 SensorBalanca sensor3(SerialPort, "S3", 2);
@@ -102,9 +99,9 @@ void taskTareAllSensors(void *pvParameters)
     {
       for (int i = 0; i < numSensores; ++i)
       {
-        // Força a atualização do valor do sensor antes de zerar
-        // Isso assume que o objeto sensor tem acesso à última leitura lida.
         // O valorLido é mantido na instância de SensorBalanca.
+        // A tara so acontece se o sensor estiver estavel; caso contrario a
+        // propria tare() informa o motivo.
         sensores[i].sensor->tare();
       }
       xSemaphoreGive(xSensorMutex);
@@ -205,6 +202,10 @@ void taskSerialPortReader(void *pvParameters)
               {
                 Serial.print(" [SEM TARA]");
               }
+              if (!sensores[i].sensor->estavel())
+              {
+                Serial.print(" [INSTAVEL]");
+              }
               Serial.println();
             }
           }
@@ -279,11 +280,14 @@ void taskProcessarSerial(void *pvParameters)
         {
           if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
           {
-            sensores[sensorIndex].sensor->tare();
+            bool zerado = sensores[sensorIndex].sensor->tare();
             xSemaphoreGive(xSensorMutex);
-            Serial.print("Sensor ");
-            Serial.print(sensorIndex + 1);
-            Serial.println(" zerado.");
+            if (zerado)
+            {
+              Serial.print("Sensor ");
+              Serial.print(sensorIndex + 1);
+              Serial.println(" zerado.");
+            }
           }
         }
         else

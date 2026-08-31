@@ -13,21 +13,56 @@ float scale_factor = 0.0f;
 // embutido, entao sem tara o peso indicado nao tem significado.
 // Vive apenas em RAM: e sempre falso apos reiniciar.
 bool sensorTarado[4] = {false, false, false, false};
+bool sensorEstavel[4] = {false, false, false, false};
 
 // A tara de partida nao pode ser feita no setup(): nenhum pacote chegou
 // ainda. Fica pendente ate a primeira leitura valida de cada sensor.
 static bool autoTaraPendente[4] = {true, true, true, true};
 
-// AJUSTE conforme a capacidade nominal da plataforma. Leituras acima disso
-// nao sao peso: sao pacote corrompido na transmissao.
-static const float CAPACIDADE_MAX_KG = 5000.0f;
+// Janela de variacao aceita entre dois pacotes consecutivos, em counts do
+// HX711. Em counts a janela independe da tara e do fator de escala.
+//
+// Com ~852 counts/kg, 200000 counts equivalem a ~235 kg de variacao entre
+// dois pacotes, o que cobre carga entrando na plataforma. Valores muito
+// alem disso indicam pacote corrompido.
+static const float JANELA_MAX_COUNTS = 200000.0f;
 
-// Variacao maxima entre dois pacotes consecutivos do mesmo sensor.
-static const float SALTO_MAX_KG = 500.0f;
-
-// Apos esta quantidade de rejeicoes seguidas por salto, o proximo valor e
-// aceito. Evita que o sensor trave caso a referencia fique defasada.
+// Apos esta quantidade de rejeicoes seguidas, a referencia e considerada
+// obsoleta e o proximo valor e aceito. Evita travar o sensor quando a
+// leitura muda de patamar de forma legitima.
 static const uint8_t REJEICOES_ATE_RESSINCRONIZAR = 3;
+
+// Ultimo valor bruto aceito de cada sensor, referencia da janela.
+static float ultimoRawAceito[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+static bool temReferencia[4] = {false, false, false, false};
+
+// ESTABILIDADE
+// Numero de leituras comparadas e a faixa maxima aceita entre elas.
+// AJUSTE: uma tolerancia menor que o ruido do sensor faz a plataforma nunca
+// estabilizar e trava tara e calibracao.
+// A tolerancia e em counts do HX711, nao em kg: assim a estabilidade pode
+// ser avaliada antes da tara e nao depende do fator de escala, que varia
+// muito entre plataformas.
+// AJUSTE: uma tolerancia menor que o ruido do transmissor faz a plataforma
+// nunca estabilizar e trava a auto-tara, a tara e a calibracao.
+// A janela curta acompanha melhor a deriva lenta da celula: com 5 amostras
+// ela abrangia dois degraus do sinal e acusava instabilidade indevida.
+//
+// Referencia medida na calibracao de 25 kg: 21298 counts, ou seja
+// ~852 counts/kg (1,174 g por count). 100 counts equivalem a ~117 g.
+// O ruido observado fica entre 20 e 40 counts (23 a 47 g).
+static const uint8_t ESTAB_AMOSTRAS = 3;
+static const float ESTAB_TOLERANCIA_COUNTS = 100.0f;
+
+// Tempo que a leitura precisa permanecer dentro da tolerancia.
+static const uint32_t ESTAB_TEMPO_MS = 1500;
+
+static float estabBuffer[4][ESTAB_AMOSTRAS];
+static uint8_t estabCount[4] = {0, 0, 0, 0};
+static uint8_t estabIndice[4] = {0, 0, 0, 0};
+
+// Instante em que a leitura entrou na tolerancia. Zero = fora dela.
+static uint32_t estabDesdeMs[4] = {0, 0, 0, 0};
 
 // Buffer de 3 amostras por sensor para a mediana.
 static float amostras[4][3];
@@ -48,6 +83,74 @@ static bool fatorEscalaValido(float fator)
 static float medianaDe3(float a, float b, float c)
 {
     return max(min(a, b), min(max(a, b), c));
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// ESTABILIDADE
+/////////////////////////////////////////////////////////////////////////////
+
+// Descarta o historico de um sensor. Usado apos a tara, quando as leituras
+// anteriores passam a se referir a outro zero.
+static void resetarFiltros(int idx)
+{
+    if (idx < 0 || idx >= 4)
+    {
+        return;
+    }
+
+    amostrasCount[idx] = 0;
+    rejeicoesSeguidas[idx] = 0;
+    estabCount[idx] = 0;
+    estabIndice[idx] = 0;
+    estabDesdeMs[idx] = 0;
+    sensorEstavel[idx] = false;
+}
+
+// Estavel = as ultimas ESTAB_AMOSTRAS leituras cabem dentro de
+// ESTAB_TOLERANCIA_COUNTS e assim permaneceram por ESTAB_TEMPO_MS.
+// Recebe o valor bruto filtrado, em counts.
+static void atualizarEstabilidade(int idx, float counts)
+{
+    if (idx < 0 || idx >= 4)
+    {
+        return;
+    }
+
+    estabBuffer[idx][estabIndice[idx]] = counts;
+    estabIndice[idx] = (estabIndice[idx] + 1) % ESTAB_AMOSTRAS;
+
+    if (estabCount[idx] < ESTAB_AMOSTRAS)
+    {
+        estabCount[idx]++;
+        sensorEstavel[idx] = false;
+        return;
+    }
+
+    float minimo = estabBuffer[idx][0];
+    float maximo = estabBuffer[idx][0];
+
+    for (uint8_t i = 1; i < ESTAB_AMOSTRAS; ++i)
+    {
+        minimo = min(minimo, estabBuffer[idx][i]);
+        maximo = max(maximo, estabBuffer[idx][i]);
+    }
+
+    if ((maximo - minimo) > ESTAB_TOLERANCIA_COUNTS)
+    {
+        // Movimento sobre a plataforma: reinicia a contagem de tempo.
+        estabDesdeMs[idx] = 0;
+        sensorEstavel[idx] = false;
+        return;
+    }
+
+    uint32_t agora = millis();
+
+    if (estabDesdeMs[idx] == 0)
+    {
+        estabDesdeMs[idx] = (agora == 0) ? 1 : agora;
+    }
+
+    sensorEstavel[idx] = (agora - estabDesdeMs[idx]) >= ESTAB_TEMPO_MS;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -260,13 +363,16 @@ bool SensorBalanca::processaString(String s)
         }
 
         // Tara automatica de partida: o valor bruto do transmissor inclui o
-        // offset mecanico da plataforma, entao o primeiro pacote valido apos
-        // o boot define o zero. Exige a plataforma vazia na energizacao.
-        if (ready && sensorIndex >= 0 && sensorIndex < 4 && autoTaraPendente[sensorIndex])
+        // offset mecanico da plataforma, entao o zero e definido apos o boot.
+        // Só acontece com a leitura estavel, para nao fixar o zero durante
+        // uma oscilacao. Exige a plataforma vazia na energizacao.
+        if (ready && sensorIndex >= 0 && sensorIndex < 4 &&
+            autoTaraPendente[sensorIndex] && sensorEstavel[sensorIndex])
         {
             autoTaraPendente[sensorIndex] = false;
             balanca.tare(valorLido, sensorIndex);
             sensorTarado[sensorIndex] = true;
+            resetarFiltros(sensorIndex);
 
             Serial.print("Tara automatica do sensor ");
             Serial.print(sensorIndex + 1);
@@ -277,38 +383,44 @@ bool SensorBalanca::processaString(String s)
         //////////////////////////////////////////////////////////////////////
         // VALIDACAO DO PACOTE
         //////////////////////////////////////////////////////////////////////
-        // So e possivel avaliar o valor em kg depois que existe uma tara de
-        // referencia. Antes disso o pacote passa direto.
+        // Janela de variacao em counts, comparada ao ultimo valor aceito.
+        // Em counts a validacao independe da tara e do fator de escala, entao
+        // continua valendo antes da tara e apos mudanca eletrica no sensor.
 
-        if (ready && sensorIndex >= 0 && sensorIndex < 4 && sensorTarado[sensorIndex])
+        if (ready && sensorIndex >= 0 && sensorIndex < 4 &&
+            temReferencia[sensorIndex])
         {
-            float kgCandidato = balanca.get_units(rawValue) / 1000.0f;
+            float variacao = fabs(rawValue - ultimoRawAceito[sensorIndex]);
 
-            // Teto absoluto: acima da capacidade nao e peso, e corrupcao.
-            if (isnan(kgCandidato) || isinf(kgCandidato) ||
-                fabs(kgCandidato) > CAPACIDADE_MAX_KG)
+            if (isnan(rawValue) || isinf(rawValue) ||
+                variacao > JANELA_MAX_COUNTS)
             {
-                Serial.print("REJEITADO (capacidade) sensor ");
+                // Apos rejeicoes seguidas a referencia e considerada obsoleta
+                // e o proximo valor e aceito. Sem isso uma mudanca legitima e
+                // grande (recalibracao, ajuste eletrico) travaria o sensor.
+                if (rejeicoesSeguidas[sensorIndex] < REJEICOES_ATE_RESSINCRONIZAR)
+                {
+                    rejeicoesSeguidas[sensorIndex]++;
+                    Serial.print("REJEITADO (janela) sensor ");
+                    Serial.print(sensorIndex + 1);
+                    Serial.print(" RAW: ");
+                    Serial.println(rawValue, 3);
+                    return false;
+                }
+
+                Serial.print("RESSINCRONIZANDO sensor ");
                 Serial.print(sensorIndex + 1);
                 Serial.print(" RAW: ");
                 Serial.println(rawValue, 3);
-                return false;
+                resetarFiltros(sensorIndex);
             }
+        }
 
-            // Coerencia entre pacotes: pega perda de digito na transmissao.
-            if (amostrasCount[sensorIndex] > 0 &&
-                fabs(kgCandidato - pesoKg) > SALTO_MAX_KG &&
-                rejeicoesSeguidas[sensorIndex] < REJEICOES_ATE_RESSINCRONIZAR)
-            {
-                rejeicoesSeguidas[sensorIndex]++;
-                Serial.print("REJEITADO (salto) sensor ");
-                Serial.print(sensorIndex + 1);
-                Serial.print(" RAW: ");
-                Serial.println(rawValue, 3);
-                return false;
-            }
-
+        if (ready && sensorIndex >= 0 && sensorIndex < 4)
+        {
             rejeicoesSeguidas[sensorIndex] = 0;
+            ultimoRawAceito[sensorIndex] = rawValue;
+            temReferencia[sensorIndex] = true;
         }
 
         //////////////////////////////////////////////////////////////////////
@@ -338,6 +450,11 @@ bool SensorBalanca::processaString(String s)
 
         pesoGramas = balanca.get_units(rawFiltrado);
         pesoKg = pesoGramas / 1000.0f;
+
+        // Em counts, para funcionar tambem antes da tara e independer do
+        // fator de escala.
+        atualizarEstabilidade(sensorIndex, rawFiltrado);
+
         return true;
     }
     return false;
@@ -370,6 +487,17 @@ uint32_t SensorBalanca::tempoDesdeUltimoPacote()
 bool SensorBalanca::conectado()
 {
     return tempoDesdeUltimoPacote() <= janelaConexaoMs;
+}
+
+bool SensorBalanca::estavel()
+{
+    if (sensorIndex < 0 || sensorIndex >= 4)
+    {
+        return false;
+    }
+
+    // Um transmissor mudo congela a ultima leitura, o que pareceria estavel.
+    return sensorEstavel[sensorIndex] && conectado();
 }
 
 void SensorBalanca::setJanelaConexao(uint32_t ms)
@@ -428,26 +556,32 @@ float SensorBalanca::getGramas()
 
 bool SensorBalanca::tare()
 {
-    // Zeragem forçada: ignora verificação de ready
-    balanca.tare(valorLido, sensorIndex);
-
-    // Só conta como tara valida se havia uma leitura real do transmissor.
-    // A tara chamada no boot, antes de qualquer pacote chegar, zera o offset
-    // mas nao pode marcar o sensor como tarado.
-    if (sensorIndex >= 0 && sensorIndex < 4)
-    {
-        sensorTarado[sensorIndex] = ready;
-
-        // Descarta amostras anteriores ao novo zero.
-        amostrasCount[sensorIndex] = 0;
-        rejeicoesSeguidas[sensorIndex] = 0;
-    }
-
+    // Sem leitura real do transmissor nao ha o que zerar.
     if (!ready)
     {
-        Serial.print("AVISO: Sensor ");
+        Serial.print("ERRO: Sensor ");
         Serial.print(sensorIndex + 1);
-        Serial.println(" tarado sem leitura valida. Refaca a tara com o transmissor conectado.");
+        Serial.println(" sem leitura valida. Verifique o transmissor.");
+        return false;
+    }
+
+    // Zerar durante oscilacao fixaria um zero errado.
+    if (!estavel())
+    {
+        Serial.print("ERRO: Sensor ");
+        Serial.print(sensorIndex + 1);
+        Serial.println(" instavel. Aguarde a leitura estabilizar para zerar.");
+        return false;
+    }
+
+    balanca.tare(valorLido, sensorIndex);
+
+    if (sensorIndex >= 0 && sensorIndex < 4)
+    {
+        sensorTarado[sensorIndex] = true;
+
+        // Descarta amostras anteriores ao novo zero.
+        resetarFiltros(sensorIndex);
     }
 
     // Forçar recalculamento imediato após definir novo offset
@@ -483,6 +617,15 @@ bool SensorBalanca::calibra(float pesoConhecido)
         Serial.print("ERRO: Sensor ");
         Serial.print(sensorIndex + 1);
         Serial.println(" precisa ser tarado antes de calibrar");
+        return false;
+    }
+
+    // Calibrar com a leitura oscilando gravaria um fator de escala errado.
+    if (!estavel())
+    {
+        Serial.print("ERRO: Sensor ");
+        Serial.print(sensorIndex + 1);
+        Serial.println(" instavel. Aguarde a leitura estabilizar para calibrar.");
         return false;
     }
 

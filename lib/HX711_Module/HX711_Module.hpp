@@ -36,6 +36,14 @@ extern int sensorIndex[4];
 extern float novoFator[4];
 extern float scale_factor;
 
+// Indica se cada sensor ja recebeu uma tara valida desde o boot.
+// Vive apenas em RAM: e sempre falso apos reiniciar.
+extern bool sensorTarado[4];
+
+// Indica se a leitura de cada sensor esta estavel (parada dentro da
+// tolerancia pelo tempo minimo). Tara e calibracao exigem estabilidade.
+extern bool sensorEstavel[4];
+
 /////////////////////////////////////////////////////////////////////////////
 // CLASSE SENSOR BALANCA
 /////////////////////////////////////////////////////////////////////////////
@@ -120,6 +128,10 @@ public:
     // Retorna 1 (true) se o transmissor enviou algum dado valido dentro da
     // janela de tempo, 0 (false) se ficou mudo por mais que a janela.
     bool conectado();
+
+    // Retorna true quando as ultimas leituras ficaram dentro da tolerancia
+    // pelo tempo minimo exigido. Detecta movimento sobre a plataforma.
+    bool estavel();
 
     // Tempo (ms) desde o ultimo pacote valido. Retorna 0xFFFFFFFF se nunca
     // recebeu nada.

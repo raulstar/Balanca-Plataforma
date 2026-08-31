@@ -21,9 +21,6 @@ HardwareSerial SerialPort(2);
 // SENSOR HX711
 /////////////////////////////////////////////////////////////////////////////
 
-// Definido em HX711_Module.cpp. Declarado aqui para nao alterar o cabecalho.
-extern bool sensorTarado[4];
-
 SensorBalanca sensor1(SerialPort, "S1", 0);
 SensorBalanca sensor2(SerialPort, "S2", 1);
 SensorBalanca sensor3(SerialPort, "S3", 2);
@@ -126,6 +123,10 @@ void loop()
                     {
                         Serial.print(" [SEM TARA]");
                     }
+                    if (!sensores[i].sensor.estavel())
+                    {
+                        Serial.print(" [INSTAVEL]");
+                    }
                     Serial.println();
                 }
             }
@@ -156,11 +157,13 @@ void loop()
             int selectedSensorIndex = comando.substring(1).toInt() - 1;
             if (selectedSensorIndex >= 0 && selectedSensorIndex < numSensores)
             {
-                sensores[selectedSensorIndex].sensor.tare();
-                sensorIndex[selectedSensorIndex] = selectedSensorIndex;
-                Serial.print("Sensor ");
-                Serial.print(selectedSensorIndex + 1);
-                Serial.println(" zerado.");
+                if (sensores[selectedSensorIndex].sensor.tare())
+                {
+                    sensorIndex[selectedSensorIndex] = selectedSensorIndex;
+                    Serial.print("Sensor ");
+                    Serial.print(selectedSensorIndex + 1);
+                    Serial.println(" zerado.");
+                }
             }
             else
             {
