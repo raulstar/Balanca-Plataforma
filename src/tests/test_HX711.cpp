@@ -108,6 +108,9 @@ void loop()
                     Serial.print(sensores[i].prefixo + " RAW: ");
                     Serial.print(sensores[i].sensor.getRaw(), 3);
 
+                    Serial.print(" | FILT: ");
+                    Serial.print(sensores[i].sensor.getRawFiltrado(), 3);
+
                     Serial.print(" | " + sensores[i].prefixo + " KG: ");
                     Serial.print(sensores[i].sensor.getKg(), 3);
 

@@ -48,14 +48,29 @@ static bool temReferencia[4] = {false, false, false, false};
 // A janela curta acompanha melhor a deriva lenta da celula: com 5 amostras
 // ela abrangia dois degraus do sinal e acusava instabilidade indevida.
 //
-// Referencia medida na calibracao de 25 kg: 21298 counts, ou seja
-// ~852 counts/kg (1,174 g por count). 100 counts equivalem a ~117 g.
-// O ruido observado fica entre 20 e 40 counts (23 a 47 g).
+// Dimensionada sobre a flutuacao medida com a plataforma sem carga:
+// bruto oscilando ~175 counts pico a pico e deriva lenta que, apos a
+// mediana de 3, produz ate 45 counts de amplitude em 3 amostras.
+// 200 counts dao ~4x de margem sobre esse pior caso, sem deixar passar
+// a rampa de convergencia do transmissor no boot (>700 counts).
 static const uint8_t ESTAB_AMOSTRAS = 3;
-static const float ESTAB_TOLERANCIA_COUNTS = 100.0f;
+static const float ESTAB_TOLERANCIA_COUNTS = 200.0f;
 
 // Tempo que a leitura precisa permanecer dentro da tolerancia.
 static const uint32_t ESTAB_TEMPO_MS = 1500;
+
+// AGENDAMENTO
+// Tara e calibracao pedidas com a leitura instavel ficam pendentes ate
+// estabilizar. Passado este prazo a solicitacao e descartada.
+static const uint32_t PENDENCIA_TIMEOUT_MS = 10000;
+
+static const uint8_t PEND_NENHUM = 0;
+static const uint8_t PEND_TARA = 1;
+static const uint8_t PEND_CALIB = 2;
+
+static uint8_t pendenciaTipo[4] = {PEND_NENHUM, PEND_NENHUM, PEND_NENHUM, PEND_NENHUM};
+static float pendenciaPeso[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+static uint32_t pendenciaPrazoMs[4] = {0, 0, 0, 0};
 
 static float estabBuffer[4][ESTAB_AMOSTRAS];
 static uint8_t estabCount[4] = {0, 0, 0, 0};
@@ -68,6 +83,11 @@ static uint32_t estabDesdeMs[4] = {0, 0, 0, 0};
 static float amostras[4][3];
 static uint8_t amostrasCount[4] = {0, 0, 0, 0};
 static uint8_t rejeicoesSeguidas[4] = {0, 0, 0, 0};
+
+// Leitura liquida minima para aceitar uma calibracao, em counts. Serve
+// apenas para barrar o caso degenerado, em que o sinal e indistinguivel
+// do ruido e o fator resultante seria arbitrario.
+static const float CALIB_MIN_COUNTS = 50.0f;
 
 static bool fatorEscalaValido(float fator)
 {
@@ -234,7 +254,7 @@ float HX711::get_units(float leituraAtual)
 // CALIBRAÇÃO
 /////////////////////////////////////////////////////////////////////////////
 
-void HX711::calibra(float leituraAtual, float known_weight)
+bool HX711::calibra(float leituraAtual, float known_weight)
 {
     //////////////////////////////////////////////////////////////////////////
     // LEITURA LÍQUIDA
@@ -265,7 +285,29 @@ void HX711::calibra(float leituraAtual, float known_weight)
     {
         Serial.println("ERRO: PESO INVALIDO");
 
-        return;
+        return false;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // SINAL INSUFICIENTE
+    //////////////////////////////////////////////////////////////////////////
+    // Poucos counts para o peso aplicado significam celula ou ligacao com
+    // problema. Gravar o fator assim produziria uma balanca que exibe
+    // numeros sem medir nada.
+
+    if (fabs(leituraLiquida) < CALIB_MIN_COUNTS)
+    {
+        Serial.print("ERRO: sinal insuficiente para calibrar. Apenas ");
+        Serial.print(fabs(leituraLiquida), 0);
+        Serial.print(" counts para ");
+        Serial.print(known_weight / 1000.0f, 2);
+        Serial.println(" kg.");
+
+        Serial.print("Cada count valeria ");
+        Serial.print((known_weight / 1000.0f) / fabs(leituraLiquida), 3);
+        Serial.println(" kg. Verifique a celula e a ligacao do sensor.");
+
+        return false;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -296,6 +338,8 @@ void HX711::calibra(float leituraAtual, float known_weight)
     Serial.println(::scale_factor, 8);
 
     Serial.println("--------------------------------");
+
+    return true;
 }
 
 void HX711::setScale(float scale)
@@ -370,7 +414,7 @@ bool SensorBalanca::processaString(String s)
             autoTaraPendente[sensorIndex] && sensorEstavel[sensorIndex])
         {
             autoTaraPendente[sensorIndex] = false;
-            balanca.tare(valorLido, sensorIndex);
+            balanca.tare(valorFiltrado, sensorIndex);
             sensorTarado[sensorIndex] = true;
             resetarFiltros(sensorIndex);
 
@@ -448,12 +492,16 @@ bool SensorBalanca::processaString(String s)
             }
         }
 
+        valorFiltrado = rawFiltrado;
         pesoGramas = balanca.get_units(rawFiltrado);
         pesoKg = pesoGramas / 1000.0f;
 
         // Em counts, para funcionar tambem antes da tara e independer do
         // fator de escala.
         atualizarEstabilidade(sensorIndex, rawFiltrado);
+
+        // Executa tara ou calibracao agendada assim que houver estabilidade.
+        processarPendencia();
 
         return true;
     }
@@ -487,6 +535,100 @@ uint32_t SensorBalanca::tempoDesdeUltimoPacote()
 bool SensorBalanca::conectado()
 {
     return tempoDesdeUltimoPacote() <= janelaConexaoMs;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// AGENDAMENTO DE TARA E CALIBRACAO
+/////////////////////////////////////////////////////////////////////////////
+
+bool SensorBalanca::agendar(uint8_t tipo, float peso)
+{
+    if (sensorIndex < 0 || sensorIndex >= 4)
+    {
+        return false;
+    }
+
+    // Somente sensores ativos: sem transmissor nao ha leitura para esperar.
+    if (!conectado())
+    {
+        Serial.print("ERRO: Sensor ");
+        Serial.print(sensorIndex + 1);
+        Serial.println(" desconectado. Solicitacao ignorada.");
+        return false;
+    }
+
+    uint32_t prazo = millis() + PENDENCIA_TIMEOUT_MS;
+
+    pendenciaTipo[sensorIndex] = tipo;
+    pendenciaPeso[sensorIndex] = peso;
+    pendenciaPrazoMs[sensorIndex] = (prazo == 0) ? 1 : prazo;
+
+    return true;
+}
+
+bool SensorBalanca::pendente()
+{
+    if (sensorIndex < 0 || sensorIndex >= 4)
+    {
+        return false;
+    }
+
+    return pendenciaTipo[sensorIndex] != PEND_NENHUM;
+}
+
+void SensorBalanca::cancelarPendencia()
+{
+    if (sensorIndex >= 0 && sensorIndex < 4)
+    {
+        pendenciaTipo[sensorIndex] = PEND_NENHUM;
+        pendenciaPrazoMs[sensorIndex] = 0;
+    }
+}
+
+void SensorBalanca::processarPendencia()
+{
+    if (sensorIndex < 0 || sensorIndex >= 4 ||
+        pendenciaTipo[sensorIndex] == PEND_NENHUM)
+    {
+        return;
+    }
+
+    // Subtracao sem sinal: correta mesmo no overflow do millis().
+    if ((int32_t)(millis() - pendenciaPrazoMs[sensorIndex]) >= 0)
+    {
+        uint8_t tipo = pendenciaTipo[sensorIndex];
+        cancelarPendencia();
+
+        Serial.print("ERRO: Sensor ");
+        Serial.print(sensorIndex + 1);
+        Serial.print(tipo == PEND_TARA ? " zeragem" : " calibracao");
+        Serial.println(" cancelada: leitura nao estabilizou a tempo.");
+        return;
+    }
+
+    if (!estavel())
+    {
+        return;
+    }
+
+    // Limpa antes de executar: tare() e calibra() consultam a estabilidade
+    // e, estando estaveis, executam sem reagendar.
+    uint8_t tipo = pendenciaTipo[sensorIndex];
+    float peso = pendenciaPeso[sensorIndex];
+    cancelarPendencia();
+
+    Serial.print("Sensor ");
+    Serial.print(sensorIndex + 1);
+    Serial.println(" estabilizou: executando solicitacao agendada.");
+
+    if (tipo == PEND_TARA)
+    {
+        tare();
+    }
+    else
+    {
+        calibra(peso);
+    }
 }
 
 bool SensorBalanca::estavel()
@@ -532,6 +674,11 @@ float SensorBalanca::getRaw()
     return valorLido;
 }
 
+float SensorBalanca::getRawFiltrado()
+{
+    return valorFiltrado;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // KG
 /////////////////////////////////////////////////////////////////////////////
@@ -565,16 +712,22 @@ bool SensorBalanca::tare()
         return false;
     }
 
-    // Zerar durante oscilacao fixaria um zero errado.
+    // Zerar durante oscilacao fixaria um zero errado: a solicitacao fica
+    // agendada e e executada assim que a leitura estabilizar.
     if (!estavel())
     {
-        Serial.print("ERRO: Sensor ");
-        Serial.print(sensorIndex + 1);
-        Serial.println(" instavel. Aguarde a leitura estabilizar para zerar.");
+        if (agendar(PEND_TARA, 0.0f))
+        {
+            Serial.print("Sensor ");
+            Serial.print(sensorIndex + 1);
+            Serial.println(" instavel: zeragem agendada para quando estabilizar.");
+        }
         return false;
     }
 
-    balanca.tare(valorLido, sensorIndex);
+    // Usa o valor filtrado, nao o ultimo pacote: fixar o zero sobre uma
+    // amostra unica embutiria o ruido daquele instante no offset.
+    balanca.tare(valorFiltrado, sensorIndex);
 
     if (sensorIndex >= 0 && sensorIndex < 4)
     {
@@ -584,12 +737,14 @@ bool SensorBalanca::tare()
         resetarFiltros(sensorIndex);
     }
 
-    // Forçar recalculamento imediato após definir novo offset
-    pesoGramas = balanca.get_units(valorLido);
+    // Forçar recalculamento imediato após definir novo offset.
+    // Usa a mesma origem do offset, senao a diferenca entre o valor filtrado
+    // e o ultimo pacote aparece como peso residual logo apos zerar.
+    pesoGramas = balanca.get_units(valorFiltrado);
     pesoKg = pesoGramas / 1000.0f;
 
     Serial.println("--------------------------------");
-    Serial.println("BALANCA ZERADA (FORCADA)");
+    Serial.println("BALANCA ZERADA");
     Serial.print("Novo Valor (KG): ");
     Serial.println(pesoKg, 3);
     Serial.println("--------------------------------");
@@ -620,16 +775,27 @@ bool SensorBalanca::calibra(float pesoConhecido)
         return false;
     }
 
-    // Calibrar com a leitura oscilando gravaria um fator de escala errado.
+    // Calibrar com a leitura oscilando gravaria um fator de escala errado:
+    // a solicitacao fica agendada ate estabilizar.
     if (!estavel())
     {
-        Serial.print("ERRO: Sensor ");
-        Serial.print(sensorIndex + 1);
-        Serial.println(" instavel. Aguarde a leitura estabilizar para calibrar.");
+        if (agendar(PEND_CALIB, pesoConhecido))
+        {
+            Serial.print("Sensor ");
+            Serial.print(sensorIndex + 1);
+            Serial.print(" instavel: calibracao com ");
+            Serial.print(pesoConhecido);
+            Serial.println(" g agendada para quando estabilizar.");
+        }
         return false;
     }
 
-    balanca.calibra(valorLido, pesoConhecido);
+    // Pelo mesmo motivo da tara: o fator sai do valor filtrado.
+    // Recusada, o fator anterior e mantido e nada deve ser anunciado.
+    if (!balanca.calibra(valorFiltrado, pesoConhecido))
+    {
+        return false;
+    }
 
     Serial.println("--------------------------------");
 

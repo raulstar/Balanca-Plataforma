@@ -194,6 +194,8 @@ void taskSerialPortReader(void *pvParameters)
             {
               Serial.print(sensores[i].prefixo + " RAW: ");
               Serial.print(sensores[i].sensor->getRaw(), 3);
+              Serial.print(" | FILT: ");
+              Serial.print(sensores[i].sensor->getRawFiltrado(), 3);
               Serial.print(" | " + sensores[i].prefixo + " KG: ");
               Serial.print(sensores[i].sensor->getKg(), 3);
               // O valor bruto carrega o offset mecanico da plataforma: sem
@@ -569,6 +571,20 @@ void loop()
   {
     salvarComEEPROM();
     salvarRegistro = false;
+  }
+
+  // As solicitacoes agendadas sao executadas a cada leitura recebida, mas o
+  // prazo tambem precisa correr quando o transmissor fica mudo.
+  if (xSensorMutex && xSemaphoreTake(xSensorMutex, 0) == pdTRUE)
+  {
+    for (int i = 0; i < numSensores; ++i)
+    {
+      if (sensores[i].sensor->pendente())
+      {
+        sensores[i].sensor->processarPendencia();
+      }
+    }
+    xSemaphoreGive(xSensorMutex);
   }
 
    //OTA.handle(); 

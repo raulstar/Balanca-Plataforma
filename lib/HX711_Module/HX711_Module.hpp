@@ -26,7 +26,8 @@ public:
 
     float get_units(float leituraAtual);
 
-    void calibra(float leituraAtual, float known_weight);
+    // Retorna false se a calibracao foi recusada e o fator anterior mantido.
+    bool calibra(float leituraAtual, float known_weight);
 
     void setScale(float scale);
     float getScale();
@@ -79,6 +80,8 @@ private:
 
     float valorLido = 0.0f;
 
+    float valorFiltrado = 0.0f;
+
     float pesoGramas = 0.0f;
 
     float pesoKg = 0.0f;
@@ -97,6 +100,10 @@ private:
     // Marca o instante do ultimo pacote valido recebido deste transmissor.
     // Zero significa que nenhum pacote chegou desde o boot.
     uint32_t ultimoPacoteMs = 0;
+
+    // Registra uma solicitacao de tara ou calibracao para quando a leitura
+    // estabilizar. Retorna false se o sensor nao estiver ativo.
+    bool agendar(uint8_t tipo, float peso);
 
     // Janela de tempo (ms) usada para decidir conectado/desconectado.
     // Base: no log, S2 chega em todo ciclo e S1 a cada ~5-6 ciclos.
@@ -133,6 +140,22 @@ public:
     // pelo tempo minimo exigido. Detecta movimento sobre a plataforma.
     bool estavel();
 
+    //////////////////////////////////////////////////////////////////////////
+    // AGENDAMENTO
+    //////////////////////////////////////////////////////////////////////////
+    // Tara e calibracao pedidas com a leitura instavel ficam pendentes e sao
+    // executadas assim que ela estabilizar, ou descartadas apos o prazo.
+
+    // Ha solicitacao aguardando estabilidade.
+    bool pendente();
+
+    // Descarta a solicitacao pendente.
+    void cancelarPendencia();
+
+    // Verifica prazo e estabilidade, executando a solicitacao quando possivel.
+    // Chamada automaticamente a cada leitura recebida.
+    void processarPendencia();
+
     // Tempo (ms) desde o ultimo pacote valido. Retorna 0xFFFFFFFF se nunca
     // recebeu nada.
     uint32_t tempoDesdeUltimoPacote();
@@ -145,6 +168,9 @@ public:
     //////////////////////////////////////////////////////////////////////////
 
     float getRaw();
+
+    // Valor bruto apos a mediana: e este, e nao getRaw(), que origina o peso.
+    float getRawFiltrado();
 
     float getKg();
 
