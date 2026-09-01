@@ -215,14 +215,30 @@ void taskSerialPortReader(void *pvParameters)
           float currentPeso = 0.0f;
           for (int i = 0; i < numSensores; i++)
           {
-            if (sensores[i].sensor->isReady())
+            // Um sensor mudo congela o ultimo peso e continuaria somando um
+            // valor velho; um sensor nao tarado ainda carrega o offset
+            // mecanico da plataforma, que sao toneladas de peso inexistente.
+            if (!sensores[i].sensor->isReady() ||
+                !sensores[i].sensor->conectado())
             {
-              // Use absolute value to ignore sign of individual sensor readings
-              float sensorKg = sensores[i].sensor->getKg();
-              if (!isnan(sensorKg) && !isinf(sensorKg))
-              {
-                currentPeso += fabs(sensorKg);
-              }
+              continue;
+            }
+
+            if (i < 4 && !sensorTarado[i])
+            {
+              continue;
+            }
+
+            // Soma COM sinal. O fabs() daqui vinha da epoca do fator de
+            // escala negativo e mascarava o defeito em vez de corrigi-lo:
+            // um sensor com fator ou ligacao invertida exibia peso positivo
+            // e entrava no total como se estivesse certo. Com a calibracao
+            // correta o sinal ja sai positivo sozinho; saindo negativo, e
+            // sinal de calibracao errada e tem de aparecer no visor.
+            float sensorKg = sensores[i].sensor->getKg();
+            if (!isnan(sensorKg) && !isinf(sensorKg))
+            {
+              currentPeso += sensorKg;
             }
           }
           if (div > 1)
@@ -314,10 +330,13 @@ void taskProcessarSerial(void *pvParameters)
             if (xSensorMutex && xSemaphoreTake(xSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE)
             {
               sensores[sensorIndex].sensor->setScale(novoFator);
+              // Grava: sem isto o fator informado a mao se perde no reboot,
+              // quando o setup() recarrega o valor antigo da EEPROM.
+              salvarComEEPROM();
               xSemaphoreGive(xSensorMutex);
               Serial.print("Sensor ");
               Serial.print(sensorIndex + 1);
-              Serial.print(" fator definido: ");
+              Serial.print(" fator definido e salvo: ");
               Serial.println(novoFator, 8);
             }
           }

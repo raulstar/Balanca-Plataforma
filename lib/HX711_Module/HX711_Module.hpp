@@ -31,6 +31,10 @@ public:
 
     void setScale(float scale);
     float getScale();
+
+    // Zero atual, em counts. A validacao de faixa fisica do pacote precisa
+    // dele para saber onde comeca a plataforma.
+    float getOffset();
 };
 
 extern int sensorIndex[4];

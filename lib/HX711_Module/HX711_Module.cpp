@@ -19,45 +19,105 @@ bool sensorEstavel[4] = {false, false, false, false};
 // ainda. Fica pendente ate a primeira leitura valida de cada sensor.
 static bool autoTaraPendente[4] = {true, true, true, true};
 
-// Janela de variacao aceita entre dois pacotes consecutivos, em counts do
-// HX711. Em counts a janela independe da tara e do fator de escala.
+/////////////////////////////////////////////////////////////////////////////
+// VALIDACAO DE PACOTE
+/////////////////////////////////////////////////////////////////////////////
+// A janela de variacao entre pacotes consecutivos foi removida. Ela nao
+// funciona nesta aplicacao por dois motivos:
 //
-// Com ~852 counts/kg, 200000 counts equivalem a ~235 kg de variacao entre
-// dois pacotes, o que cobre carga entrando na plataforma. Valores muito
-// alem disso indicam pacote corrompido.
-static const float JANELA_MAX_COUNTS = 200000.0f;
+//  1. Frouxa demais para pegar corrupcao. Em campo "S1-23567" chegou como
+//     "S1-23" -- uma variacao de 23544 counts, dentro dos 200000 da janela.
+//     Passou, e a mediana teve de absorver o estrago.
+//  2. Apertada demais para carga real. Um eixo subindo aplica milhares de
+//     kg entre dois pacotes de ~1 s; para nao rejeitar isso a janela teria
+//     de cobrir quase toda a faixa util, virando letra morta.
+//
+// Corrupcao de transmissao agora e barrada na origem pelo checksum do
+// pacote, e o que resta e validado por faixa fisica absoluta.
 
-// Apos esta quantidade de rejeicoes seguidas, a referencia e considerada
-// obsoleta e o proximo valor e aceito. Evita travar o sensor quando a
-// leitura muda de patamar de forma legitima.
-static const uint8_t REJEICOES_ATE_RESSINCRONIZAR = 3;
+// Exige o checksum "*XX" nos pacotes. Durante a migracao dos 4 transmissores
+// mude para false: os antigos, sem checksum, voltam a ser aceitos (e a
+// protecao contra pacote truncado deixa de valer para eles).
+static const bool EXIGIR_CHECKSUM = true;
 
-// Ultimo valor bruto aceito de cada sensor, referencia da janela.
-static float ultimoRawAceito[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-static bool temReferencia[4] = {false, false, false, false};
+// FAIXA FISICA
+// A janela de aceitacao relativa ao zero foi REMOVIDA. Ela era derivada do
+// proprio fator de escala que deveria proteger, e isso fechava um laco:
+//
+//   fator errado -> janela estreita -> a carga de calibracao e rejeitada ->
+//   a calibracao so pode gerar outro fator errado
+//
+// Em campo a S2 travou por completo desta forma. Com o fator de -4594 g/count
+// gravado por uma calibracao ruim, a janela tinha 1360 counts; um ajuste
+// mecanico moveu o zero em 8315 counts e TODO pacote passou a ser rejeitado.
+// Como a rejeicao acontecia antes de renovar a janela de conexao, o sensor
+// ainda aparecia como desconectado e a tara ficava inalcancavel. O unico
+// escape era o comando "f[n]".
+//
+// Nao adianta redimensiona-la a partir de uma sensibilidade nominal: 5000 kg
+// a ~528 counts/kg ja ocupam 2,6 milhoes dos 8,4 milhoes de counts do HX711.
+// Somando sobrecarga e a folga necessaria para uma sensibilidade ate poucas
+// vezes maior, a janela cobre praticamente todo o conversor. Ou seja, ela so
+// e estreita quando o fator esta errado -- morde exatamente quando nao
+// deveria, e nunca quando deveria.
+//
+// A protecao real ficou onde funciona: o checksum barra a corrupcao de
+// transmissao na origem, o limite absoluto abaixo barra o que nao cabe no
+// conversor, e fatorEscalaPlausivel() barra na entrada o fator absurdo que
+// dava origem a tudo isto.
+
+// Unico limite que sobrevive: o valor tem de caber nos 24 bits com sinal do
+// HX711. Vale antes e depois da tara, e nao depende de calibracao alguma.
+static const float LIMITE_ABSOLUTO_COUNTS = 8388607.0f;
+
+// FAIXA PLAUSIVEL DO FATOR DE ESCALA, em gramas por count.
+//
+// Piso (0,05 g/count): o HX711 tem 24 bits. Cobrir 5000 kg gastando o
+// conversor inteiro daria ~0,3 g/count, e nenhuma montagem real usa mais que
+// isso. Abaixo de 0,05 o fator so pode ter vindo de erro de digitacao ou de
+// uma calibracao com o peso informado na unidade errada.
+//
+// Teto (50 g/count): a divisao do controlador e de 5 kg. Com 50 g/count
+// ainda restam 100 counts por divisao, o minimo para uma leitura solida.
+// Acima disso o ruido de repouso passa a valer mais que uma divisao inteira.
+// Foi o caso dos -4594 g/count aceitos em campo: 60 counts de deriva termica
+// viraram 275 kg, e a plataforma "perdia a calibracao" parada com a carga em
+// cima.
+static const float FATOR_MIN_G_POR_COUNT = 0.05f;
+static const float FATOR_MAX_G_POR_COUNT = 50.0f;
 
 // ESTABILIDADE
 // Numero de leituras comparadas e a faixa maxima aceita entre elas.
-// AJUSTE: uma tolerancia menor que o ruido do sensor faz a plataforma nunca
-// estabilizar e trava tara e calibracao.
-// A tolerancia e em counts do HX711, nao em kg: assim a estabilidade pode
-// ser avaliada antes da tara e nao depende do fator de escala, que varia
-// muito entre plataformas.
-// AJUSTE: uma tolerancia menor que o ruido do transmissor faz a plataforma
-// nunca estabilizar e trava a auto-tara, a tara e a calibracao.
-// A janela curta acompanha melhor a deriva lenta da celula: com 5 amostras
-// ela abrangia dois degraus do sinal e acusava instabilidade indevida.
 //
-// Dimensionada sobre a flutuacao medida com a plataforma sem carga:
-// bruto oscilando ~175 counts pico a pico e deriva lenta que, apos a
-// mediana de 3, produz ate 45 counts de amplitude em 3 amostras.
-// 200 counts dao ~4x de margem sobre esse pior caso, sem deixar passar
-// a rampa de convergencia do transmissor no boot (>700 counts).
-static const uint8_t ESTAB_AMOSTRAS = 3;
-static const float ESTAB_TOLERANCIA_COUNTS = 200.0f;
+// A tolerancia e em counts do HX711, nao em kg, de proposito: assim a
+// estabilidade pode ser avaliada ANTES da tara e nao depende do fator de
+// escala. Essa independencia e essencial -- um fator errado na EEPROM
+// (ja aconteceu com o S1) travaria a tara justamente quando ela e o unico
+// caminho para consertar a calibracao.
+//
+// Dimensionada sobre o ruido medido em campo na plataforma S1, a
+// ~528 counts/kg:
+//   sem carga:  95 counts pico a pico (0,18 kg)
+//   com carga:  45 counts pico a pico (0,09 kg)
+//   deriva lenta: ~75 counts ao longo de 17 pacotes
+//   pior janela de 5 amostras consecutivas observada: 74 counts
+//
+// 600 counts (~1,14 kg) dao ~8x de margem sobre esse pior caso e ainda
+// ficam em 1/4 da divisao de 5 kg do controlador: apertado o bastante para
+// um zero confiavel, folgado o bastante para nao travar com vibracao ou
+// vento na plataforma carregada.
+//
+// A janela voltou a 5 amostras. Com 3, um par de pacotes ruins consecutivos
+// bastava para a leitura "parecer" estavel e fixar um zero errado; a
+// tolerancia mais folgada remove o motivo pelo qual ela tinha sido encurtada.
+static const uint8_t ESTAB_AMOSTRAS = 5;
+static const float ESTAB_TOLERANCIA_COUNTS = 600.0f;
 
 // Tempo que a leitura precisa permanecer dentro da tolerancia.
-static const uint32_t ESTAB_TEMPO_MS = 1500;
+// Com pacotes chegando a cada ~150-950 ms, 2000 ms garantem que a janela de
+// 5 amostras seja de fato preenchida com dados novos antes de declarar
+// estabilidade.
+static const uint32_t ESTAB_TEMPO_MS = 2000;
 
 // AGENDAMENTO
 // Tara e calibracao pedidas com a leitura instavel ficam pendentes ate
@@ -82,7 +142,6 @@ static uint32_t estabDesdeMs[4] = {0, 0, 0, 0};
 // Buffer de 3 amostras por sensor para a mediana.
 static float amostras[4][3];
 static uint8_t amostrasCount[4] = {0, 0, 0, 0};
-static uint8_t rejeicoesSeguidas[4] = {0, 0, 0, 0};
 
 // Leitura liquida minima para aceitar uma calibracao, em counts. Serve
 // apenas para barrar o caso degenerado, em que o sinal e indistinguivel
@@ -92,6 +151,22 @@ static const float CALIB_MIN_COUNTS = 50.0f;
 static bool fatorEscalaValido(float fator)
 {
     return !isnan(fator) && !isinf(fator) && fabs(fator) > 0.0001f;
+}
+
+// Alem de aritmeticamente utilizavel, o fator precisa ser fisicamente
+// possivel para esta plataforma. O sinal e livre: carga entrando pode fazer
+// o bruto subir ou descer, conforme a ligacao da celula.
+static bool fatorEscalaPlausivel(float fator)
+{
+    if (!fatorEscalaValido(fator))
+    {
+        return false;
+    }
+
+    float magnitude = fabs(fator);
+
+    return magnitude >= FATOR_MIN_G_POR_COUNT &&
+           magnitude <= FATOR_MAX_G_POR_COUNT;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -119,7 +194,6 @@ static void resetarFiltros(int idx)
     }
 
     amostrasCount[idx] = 0;
-    rejeicoesSeguidas[idx] = 0;
     estabCount[idx] = 0;
     estabIndice[idx] = 0;
     estabDesdeMs[idx] = 0;
@@ -314,10 +388,48 @@ bool HX711::calibra(float leituraAtual, float known_weight)
     // CALIBRAÇÃO
     //////////////////////////////////////////////////////////////////////////
 
-    sensorScaleFactor = known_weight / leituraLiquida;
-    ::scale_factor = sensorScaleFactor;
+    float fatorCalculado = known_weight / leituraLiquida;
+
     Serial.print("Scale factor calculado:");
-    Serial.println(::scale_factor, 8);
+    Serial.println(fatorCalculado, 8);
+
+    //////////////////////////////////////////////////////////////////////////
+    // FATOR IMPLAUSIVEL
+    //////////////////////////////////////////////////////////////////////////
+    // Ultima barreira antes de gravar. CALIB_MIN_COUNTS olha so o tamanho do
+    // sinal e nao basta: em campo, 850 kg produziram 185 counts, passaram
+    // pelos 50 exigidos, e gravaram 4594 g/count. Com esse fator, 60 counts
+    // de deriva termica viravam 275 kg e a plataforma parecia "perder a
+    // calibracao" sozinha, com a carga parada em cima dela.
+    //
+    // O fator resultante e o que revela o absurdo, porque so ele confronta o
+    // sinal medido com o peso que dizem ter sido aplicado. Recusado aqui, o
+    // fator anterior e mantido intacto e nada e gravado na EEPROM.
+
+    if (!fatorEscalaPlausivel(fatorCalculado))
+    {
+        Serial.print("ERRO: fator implausivel (");
+        Serial.print(fatorCalculado, 4);
+        Serial.println(" g/count). Calibracao recusada.");
+
+        Serial.print("Esperado entre ");
+        Serial.print(FATOR_MIN_G_POR_COUNT, 2);
+        Serial.print(" e ");
+        Serial.print(FATOR_MAX_G_POR_COUNT, 2);
+        Serial.println(" g/count.");
+
+        Serial.print("Foram apenas ");
+        Serial.print(fabs(leituraLiquida), 0);
+        Serial.print(" counts para ");
+        Serial.print(known_weight / 1000.0f, 2);
+        Serial.println(" kg: a carga nao esta chegando as celulas.");
+        Serial.println("Verifique a mecanica da plataforma e a ligacao da caixa de juncao.");
+
+        return false;
+    }
+
+    sensorScaleFactor = fatorCalculado;
+    ::scale_factor = sensorScaleFactor;
 
     int calibIndex = sensorId;
 
@@ -353,6 +465,11 @@ float HX711::getScale()
     return sensorScaleFactor;
 }
 
+float HX711::getOffset()
+{
+    return offset;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CONSTRUTOR SENSOR BALANÇA
 /////////////////////////////////////////////////////////////////////////////
@@ -376,10 +493,81 @@ SensorBalanca::SensorBalanca(HardwareSerial &porta, String prefixoSensor, int se
 // PROCESSA STRING
 /////////////////////////////////////////////////////////////////////////////
 
+/////////////////////////////////////////////////////////////////////////////
+// CHECKSUM
+/////////////////////////////////////////////////////////////////////////////
+// Pacote: <prefixo><valor>*<XOR em hex de 2 digitos>, ex. "S1-102796*3C".
+// Devolve o indice do '*' quando o checksum confere, ou -1 se estiver
+// ausente/invalido. O corpo a validar e tudo que vem antes do '*'.
+
+static int validarChecksum(const String &s)
+{
+    int sep = s.lastIndexOf('*');
+
+    // Sem checksum, ou sem os dois digitos hex depois dele.
+    if (sep < 0 || s.length() != (unsigned int)(sep + 3))
+    {
+        return -1;
+    }
+
+    uint8_t calculado = 0;
+    for (int i = 0; i < sep; ++i)
+    {
+        calculado ^= (uint8_t)s[i];
+    }
+
+    char *fim = nullptr;
+    long recebido = strtol(s.c_str() + sep + 1, &fim, 16);
+
+    if (fim == nullptr || *fim != '\0')
+    {
+        return -1;
+    }
+
+    return (calculado == (uint8_t)recebido) ? sep : -1;
+}
+
 bool SensorBalanca::processaString(String s)
 {
     if (s.startsWith(prefixo))
     {
+        //////////////////////////////////////////////////////////////////////
+        // CHECKSUM
+        //////////////////////////////////////////////////////////////////////
+        // Barrado aqui, o pacote truncado nunca chega aos filtros. E o unico
+        // ponto onde ele ainda e distinguivel de uma leitura legitima: depois
+        // de virar numero, "S1-23" e tao plausivel quanto "S1-23567".
+
+        int sep = validarChecksum(s);
+
+        if (sep >= 0)
+        {
+            s = s.substring(0, sep);
+        }
+        else if (EXIGIR_CHECKSUM)
+        {
+            Serial.print("REJEITADO (checksum) ");
+            Serial.println(s);
+            return false;
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // JANELA DE CONEXAO
+        //////////////////////////////////////////////////////////////////////
+        // Renovada aqui, e nao depois das validacoes de valor: um pacote com
+        // checksum correto ja prova que o transmissor esta vivo, mesmo que o
+        // valor que ele carrega venha a ser recusado adiante.
+        //
+        // Quando isto ficava depois das validacoes, uma sequencia de valores
+        // recusados derrubava conectado(), que derruba estavel(), que bloqueia
+        // tare() -- o sensor era declarado desconectado enquanto transmitia
+        // sem parar, e a tara, unico caminho para sair da situacao, ficava
+        // inalcancavel.
+        // (0 e reservado para "nunca recebeu")
+
+        uint32_t agora = millis();
+        ultimoPacoteMs = (agora == 0) ? 1 : agora;
+
         float rawValue = atof(s.c_str() + prefixo.length());
 
         // Se o valor recebido raw for igual a zero, deve ser ignorado.
@@ -388,12 +576,23 @@ bool SensorBalanca::processaString(String s)
             return false;
         }
 
-        valorLido = rawValue;
+        //////////////////////////////////////////////////////////////////////
+        // FAIXA FISICA
+        //////////////////////////////////////////////////////////////////////
+        // Resta apenas o limite do conversor. A janela relativa ao zero saiu
+        // daqui: ver a nota no topo do arquivo.
 
-        // Pacote valido deste transmissor: renova a janela de conexao.
-        // (0 e reservado para "nunca recebeu")
-        uint32_t agora = millis();
-        ultimoPacoteMs = (agora == 0) ? 1 : agora;
+        if (isnan(rawValue) || isinf(rawValue) ||
+            fabs(rawValue) > LIMITE_ABSOLUTO_COUNTS)
+        {
+            Serial.print("REJEITADO (fora da faixa do HX711) ");
+            Serial.print(prefixo);
+            Serial.print(" RAW: ");
+            Serial.println(rawValue, 3);
+            return false;
+        }
+
+        valorLido = rawValue;
 
         // Apenas marca como pronto se o valor é válido.
         // Não descartamos o valor lido aqui para permitir a tara de valores brutos.
@@ -404,67 +603,6 @@ bool SensorBalanca::processaString(String s)
         else
         {
             ready = true;
-        }
-
-        // Tara automatica de partida: o valor bruto do transmissor inclui o
-        // offset mecanico da plataforma, entao o zero e definido apos o boot.
-        // Só acontece com a leitura estavel, para nao fixar o zero durante
-        // uma oscilacao. Exige a plataforma vazia na energizacao.
-        if (ready && sensorIndex >= 0 && sensorIndex < 4 &&
-            autoTaraPendente[sensorIndex] && sensorEstavel[sensorIndex])
-        {
-            autoTaraPendente[sensorIndex] = false;
-            balanca.tare(valorFiltrado, sensorIndex);
-            sensorTarado[sensorIndex] = true;
-            resetarFiltros(sensorIndex);
-
-            Serial.print("Tara automatica do sensor ");
-            Serial.print(sensorIndex + 1);
-            Serial.print(": ");
-            Serial.println(valorLido, 3);
-        }
-
-        //////////////////////////////////////////////////////////////////////
-        // VALIDACAO DO PACOTE
-        //////////////////////////////////////////////////////////////////////
-        // Janela de variacao em counts, comparada ao ultimo valor aceito.
-        // Em counts a validacao independe da tara e do fator de escala, entao
-        // continua valendo antes da tara e apos mudanca eletrica no sensor.
-
-        if (ready && sensorIndex >= 0 && sensorIndex < 4 &&
-            temReferencia[sensorIndex])
-        {
-            float variacao = fabs(rawValue - ultimoRawAceito[sensorIndex]);
-
-            if (isnan(rawValue) || isinf(rawValue) ||
-                variacao > JANELA_MAX_COUNTS)
-            {
-                // Apos rejeicoes seguidas a referencia e considerada obsoleta
-                // e o proximo valor e aceito. Sem isso uma mudanca legitima e
-                // grande (recalibracao, ajuste eletrico) travaria o sensor.
-                if (rejeicoesSeguidas[sensorIndex] < REJEICOES_ATE_RESSINCRONIZAR)
-                {
-                    rejeicoesSeguidas[sensorIndex]++;
-                    Serial.print("REJEITADO (janela) sensor ");
-                    Serial.print(sensorIndex + 1);
-                    Serial.print(" RAW: ");
-                    Serial.println(rawValue, 3);
-                    return false;
-                }
-
-                Serial.print("RESSINCRONIZANDO sensor ");
-                Serial.print(sensorIndex + 1);
-                Serial.print(" RAW: ");
-                Serial.println(rawValue, 3);
-                resetarFiltros(sensorIndex);
-            }
-        }
-
-        if (ready && sensorIndex >= 0 && sensorIndex < 4)
-        {
-            rejeicoesSeguidas[sensorIndex] = 0;
-            ultimoRawAceito[sensorIndex] = rawValue;
-            temReferencia[sensorIndex] = true;
         }
 
         //////////////////////////////////////////////////////////////////////
@@ -493,12 +631,40 @@ bool SensorBalanca::processaString(String s)
         }
 
         valorFiltrado = rawFiltrado;
-        pesoGramas = balanca.get_units(rawFiltrado);
-        pesoKg = pesoGramas / 1000.0f;
 
         // Em counts, para funcionar tambem antes da tara e independer do
         // fator de escala.
         atualizarEstabilidade(sensorIndex, rawFiltrado);
+
+        //////////////////////////////////////////////////////////////////////
+        // TARA AUTOMATICA DE PARTIDA
+        //////////////////////////////////////////////////////////////////////
+        // O valor bruto do transmissor inclui o offset mecanico da plataforma,
+        // entao o zero e definido apos o boot. So acontece com a leitura
+        // estavel, para nao fixar o zero durante uma oscilacao. Exige a
+        // plataforma vazia na energizacao.
+        //
+        // Roda DEPOIS do filtro: antes, tarava com o valorFiltrado do pacote
+        // anterior e conferia a estabilidade de uma amostra atrasada, entao o
+        // zero gravado nao era o mesmo que o log anunciava.
+
+        if (ready && sensorIndex >= 0 && sensorIndex < 4 &&
+            autoTaraPendente[sensorIndex] && sensorEstavel[sensorIndex])
+        {
+            autoTaraPendente[sensorIndex] = false;
+            balanca.tare(valorFiltrado, sensorIndex);
+            sensorTarado[sensorIndex] = true;
+
+            Serial.print("Tara automatica do sensor ");
+            Serial.print(sensorIndex + 1);
+            Serial.print(": ");
+            Serial.println(valorFiltrado, 3);
+
+            resetarFiltros(sensorIndex);
+        }
+
+        pesoGramas = balanca.get_units(valorFiltrado);
+        pesoKg = pesoGramas / 1000.0f;
 
         // Executa tara ou calibracao agendada assim que houver estabilidade.
         processarPendencia();
@@ -797,6 +963,14 @@ bool SensorBalanca::calibra(float pesoConhecido)
         return false;
     }
 
+    // Sem isto o fator novo vive so em RAM: no proximo boot o setup()
+    // recarrega fatorEscalaConhecido[] da EEPROM e restaura o fator antigo,
+    // e a plataforma volta a pesar errado depois de ter sido calibrada.
+    // Precisa ficar aqui, e nao no tratador do comando serial, porque a
+    // calibracao agendada (executada quando a leitura estabiliza) nunca
+    // passa por ele.
+    salvarComEEPROM();
+
     Serial.println("--------------------------------");
 
     Serial.print("BALANCA CALIBRADA COM ");
@@ -812,6 +986,31 @@ bool SensorBalanca::calibra(float pesoConhecido)
 void SensorBalanca::setScale(float scale)
 {
     balanca.setScale(scale);
+
+    // Avisa, mas nao recusa. O setup() passa por aqui aplicando o que veio da
+    // EEPROM, e recusar deixaria a plataforma sem fator nenhum; o comando
+    // "f[n]" tambem precisa continuar aceitando qualquer valor, para servir de
+    // ajuste manual. O importante e que o operador saiba, no boot, quais
+    // plataformas estao com fator que nao mede peso e precisam ser calibradas
+    // de novo.
+    if (fatorEscalaValido(scale) && !fatorEscalaPlausivel(scale))
+    {
+        Serial.print("AVISO: sensor ");
+        Serial.print(sensorIndex + 1);
+        Serial.print(" com fator implausivel (");
+        Serial.print(scale, 4);
+        Serial.println(" g/count). Recalibre antes de pesar.");
+    }
+
+    // Mantem fatorEscalaConhecido[] em dia com o fator em uso, para que o
+    // comando "f[n] [fator]" possa ser gravado na EEPROM por quem o chamou.
+    // A gravacao em si fica com o chamador: o setup() tambem passa por aqui
+    // ao aplicar o que veio da EEPROM, e gravar aqui custaria quatro escritas
+    // inuteis a cada boot.
+    if (sensorIndex >= 0 && sensorIndex < 4 && fatorEscalaValido(scale))
+    {
+        fatorEscalaConhecido[sensorIndex] = scale;
+    }
 }
 
 float SensorBalanca::getScale()
