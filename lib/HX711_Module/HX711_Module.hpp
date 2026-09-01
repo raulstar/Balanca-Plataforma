@@ -112,7 +112,7 @@ private:
     // Janela de tempo (ms) usada para decidir conectado/desconectado.
     // Base: no log, S2 chega em todo ciclo e S1 a cada ~5-6 ciclos.
     // 2000 ms cobre com folga (~3x) o maior intervalo observado do S1.
-    uint32_t janelaConexaoMs = 2000;
+    uint32_t janelaConexaoMs = 3000;
 
 public:
 
