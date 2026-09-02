@@ -508,7 +508,10 @@ void setup()
   // Create asynchronous Nextion display commands task
   xTaskCreate(taskProcessNextionCommands, "ProcessNextion", 4096, NULL, 1, &hNextionTask);
   xTaskCreate(taskUpdateDisplay, "UpdateDisplay", 4096, NULL, 1, NULL);
-  xTaskCreate(taskProcessarImpressao, "ProcessarImpressao", 4096, NULL, 1, NULL);
+  // A impressao bit-bang nao tolera preempcao no meio de um byte: a task fica
+  // no core 1 (o WiFi vive no core 0) e com prioridade acima das tasks de web,
+  // display e sensores, que antes a interrompiam durante a transmissao.
+  xTaskCreatePinnedToCore(taskProcessarImpressao, "ProcessarImpressao", 4096, NULL, 3, NULL, 1);
   // Create asynchronous web handling task (priority 1)
   xTaskCreate(taskHandleWeb, "HandleWeb", 4096, NULL, 1, NULL);
   // Nao ha o que tarar aqui: nenhum pacote chegou ainda. A tara de partida
@@ -613,5 +616,5 @@ void loop()
 
   // SerialPort reading is now handled by taskSerialPortReader.
 
-  // delay(2);
+   delay(2);
 }
