@@ -56,7 +56,7 @@ String tabela[20][11];
 
 int linhaAtual = 0;
 int contadorRegistro = 0;
-int contEixo = 1;
+int contEixo = 0;
 
 String last_thora = "";
 String last_tdata = "";
@@ -138,6 +138,12 @@ void initNextion()
     NEXTION_SERIAL.begin(115200, SERIAL_8N1, NEXTION_RX, NEXTION_TX);
 
     Serial.println("Nextion iniciado");
+
+    // Clear display and internal state
+    handle_blimpar();
+
+    // Load data from EEPROM
+    carregarComEEPROM();
 
     // Send initial WiFi configuration values to display
     setNextionText("page3.gssid", sta_ssid);
@@ -631,23 +637,23 @@ void handle_bsom()
 
     switch (contEixo)
     {
-    case 0:
+    case 1:
         //eixo1 = peixo;
         peixo1 = peixo;
         break;
-    case 1:
+    case 2:
         //eixo2 = peixo;
         peixo2 = peixo;
         break;
-    case 2:
+    case 3:
         //eixo3 = peixo;
         peixo3 = peixo;
         break;
-    case 3:
+    case 4:
         //eixo4 = peixo;
         peixo4 = peixo;
         break;
-    case 4:
+    case 5:
         //eixo5 = peixo;
         peixo5 = peixo;
         break;
@@ -964,7 +970,7 @@ void handle_blimpar()
     ttara = 0.0;
     tplaca = "";
     placaVeiculo = "";
-    contEixo = 1;
+    contEixo = 0;
     eixo = 0;
     peixo = 0;
     eixo1 = 0;
@@ -978,6 +984,7 @@ void handle_blimpar()
     peixo4 = 0;
     peixo5 = 0;
     peixo6 = 0;
+    
 
     updateDisplay();
 }
